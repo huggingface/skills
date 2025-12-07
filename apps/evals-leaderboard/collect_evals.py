@@ -98,6 +98,35 @@ BENCHMARKS: Dict[str, BenchmarkSpec] = {
             "arc c",
         ),
     ),
+    "aime_2025": BenchmarkSpec(
+        key="aime_2025",
+        label="AIME 2025",
+        aliases=(
+            "aime 2025",
+            "aime2025",
+            "aime",
+            "american invitational mathematics examination",
+        ),
+    ),
+    "bigbenchhard": BenchmarkSpec(
+        key="bigbenchhard",
+        label="BigBenchHard",
+        aliases=(
+            "bigbenchhard",
+            "big bench hard",
+            "bbh",
+            "bigbench hard",
+        ),
+    ),
+    "livecodebench": BenchmarkSpec(
+        key="livecodebench",
+        label="LiveCodeBench",
+        aliases=(
+            "livecodebench",
+            "live code bench",
+            "lcb",
+        ),
+    ),
 }
 
 
