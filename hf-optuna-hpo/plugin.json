@@ -1,0 +1,22 @@
+{
+  "name": "optuna-hpo",
+  "version": "1.0.0",
+  "description": "Hyperparameter optimisation for LLM fine-tuning using Optuna. Orchestrates distributed trials across cloud backends (Huggingface Jobs, Modal &c.) with intelligent sampling, early stopping and cost tracking. Train the future without going broke.",
+  "author": {
+    "name": "Chris von Csefalvay"
+  },
+  "repository": "https://github.com/huggingface/skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "huggingface",
+    "optuna",
+    "hyperparameter",
+    "optimisation",
+    "hpo",
+    "fine-tuning",
+    "llm",
+    "trl",
+    "distributed",
+    "cloud"
+  ]
+}
