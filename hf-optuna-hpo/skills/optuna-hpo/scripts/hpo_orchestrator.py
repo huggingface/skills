@@ -24,6 +24,8 @@ from typing import Callable
 import optuna
 from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
+from huggingface_hub import HfApi, whoami
+from huggingface_hub.utils import HfHubHTTPError
 
 from backend_interface import (
     JobStatus,
@@ -39,6 +41,79 @@ from search_spaces import (
     validate_search_space,
     format_search_space,
 )
+
+
+def verify_hf_auth(require_write: bool = True) -> dict:
+    """
+    Verify HuggingFace Hub authentication.
+
+    Args:
+        require_write: If True, verify the token has write permissions
+
+    Returns:
+        User info dict with 'name', 'orgs', 'auth' keys
+
+    Raises:
+        RuntimeError: If authentication fails or token lacks required permissions
+    """
+    try:
+        user_info = whoami()
+    except HfHubHTTPError as e:
+        if "401" in str(e) or "Unauthorized" in str(e):
+            raise RuntimeError(
+                "HuggingFace Hub authentication failed.\n"
+                "Please run: huggingface-cli login\n"
+                "Or set the HF_TOKEN environment variable."
+            ) from e
+        raise RuntimeError(f"HuggingFace Hub error: {e}") from e
+    except Exception as e:
+        raise RuntimeError(
+            f"Could not verify HuggingFace authentication: {e}\n"
+            "Please run: huggingface-cli login"
+        ) from e
+
+    # Check token type
+    auth_info = user_info.get("auth", {})
+    token_type = auth_info.get("type", "unknown")
+
+    if require_write:
+        # Check for write access
+        access_token = auth_info.get("accessToken", {})
+        role = access_token.get("role", "")
+
+        # Fine-grained tokens have explicit permissions
+        if token_type == "fine-grained":
+            # For fine-grained tokens, check if write permission exists
+            # The role field might be 'write' or similar
+            if role not in ("write", "admin"):
+                raise RuntimeError(
+                    f"HuggingFace token lacks write permissions (role: {role}).\n"
+                    "HPO requires write access to push models and sync studies.\n"
+                    "Please create a token with write permissions at:\n"
+                    "https://huggingface.co/settings/tokens"
+                )
+
+    return {
+        "name": user_info.get("name", "unknown"),
+        "username": user_info.get("name", "unknown"),
+        "orgs": [org.get("name") for org in user_info.get("orgs", [])],
+        "auth": auth_info,
+        "token_type": token_type,
+    }
+
+
+def check_hf_auth() -> tuple[bool, str, dict | None]:
+    """
+    Check HuggingFace authentication status without raising.
+
+    Returns:
+        Tuple of (is_valid, message, user_info)
+    """
+    try:
+        user_info = verify_hf_auth(require_write=True)
+        return True, f"Authenticated as: {user_info['username']}", user_info
+    except RuntimeError as e:
+        return False, str(e), None
 
 
 @dataclass
@@ -68,6 +143,9 @@ class HPOStudy:
     n_trials: int = 20
     n_parallel: int = 3
     direction: str = "minimize"  # minimize eval_loss
+    trial_timeout_minutes: int = 180  # 3 hour default per trial
+    poll_interval_seconds: int = 30
+    report_interval_seconds: int = 300  # Report progress every 5 minutes
 
     # Budget
     budget_usd: float | None = None
@@ -84,15 +162,39 @@ class HPOStudy:
     # Hub configuration
     push_to_hub: bool = True
     hub_model_prefix: str | None = None
+    results_dataset: str | None = None  # Hub dataset for results table (e.g., "username/hpo-results")
+    scripts_dataset: str | None = None  # Hub dataset for trial scripts (e.g., "username/hpo-scripts")
+
+    # Authentication
+    skip_auth_check: bool = False  # Set to True for testing without Hub
+
+    # Callbacks
+    progress_callback: Callable[[dict], None] | None = None
 
     # Internal state
     _study: optuna.Study | None = field(default=None, repr=False)
     _active_jobs: dict = field(default_factory=dict, repr=False)
     _total_cost: float = field(default=0.0, repr=False)
     _storage_path: Path | None = field(default=None, repr=False)
+    _last_report_time: float = field(default=0.0, repr=False)
+    _trials_started: int = field(default=0, repr=False)
+    _user_info: dict | None = field(default=None, repr=False)
 
     def __post_init__(self):
         """Initialise the study."""
+        # Verify HuggingFace authentication
+        if not self.skip_auth_check:
+            require_write = self.push_to_hub or self.storage.startswith("hub://")
+            try:
+                self._user_info = verify_hf_auth(require_write=require_write)
+                print(f"✓ Authenticated as: {self._user_info['username']}")
+            except RuntimeError as e:
+                raise RuntimeError(
+                    f"Authentication required for HPO study.\n{e}"
+                ) from e
+        else:
+            self._user_info = None
+
         # Validate and resolve search space
         self._search_space = get_search_space(self.search_space)
         errors = validate_search_space(self._search_space)
@@ -186,6 +288,64 @@ class HPOStudy:
 
         return self._study
 
+    def _report_progress(self, force: bool = False) -> None:
+        """Report progress to callback if enough time has passed."""
+        now = time.time()
+        if not force and (now - self._last_report_time) < self.report_interval_seconds:
+            return
+
+        self._last_report_time = now
+
+        # Build progress report
+        study = self._create_or_load_study()
+        completed = len([t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE])
+        pruned = len([t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED])
+        failed = len([t for t in study.trials if t.state == optuna.trial.TrialState.FAIL])
+
+        progress = {
+            "timestamp": now,
+            "trials_completed": completed,
+            "trials_pruned": pruned,
+            "trials_failed": failed,
+            "trials_active": len(self._active_jobs),
+            "trials_remaining": max(0, self.n_trials - completed),
+            "total_cost_usd": round(self._total_cost, 2),
+            "budget_usd": self.budget_usd,
+            "budget_percent_used": (
+                round(100 * self._total_cost / self.budget_usd, 1)
+                if self.budget_usd else None
+            ),
+            "best_value": study.best_value if completed > 0 else None,
+            "active_jobs": {
+                trial_id: {
+                    "job_id": info["job_id"],
+                    "elapsed_minutes": round((now - info["start_time"]) / 60, 1),
+                }
+                for trial_id, info in self._active_jobs.items()
+            },
+        }
+
+        # Print progress summary
+        print(f"\n{'=' * 50}")
+        print(f"HPO PROGRESS REPORT - {self.name}")
+        print(f"{'=' * 50}")
+        print(f"Completed: {completed}/{self.n_trials} | Pruned: {pruned} | Failed: {failed}")
+        print(f"Active trials: {len(self._active_jobs)}")
+        if completed > 0:
+            print(f"Best objective so far: {progress['best_value']:.6f}")
+        print(f"Total cost: ${self._total_cost:.2f}", end="")
+        if self.budget_usd:
+            print(f" / ${self.budget_usd} ({progress['budget_percent_used']}%)")
+        else:
+            print()
+        for trial_id, info in progress["active_jobs"].items():
+            print(f"  - Trial {trial_id}: running for {info['elapsed_minutes']:.1f} min")
+        print(f"{'=' * 50}\n")
+
+        # Call user callback if provided
+        if self.progress_callback:
+            self.progress_callback(progress)
+
     def _objective(self, trial: optuna.Trial) -> float:
         """Objective function for Optuna optimisation."""
         # Suggest hyperparameters
@@ -207,20 +367,26 @@ class HPOStudy:
 
         # Submit job
         job_id = self.runner.submit(trial_config)
+        start_time = time.time()
         self._active_jobs[trial.number] = {
             "job_id": job_id,
             "config": trial_config,
-            "start_time": time.time(),
+            "start_time": start_time,
         }
+        self._trials_started += 1
 
-        # Poll for completion with pruning checks
+        timeout_seconds = self.trial_timeout_minutes * 60
+
+        # Poll for completion with pruning checks and timeout
         while True:
             status = self.runner.status(job_id)
+            elapsed = time.time() - start_time
 
             if status == JobStatus.COMPLETED:
                 result = self.runner.results(job_id)
                 self._total_cost += result.cost_usd or 0
                 del self._active_jobs[trial.number]
+                self._report_progress()
 
                 if result.objective_value is None:
                     raise optuna.TrialPruned("No objective value returned")
@@ -231,6 +397,7 @@ class HPOStudy:
                 result = self.runner.results(job_id)
                 self._total_cost += result.cost_usd or 0
                 del self._active_jobs[trial.number]
+                self._report_progress()
                 raise optuna.TrialPruned(f"Job failed: {result.error_message}")
 
             elif status == JobStatus.RUNNING:
@@ -244,14 +411,28 @@ class HPOStudy:
                         result = self.runner.results(job_id)
                         self._total_cost += result.cost_usd or 0
                         del self._active_jobs[trial.number]
+                        self._report_progress()
                         raise optuna.TrialPruned()
+
+            # Check timeout
+            if elapsed > timeout_seconds:
+                print(f"Trial {trial.number} timed out after {self.trial_timeout_minutes} minutes")
+                self.runner.cancel(job_id)
+                del self._active_jobs[trial.number]
+                self._report_progress()
+                raise optuna.TrialPruned(f"Trial timed out after {self.trial_timeout_minutes} minutes")
 
             # Check budget
             if self.budget_usd and self._total_cost >= self.budget_usd:
                 self.runner.cancel(job_id)
-                raise optuna.TrialPruned("Out of cash.")
+                del self._active_jobs[trial.number]
+                self._report_progress()
+                raise optuna.TrialPruned("Budget exhausted")
 
-            time.sleep(30)  # Poll every 30 seconds
+            # Report progress periodically
+            self._report_progress()
+
+            time.sleep(self.poll_interval_seconds)
 
     def optimise(
         self,
@@ -338,6 +519,254 @@ class HPOStudy:
         print(f"Synced study to: {url}")
         return url
 
+    def sync_results_table(self, repo_id: str | None = None) -> str:
+        """
+        Sync trial results as a structured table to HuggingFace Hub.
+
+        Creates a dataset with a results table containing:
+        - study_name, trial_id, job_id
+        - All hyperparameters as columns
+        - objective_value, status, duration, cost
+
+        Args:
+            repo_id: Hub repository ID (default: from results_dataset setting)
+
+        Returns:
+            URL to the uploaded dataset
+        """
+        import io
+        import csv
+
+        if repo_id is None:
+            repo_id = self.results_dataset
+        if repo_id is None:
+            raise ValueError(
+                "No results_dataset configured. Set results_dataset parameter "
+                "or pass repo_id explicitly."
+            )
+
+        study = self._create_or_load_study()
+        api = HfApi()
+
+        # Ensure repo exists
+        api.create_repo(repo_id, repo_type="dataset", exist_ok=True)
+
+        # Collect all hyperparameter keys across trials
+        all_hp_keys = set()
+        for trial in study.trials:
+            all_hp_keys.update(trial.params.keys())
+        hp_keys = sorted(all_hp_keys)
+
+        # Build CSV data
+        csv_buffer = io.StringIO()
+        fieldnames = [
+            "study_name",
+            "trial_id",
+            "job_id",
+            "status",
+            "objective_value",
+            "duration_minutes",
+            "cost_usd",
+        ] + hp_keys
+
+        writer = csv.DictWriter(csv_buffer, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for trial in study.trials:
+            row = {
+                "study_name": self.name,
+                "trial_id": trial.number,
+                "job_id": f"{self.name}-trial-{trial.number}",
+                "status": trial.state.name,
+                "objective_value": trial.value,
+                "duration_minutes": (
+                    round(trial.duration.total_seconds() / 60, 2)
+                    if trial.duration else None
+                ),
+                "cost_usd": trial.user_attrs.get("cost_usd"),
+            }
+            # Add hyperparameters
+            for key in hp_keys:
+                row[key] = trial.params.get(key)
+
+            writer.writerow(row)
+
+        # Upload CSV
+        csv_content = csv_buffer.getvalue().encode("utf-8")
+        url = api.upload_file(
+            path_or_fileobj=csv_content,
+            path_in_repo=f"{self.name}_results.csv",
+            repo_id=repo_id,
+            repo_type="dataset",
+            commit_message=f"Update results for {self.name}",
+        )
+
+        # Also create/update README
+        self._create_results_readme(repo_id, study, hp_keys)
+
+        print(f"Synced results table to: {url}")
+        return url
+
+    def _create_results_readme(
+        self,
+        repo_id: str,
+        study: optuna.Study,
+        hp_keys: list[str],
+    ) -> None:
+        """Create README for results dataset."""
+        api = HfApi()
+
+        completed = len([t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE])
+
+        readme = f"""---
+license: apache-2.0
+tags:
+- optuna
+- hpo
+- hyperparameter-optimization
+- results
+---
+
+# HPO Results: {self.name}
+
+Hyperparameter optimisation results for `{self.model}` on `{self.dataset}`.
+
+## Summary
+
+| Metric | Value |
+|--------|-------|
+| Study | {self.name} |
+| Model | {self.model} |
+| Dataset | {self.dataset} |
+| Method | {self.method} |
+| Completed trials | {completed} |
+"""
+
+        if completed > 0:
+            readme += f"""| Best objective | {study.best_value:.6f} |
+
+## Best hyperparameters
+
+| Parameter | Value |
+|-----------|-------|
+"""
+            for key, value in sorted(study.best_params.items()):
+                if isinstance(value, float):
+                    readme += f"| {key} | {value:.6g} |\n"
+                else:
+                    readme += f"| {key} | {value} |\n"
+
+        readme += f"""
+
+## Results table
+
+The file `{self.name}_results.csv` contains all trial results with columns:
+- `study_name`: Name of the HPO study
+- `trial_id`: Optuna trial number
+- `job_id`: HuggingFace Jobs identifier
+- `status`: Trial status (COMPLETE, PRUNED, FAIL)
+- `objective_value`: Final eval_loss
+- `duration_minutes`: Trial duration
+- `cost_usd`: Estimated cost
+- Hyperparameters: {", ".join(f"`{k}`" for k in hp_keys)}
+
+## Usage
+
+```python
+import pandas as pd
+from huggingface_hub import hf_hub_download
+
+# Download results
+path = hf_hub_download(
+    repo_id="{repo_id}",
+    filename="{self.name}_results.csv",
+    repo_type="dataset",
+)
+
+# Load and analyse
+df = pd.read_csv(path)
+print(df.sort_values("objective_value").head())
+```
+"""
+
+        api.upload_file(
+            path_or_fileobj=readme.encode("utf-8"),
+            path_in_repo="README.md",
+            repo_id=repo_id,
+            repo_type="dataset",
+            commit_message=f"Update README for {self.name}",
+        )
+
+    def sync_scripts(self, repo_id: str | None = None) -> str:
+        """
+        Sync trial scripts to a HuggingFace Hub dataset.
+
+        Stores the generated training scripts for each trial for
+        reproducibility and debugging.
+
+        Args:
+            repo_id: Hub repository ID (default: from scripts_dataset setting)
+
+        Returns:
+            URL to the uploaded dataset
+        """
+        if repo_id is None:
+            repo_id = self.scripts_dataset
+        if repo_id is None:
+            raise ValueError(
+                "No scripts_dataset configured. Set scripts_dataset parameter "
+                "or pass repo_id explicitly."
+            )
+
+        api = HfApi()
+
+        # Ensure repo exists
+        api.create_repo(repo_id, repo_type="dataset", exist_ok=True)
+
+        # Upload scripts from active/completed jobs
+        uploaded = []
+        for trial_id, job_info in self._active_jobs.items():
+            if "config" in job_info:
+                script = self.runner._generate_trial_script(job_info["config"])
+                url = api.upload_file(
+                    path_or_fileobj=script.encode("utf-8"),
+                    path_in_repo=f"{self.name}/trial_{trial_id}.py",
+                    repo_id=repo_id,
+                    repo_type="dataset",
+                    commit_message=f"Trial {trial_id} script for {self.name}",
+                )
+                uploaded.append(url)
+
+        if uploaded:
+            print(f"Synced {len(uploaded)} scripts to: {repo_id}")
+            return uploaded[-1]
+        else:
+            print("No scripts to sync")
+            return ""
+
+    def sync_all(self) -> dict[str, str]:
+        """
+        Sync study database, results table, and scripts to Hub.
+
+        Returns:
+            Dict with URLs for 'study', 'results', 'scripts'
+        """
+        urls = {}
+
+        # Sync study database
+        if self.storage.startswith("hub://") or hasattr(self, "_hub_repo"):
+            urls["study"] = self.sync_to_hub()
+
+        # Sync results table
+        if self.results_dataset:
+            urls["results"] = self.sync_results_table()
+
+        # Sync scripts
+        if self.scripts_dataset:
+            urls["scripts"] = self.sync_scripts()
+
+        return urls
+
     def launch_dashboard(self, port: int = 7860) -> None:
         """
         Launch the Gradio visualisation dashboard.
@@ -394,6 +823,9 @@ class HPOStudy:
             avg_trial_minutes=30,
         )
 
+        results_info = self.results_dataset or "Not configured"
+        scripts_info = self.scripts_dataset or "Not configured"
+
         return f"""HPO study configuration
 {'=' * 40}
 Model:      {self.model}
@@ -407,7 +839,15 @@ Search space:
 Trials:     {self.n_trials} ({self.n_parallel} parallel)
 Est. cost:  ${min_cost} - ${max_cost}
 Budget:     {"$" + str(self.budget_usd) if self.budget_usd else "No limit"}
-Storage:    {self.storage}
+Timeout:    {self.trial_timeout_minutes} min per trial
+Progress:   Reports every {self.report_interval_seconds // 60} min
+
+Storage:
+  Study DB: {self.storage}
+  Results:  {results_info}
+  Scripts:  {scripts_info}
+
+Dashboard:  python scripts/gradio_dashboard.py --study ./optuna_studies/{self.name}.db --name {self.name}
 """
 
 

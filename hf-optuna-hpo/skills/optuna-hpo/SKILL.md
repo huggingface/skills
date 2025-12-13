@@ -45,9 +45,32 @@ When assisting with HPO:
 Before starting any HPO study, verify:
 
 ### Account and authentication
+
+**CRITICAL: Verify authentication before launching any trials.**
+
+```python
+from huggingface_hub import whoami
+
+# Check authentication
+try:
+    info = whoami()
+    print(f"✓ Authenticated as: {info['name']}")
+except Exception as e:
+    print(f"✗ Not authenticated: {e}")
+    print("Run: huggingface-cli login")
+```
+
+Requirements:
 - [ ] HuggingFace account with Pro/Team/Enterprise plan (for HF Jobs)
-- [ ] Authenticated: check with `hf_whoami()`
-- [ ] HF_TOKEN with write permissions for Hub sync
+- [ ] Logged in via `huggingface-cli login` or `HF_TOKEN` environment variable
+- [ ] Token has **write permissions** (required for pushing models and syncing studies)
+
+To create a token with write access:
+1. Go to https://huggingface.co/settings/tokens
+2. Create new token with "Write" role
+3. Run `huggingface-cli login` and paste the token
+
+The orchestrator will verify authentication automatically on startup and provide clear error messages if credentials are missing or insufficient.
 
 ### Dataset requirements
 - [ ] Dataset exists on Hub or is loadable via `datasets.load_dataset()`
@@ -121,7 +144,32 @@ Est. time:  ~2 hours
 Proceed? [Yes / Modify / Cancel]
 ```
 
-### Step 3: Handle issues during execution
+### Step 3: Offer to launch the dashboard
+
+**CRITICAL: Before starting trials, ask the user if they want to launch the Gradio dashboard for real-time monitoring.**
+
+```
+Question: "Would you like to launch the Gradio dashboard for real-time monitoring?"
+Options:
+- Yes, launch dashboard (Recommended)
+- No, CLI progress reports are sufficient
+```
+
+If yes, provide the launch command:
+```bash
+python scripts/gradio_dashboard.py --study ./optuna_studies/{study_name}.db --name {study_name}
+```
+
+The dashboard provides:
+- Live optimisation history plot
+- Parameter importance analysis
+- Trial table with status and metrics
+- Best trial details
+- Cost summary
+
+**Suggest running this in a separate terminal** so the user can monitor while trials execute.
+
+### Step 4: Handle issues during execution
 
 If trials consistently fail, pause and ask:
 ```
@@ -328,6 +376,48 @@ study.optimise()
 study.sync_to_hub("username/my-hpo-study")
 ```
 
+### Separate datasets for results and scripts
+
+For better organisation, store results and scripts in separate datasets:
+
+```python
+study = HPOStudy(
+    name="qwen-sft-hpo",
+    model="Qwen/Qwen2.5-0.5B",
+    dataset="trl-lib/Capybara",
+    method="sft",
+    runner=HFJobsRunner(flavour="a10g-large"),
+
+    # Separate datasets
+    results_dataset="username/hpo-results",   # CSV table with all trial results
+    scripts_dataset="username/hpo-scripts",   # Training scripts for each trial
+    storage="hub://username/hpo-study-db",    # Optuna database
+
+    n_trials=20,
+)
+
+# After optimisation, sync all
+study.optimise()
+study.sync_all()  # Syncs study DB, results table, and scripts
+```
+
+**Results dataset** contains:
+- `{study_name}_results.csv` - Table with columns:
+  - `study_name`, `trial_id`, `job_id`
+  - `status`, `objective_value`, `duration_minutes`, `cost_usd`
+  - All hyperparameters as separate columns
+- `README.md` - Summary with best hyperparameters
+
+**Scripts dataset** contains:
+- `{study_name}/trial_{id}.py` - Complete training script for each trial
+
+You can also sync individually:
+```python
+study.sync_results_table()  # Just the CSV table
+study.sync_scripts()        # Just the scripts
+study.sync_to_hub()         # Just the Optuna database
+```
+
 ### Gradio dashboard
 
 Launch the visualisation dashboard:
@@ -384,7 +474,7 @@ study = HPOStudy(
 
 See `references/pruning_strategies.md` for guidance on when to use each strategy.
 
-## Parallelism and budget
+## Parallelism, budget, and timeouts
 
 ### Fixed parallelism (default)
 
@@ -410,6 +500,64 @@ study = HPOStudy(
 
 When budget is nearly exhausted, the skill will pause and ask the user how to proceed.
 
+### Timeout configuration
+
+Trials have a configurable timeout to prevent runaway jobs:
+
+```python
+study = HPOStudy(
+    trial_timeout_minutes=180,  # 3 hours per trial (default)
+    poll_interval_seconds=30,   # How often to check job status
+    ...
+)
+```
+
+If a trial exceeds the timeout, it will be cancelled and marked as pruned.
+
+## Progress monitoring
+
+### Automatic progress reports
+
+The orchestrator prints progress reports to the console every 5 minutes (configurable):
+
+```python
+study = HPOStudy(
+    report_interval_seconds=300,  # Report every 5 minutes (default)
+    ...
+)
+```
+
+Progress reports include:
+- Completed/pruned/failed trial counts
+- Active trials and their elapsed time
+- Best objective value so far
+- Cost tracking (if budget is set)
+
+### Custom progress callback
+
+For programmatic monitoring, provide a callback function:
+
+```python
+def my_progress_handler(progress: dict):
+    # progress contains: trials_completed, trials_active, best_value, total_cost_usd, etc.
+    send_slack_notification(f"HPO progress: {progress['trials_completed']}/{n_trials} done")
+
+study = HPOStudy(
+    progress_callback=my_progress_handler,
+    ...
+)
+```
+
+### Real-time dashboard
+
+For interactive monitoring, launch the Gradio dashboard in a separate terminal:
+
+```bash
+python scripts/gradio_dashboard.py --study ./optuna_studies/my-study.db --name my-study
+```
+
+The dashboard auto-refreshes and provides visualisations of optimisation progress.
+
 ## Training method support
 
 ### Currently supported
@@ -434,12 +582,30 @@ The architecture is extensible. See `references/adding_methods.md` to add new tr
 
 ## Troubleshooting
 
+### Authentication errors
+
+**"HuggingFace Hub authentication failed"**
+```bash
+# Solution: Log in to HuggingFace
+huggingface-cli login
+```
+
+**"Token lacks write permissions"**
+1. Go to https://huggingface.co/settings/tokens
+2. Create a new token with "Write" role
+3. Log in again: `huggingface-cli login`
+
+**"Could not verify HuggingFace authentication"**
+- Check your internet connection
+- Verify HF_TOKEN environment variable is set correctly
+- Try: `python -c "from huggingface_hub import whoami; print(whoami())"`
+
 ### Trials failing consistently
 
 1. Check error logs: `study.get_trial_logs(trial_id)`
 2. Verify dataset format with inspector
 3. Check hardware is sufficient for model size
-4. Ensure HF_TOKEN has correct permissions
+4. Ensure HF_TOKEN has correct permissions (write access required)
 
 ### Pruning too aggressively
 
@@ -477,9 +643,12 @@ See `references/troubleshooting.md` for complete troubleshooting guide.
 
 ## Key takeaways
 
-1. **Always clarify before launching** - Use `AskUserQuestion` to confirm configuration
-2. **Validate datasets first** - Prevent wasted GPU spend on format errors
-3. **Estimate costs upfront** - Get user approval before expensive sweeps
-4. **Use MedianPruner** - Saves 30-50% on trial costs via early stopping
-5. **Sync to Hub** - Enable resume and sharing across sessions
-6. **Launch dashboard** - Visualise progress with the Gradio app
+1. **Verify authentication first** - Orchestrator checks HF auth on startup; ensure write access
+2. **Always clarify before launching** - Use `AskUserQuestion` to confirm configuration
+3. **Validate datasets first** - Prevent wasted GPU spend on format errors
+4. **Estimate costs upfront** - Get user approval before expensive sweeps
+5. **Offer to launch the dashboard** - Ask user if they want real-time Gradio monitoring
+6. **Use MedianPruner** - Saves 30-50% on trial costs via early stopping
+7. **Set appropriate timeouts** - Default is 3 hours per trial; adjust based on model size
+8. **Monitor progress** - Progress reports print every 5 minutes; use callback for custom alerts
+9. **Sync to Hub** - Enable resume and sharing across sessions
