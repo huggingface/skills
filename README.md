@@ -72,6 +72,7 @@ This repository contains a few skills to get you started. You can also contribut
 | `hf_dataset_creator/`   | Prompts, templates, and scripts for creating structured training datasets. | [SKILL.md](hf_dataset_creator/skills/hugging-face-dataset-creator/SKILL.md) |
 | `hf_model_evaluation/`  | Instructions plus utilities for orchestrating evaluation jobs, generating reports, and mapping metrics. | [SKILL.md](hf_model_evaluation/skills/hugging-face-evaluation-manager/SKILL.md) |
 | `hf-llm-trainer/`       | Comprehensive training skill with `SKILL.md` guidance, helper scripts (e.g., `train_sft_example.py`, `convert_to_gguf.py`, cost estimators). | [SKILL.md](hf-llm-trainer/skills/model-trainer/SKILL.md) |
+| `hf-optuna-hpo/`        | Hyperparameter optimisation for LLM fine-tuning using Optuna. Orchestrates distributed HPO studies with cloud GPU backends, budget management, and Gradio visualisation. | [SKILL.md](hf-optuna-hpo/skills/optuna-hpo/SKILL.md) |
 | `hf-paper-publisher/`   | Tools for publishing and managing research papers on Hugging Face Hub. Index papers from arXiv, link papers to models/datasets, generate professional research articles from templates, and manage paper authorship. | [SKILL.md](hf-paper-publisher/skills/hugging-face-paper-publisher/SKILL.md) |
 
 ### Using skills in your coding agent
@@ -82,6 +83,7 @@ Once a skill is installed, mention it directly while giving your coding agent in
 - "Use the HF model evaluation skill to launch `run_eval_job.py` on the latest checkpoint."
 - "Use the HF dataset creator skill to draft new few-shot classification templates."
 - "Use the HF paper publisher skill to index my arXiv paper and link it to my model."
+- "Use the Optuna HPO skill to find optimal learning rate and LoRA parameters for my fine-tuning job."
 
 Your coding agent automatically loads the corresponding `SKILL.md` instructions and helper scripts while it completes the task.
 
