@@ -16,7 +16,7 @@ In practice, skills are self-contained folders that package instructions, script
 
 ## Installation
 
-Hugging Face skills are compatible with Claude Code, Codex, and Gemini CLI. With integrations Cursor, Windsurf, and Continue, on the way.
+Hugging Face skills are compatible with Claude Code, Codex, and Gemini CLI. With integrations Cursor, Windsurf, and Continue, on the way. 
 
 ### Claude Code
 
