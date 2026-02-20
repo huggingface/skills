@@ -1,0 +1,4 @@
+# For models that support HF Inference API (InferenceClient)
+# Use with: cpu-basic hardware (free)
+gradio>=5.0.0
+huggingface_hub>=0.26.0

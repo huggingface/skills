@@ -91,6 +91,7 @@ This repository contains a few skills to get you started. You can also contribut
 <!-- BEGIN_SKILLS_TABLE -->
 | Name | Description | Documentation |
 |------|-------------|---------------|
+| `hf-create-a-space` | Create and deploy Hugging Face Spaces for ML models. Supports Gradio chat interfaces via Inference API (for supported models) or ZeroGPU (for any model). Guides you through deployment method selection and potential compatibility issues. | [SKILL.md](skills/hf-create-a-space/SKILL.md) |
 | `hugging-face-cli` | Execute Hugging Face Hub operations using the hf CLI. Download models/datasets, upload files, manage repos, and run cloud compute jobs. | [SKILL.md](skills/hugging-face-cli/SKILL.md) |
 | `hugging-face-datasets` | Create and manage datasets on Hugging Face Hub. Supports initializing repos, defining configs/system prompts, streaming row updates, and SQL-based dataset querying/transformation. | [SKILL.md](skills/hugging-face-datasets/SKILL.md) |
 | `hugging-face-evaluation` | Add and manage evaluation results in Hugging Face model cards. Supports extracting eval tables from README content, importing scores from Artificial Analysis API, and running custom evaluations with vLLM/lighteval. | [SKILL.md](skills/hugging-face-evaluation/SKILL.md) |

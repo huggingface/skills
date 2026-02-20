@@ -1,0 +1,7 @@
+# For models that need local loading with ZeroGPU
+# Use with: zero-a10g hardware (free with quota)
+gradio>=5.0.0
+torch
+transformers
+accelerate
+spaces

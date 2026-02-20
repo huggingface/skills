@@ -1,0 +1,8 @@
+# For LoRA/PEFT adapters with ZeroGPU
+# Use with: zero-a10g hardware (free with quota)
+gradio>=5.0.0
+torch
+transformers
+accelerate
+spaces
+peft

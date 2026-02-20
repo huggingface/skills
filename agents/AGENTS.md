@@ -3,6 +3,7 @@
 You have additional SKILLs documented in directories containing a "SKILL.md" file.
 
 These skills are:
+ - hf-create-a-space -> "skills/hf-create-a-space/SKILL.md"
  - hugging-face-cli -> "skills/hugging-face-cli/SKILL.md"
  - hugging-face-datasets -> "skills/hugging-face-datasets/SKILL.md"
  - hugging-face-evaluation -> "skills/hugging-face-evaluation/SKILL.md"
@@ -16,6 +17,7 @@ IMPORTANT: You MUST read the SKILL.md file whenever the description of the skill
 
 <available_skills>
 
+hf-create-a-space: `Create and deploy Hugging Face Spaces for ML models. Supports Gradio chat interfaces via Inference API (for supported models) or ZeroGPU (for any model). Guides you through deployment method selection and potential compatibility issues.`
 hugging-face-cli: `Execute Hugging Face Hub operations using the `hf` CLI. Use when the user needs to download models/datasets/spaces, upload files to Hub repositories, create repos, manage local cache, or run compute jobs on HF infrastructure. Covers authentication, file transfers, repository creation, cache operations, and cloud compute.`
 hugging-face-datasets: `Create and manage datasets on Hugging Face Hub. Supports initializing repos, defining configs/system prompts, streaming row updates, and SQL-based dataset querying/transformation. Designed to work alongside HF MCP server for comprehensive dataset workflows.`
 hugging-face-evaluation: `Add and manage evaluation results in Hugging Face model cards. Supports extracting eval tables from README content, importing scores from Artificial Analysis API, and running custom model evaluations with vLLM/lighteval. Works with the model-index metadata format.`
