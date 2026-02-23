@@ -1,6 +1,127 @@
 ---
 name: hugging-face-model-trainer
 description: This skill should be used when users want to train or fine-tune language models using TRL (Transformer Reinforcement Learning) on Hugging Face Jobs infrastructure. Covers SFT, DPO, GRPO and reward modeling training methods, plus GGUF conversion for local deployment. Includes guidance on the TRL Jobs package, UV scripts with PEP 723 format, dataset preparation and validation, hardware selection, cost estimation, Trackio monitoring, Hub authentication, and model persistence. Should be invoked for tasks involving cloud GPU training, GGUF conversion, or when users mention training on Hugging Face Jobs without local GPU setup.
+version: "2.0.0"
+
+tools:
+  - name: hf_jobs
+    category: mcp
+    description: "Submit and manage training jobs on Hugging Face infrastructure"
+    command: "hf_jobs()"
+    parameters:
+      - name: mode
+        type: string
+        required: true
+        description: "Job mode: 'uv', 'ps', 'logs', 'inspect', 'cancel'"
+      - name: config
+        type: dict
+        required: false
+        description: "Job configuration with script, flavor, timeout, secrets"
+    examples:
+      - "hf_jobs('uv', {'script': '...', 'flavor': 'a10g-large', 'timeout': '2h'})"
+      - "hf_jobs('ps')"
+    aliases: [submit_job, run_job]
+
+  - name: uv_run_script
+    category: cli
+    description: "Run UV scripts with PEP 723 inline dependencies"
+    command: "uv run"
+    parameters:
+      - name: script
+        type: string
+        required: true
+        description: "Script path or inline code"
+      - name: args
+        type: list
+        required: false
+        description: "Script arguments"
+    examples:
+      - "uv run scripts/estimate_cost.py --model meta-llama/Llama-2-7b-hf"
+
+  - name: estimate_cost
+    category: script
+    description: "Estimate training time and GPU cost"
+    command: "scripts/estimate_cost.py"
+    parameters:
+      - name: model
+        type: string
+        required: true
+        description: "Model ID or path"
+      - name: dataset
+        type: string
+        required: true
+        description: "Dataset ID"
+      - name: hardware
+        type: string
+        required: true
+        description: "GPU flavor"
+    examples:
+      - "uv run scripts/estimate_cost.py --model Qwen/Qwen2.5-0.5B --dataset trl-lib/Capybara --hardware a10g-large"
+
+  - name: validate_dataset
+    category: script
+    description: "Validate dataset format before training"
+    command: "dataset_inspector.py"
+    parameters:
+      - name: dataset
+        type: string
+        required: true
+        description: "Dataset ID to validate"
+      - name: split
+        type: string
+        required: false
+        default: "train"
+        description: "Dataset split to inspect"
+    examples:
+      - "hf_jobs('uv', {'script': 'https://huggingface.co/datasets/mcp-tools/skills/raw/main/dataset_inspector.py', 'script_args': ['--dataset', 'user/dataset']})"
+    aliases: [inspect_dataset, check_dataset]
+
+dependencies:
+  skills:
+    - name: hugging-face-jobs
+      required: true
+      reason: "Core infrastructure for running training jobs"
+      auto_load: true
+    - name: hugging-face-cli
+      required: false
+      reason: "For local operations and repo management"
+      auto_load: false
+    - name: hugging-face-trackio
+      required: false
+      reason: "For training monitoring and metrics visualization"
+      auto_load: true
+  packages:
+    - name: trl
+      version: ">=0.12.0"
+      install: "pip install trl>=0.12.0"
+    - name: peft
+      version: ">=0.7.0"
+      install: "pip install peft>=0.7.0"
+    - name: trackio
+      version: "latest"
+      install: "pip install trackio"
+  environment:
+    - name: HF_TOKEN
+      required: true
+      description: "Hugging Face API token with write permissions for Hub push"
+
+prerequisites:
+  auth:
+    - hf_authenticated
+    - hf_write_access
+  resources:
+    - type: gpu
+      required: false
+      recommendation: "t4-small for demos, a10g-large for production, a100-large for large models"
+  knowledge:
+    - "Python basics"
+    - "PyTorch fundamentals"
+    - "Hugging Face Hub concepts"
+
+performance:
+  typical_duration: "10m - 6h"
+  cost_range: "$0.50 - $50"
+  complexity: medium
 license: Complete terms in LICENSE.txt
 ---
 

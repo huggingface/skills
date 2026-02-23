@@ -15,6 +15,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -32,55 +33,216 @@ def load_template() -> str:
     return TEMPLATE_PATH.read_text(encoding="utf-8")
 
 
-def parse_frontmatter(text: str) -> dict[str, str]:
-    """Parse a minimal YAML-ish frontmatter block without external deps."""
+def parse_frontmatter(text: str) -> dict[str, Any]:
+    """Parse a minimal YAML-ish frontmatter block without external deps.
+
+    Supports:
+    - Simple key: value pairs
+    - Nested lists (tools, dependencies)
+    - Nested dicts (performance, prerequisites)
+    """
     match = re.search(r"^---\s*\n(.*?)\n---\s*", text, re.DOTALL)
     if not match:
         return {}
-    data: dict[str, str] = {}
-    for line in match.group(1).splitlines():
-        if ":" not in line:
+
+    frontmatter_text = match.group(1)
+    data: dict[str, Any] = {}
+    current_list: str | None = None
+    current_item: dict[str, Any] | None = None
+    indent_stack: list[tuple[str, int]] = []
+
+    for line in frontmatter_text.splitlines():
+        if not line.strip():
             continue
-        key, value = line.split(":", 1)
-        data[key.strip()] = value.strip()
+
+        indent = len(line) - len(line.lstrip())
+        stripped = line.strip()
+
+        if stripped.startswith("- "):
+            value = stripped[2:].strip()
+            if ":" in value:
+                current_item = {"_raw": value}
+                key = value.split(":")[0].strip()
+                current_item["_key"] = key
+                if current_list and current_list not in data:
+                    data[current_list] = []
+                if current_list:
+                    data[current_list].append(current_item)
+            else:
+                if current_list:
+                    if current_list not in data:
+                        data[current_list] = []
+                    data[current_list].append(value)
+            continue
+
+        if ":" in stripped:
+            key, value = stripped.split(":", 1)
+            key = key.strip()
+            value = value.strip()
+
+            if not value and not key.startswith(" "):
+                current_list = key
+                current_item = None
+            elif current_item is not None:
+                current_item[key] = value.strip("\"'")
+            else:
+                data[key] = value.strip("\"'")
+                current_list = None
+
+    for key in data:
+        if isinstance(data[key], list):
+            cleaned = []
+            for item in data[key]:
+                if isinstance(item, dict) and "_raw" in item:
+                    clean_item = {
+                        k: v for k, v in item.items() if not k.startswith("_")
+                    }
+                    cleaned.append(clean_item)
+                else:
+                    cleaned.append(item)
+            data[key] = cleaned
+
     return data
 
 
-def collect_skills() -> list[dict[str, str]]:
-    skills: list[dict[str, str]] = []
+def collect_skills() -> list[dict[str, Any]]:
+    skills: list[dict[str, Any]] = []
     for skill_md in ROOT.glob("skills/*/SKILL.md"):
         meta = parse_frontmatter(skill_md.read_text(encoding="utf-8"))
         name = meta.get("name")
         description = meta.get("description")
         if not name or not description:
             continue
+
+        tools = meta.get("tools", [])
+
+        skill_deps = []
+        dependencies = meta.get("dependencies", {})
+        if isinstance(dependencies, dict):
+            for dep in dependencies.get("skills", []):
+                if isinstance(dep, dict):
+                    skill_deps.append(
+                        {
+                            "name": dep.get("name", ""),
+                            "required": dep.get("required", True),
+                            "reason": dep.get("reason", ""),
+                            "auto_load": dep.get("auto_load", False),
+                        }
+                    )
+
+        env_deps = []
+        if isinstance(dependencies, dict):
+            for env in dependencies.get("environment", []):
+                if isinstance(env, dict):
+                    env_deps.append(env.get("name", ""))
+
+        has_tools = isinstance(tools, list) and len(tools) > 0
+        tool_count = len(tools) if isinstance(tools, list) else 0
+        tool_categories = (
+            list(
+                set(t.get("category", "unknown") for t in tools if isinstance(t, dict))
+            )
+            if isinstance(tools, list)
+            else []
+        )
+
         skills.append(
             {
                 "name": name,
                 "description": description,
                 "path": str(skill_md.parent.relative_to(ROOT)),
+                "tools": tools if isinstance(tools, list) else [],
+                "skill_deps": skill_deps,
+                "dependencies": env_deps,
+                "has_tools": has_tools,
+                "tool_count": tool_count,
+                "tool_categories": ", ".join(tool_categories)
+                if tool_categories
+                else "none",
             }
         )
-    # Keep deterministic order for consistent output
     return sorted(skills, key=lambda s: s["name"].lower())
 
 
-def render(template: str, skills: list[dict[str, str]]) -> str:
-    """Very small Mustache-like renderer that only supports a single skills loop."""
-    def repl(match: re.Match[str]) -> str:
-        block = match.group(1).strip("\n")
-        rendered_blocks = []
-        for skill in skills:
-            rendered = (
-                block.replace("{{name}}", skill["name"])
-                .replace("{{description}}", skill["description"])
-                .replace("{{path}}", skill["path"])
+def render(template: str, skills: list[dict[str, Any]]) -> str:
+    """Enhanced Mustache-like renderer supporting nested loops and conditionals."""
+
+    def render_simple_block(block: str, context: dict[str, Any]) -> str:
+        result = block
+        for key, value in context.items():
+            if isinstance(value, str):
+                result = result.replace("{{" + key + "}}", value)
+            elif isinstance(value, bool):
+                result = result.replace("{{" + key + "}}", str(value).lower())
+            elif isinstance(value, (int, float)):
+                result = result.replace("{{" + key + "}}", str(value))
+            elif isinstance(value, list):
+                if value:
+                    result = result.replace(
+                        "{{" + key + "}}", ", ".join(str(v) for v in value)
+                    )
+                else:
+                    result = result.replace("{{" + key + "}}", "")
+        return result
+
+    def process_nested_loops(block: str, context: dict[str, Any]) -> str:
+        result = block
+
+        inner_loops = re.findall(r"{{#(\w+)}}(.*?){{/\1}}", result, flags=re.DOTALL)
+
+        for loop_var, inner_block in inner_loops:
+            items = context.get(loop_var, [])
+
+            if isinstance(items, bool):
+                if items:
+                    result = result.replace(
+                        "{{#" + loop_var + "}}" + inner_block + "{{/" + loop_var + "}}",
+                        inner_block.strip(),
+                    )
+                else:
+                    result = result.replace(
+                        "{{#" + loop_var + "}}" + inner_block + "{{/" + loop_var + "}}",
+                        "",
+                    )
+                continue
+
+            if not items:
+                result = result.replace(
+                    "{{#" + loop_var + "}}" + inner_block + "{{/" + loop_var + "}}", ""
+                )
+                continue
+
+            rendered_parts = []
+            for item in items:
+                if isinstance(item, dict):
+                    item_rendered = render_simple_block(inner_block, item)
+                else:
+                    item_rendered = inner_block.replace("{{.}}", str(item))
+                rendered_parts.append(item_rendered.strip())
+
+            combined = "\n".join(rendered_parts)
+            result = result.replace(
+                "{{#" + loop_var + "}}" + inner_block + "{{/" + loop_var + "}}",
+                combined,
             )
-            rendered_blocks.append(rendered)
+
+        return result
+
+    def repl_skills_loop(match: re.Match[str]) -> str:
+        block = match.group(1)
+        rendered_blocks = []
+
+        for skill in skills:
+            skill_rendered = process_nested_loops(block, skill)
+            skill_rendered = render_simple_block(skill_rendered, skill)
+            rendered_blocks.append(skill_rendered)
+
         return "\n".join(rendered_blocks)
 
-    # Render loop blocks
-    content = re.sub(r"{{#skills}}(.*?){{/skills}}", repl, template, flags=re.DOTALL)
+    content = re.sub(
+        r"{{#skills}}(.*?){{/skills}}", repl_skills_loop, template, flags=re.DOTALL
+    )
+
     return content
 
 
@@ -91,7 +253,7 @@ def load_marketplace() -> dict:
     return json.loads(MARKETPLACE_PATH.read_text(encoding="utf-8"))
 
 
-def generate_readme_table(skills: list[dict[str, str]]) -> str:
+def generate_readme_table(skills: list[dict[str, Any]]) -> str:
     """Generate the skills table for README.md using marketplace.json names."""
     marketplace = load_marketplace()
     plugins = {p["source"]: p for p in marketplace.get("plugins", [])}

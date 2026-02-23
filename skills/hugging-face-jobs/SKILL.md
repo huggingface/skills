@@ -1,6 +1,102 @@
 ---
 name: hugging-face-jobs
 description: This skill should be used when users want to run any workload on Hugging Face Jobs infrastructure. Covers UV scripts, Docker-based jobs, hardware selection, cost estimation, authentication with tokens, secrets management, timeout configuration, and result persistence. Designed for general-purpose compute workloads including data processing, inference, experiments, batch jobs, and any Python-based tasks. Should be invoked for tasks involving cloud compute, GPU workloads, or when users mention running jobs on Hugging Face infrastructure without local setup.
+version: "2.0.0"
+
+tools:
+  - name: hf_jobs
+    category: mcp
+    description: "Submit and manage jobs on Hugging Face infrastructure"
+    command: "hf_jobs()"
+    parameters:
+      - name: mode
+        type: string
+        required: true
+        description: "Operation: 'uv', 'run', 'ps', 'logs', 'inspect', 'cancel', 'scheduled uv', 'scheduled run'"
+      - name: config
+        type: dict
+        required: false
+        description: "Job configuration with script/image, flavor, timeout, secrets, env"
+    examples:
+      - "hf_jobs('uv', {'script': '...', 'flavor': 'a10g-large', 'timeout': '2h'})"
+      - "hf_jobs('run', {'image': 'python:3.12', 'command': ['python', '-c', '...']})"
+      - "hf_jobs('ps')"
+      - "hf_jobs('logs', {'job_id': 'abc123'})"
+    aliases: [run_job, submit_job, jobs]
+
+  - name: run_uv_job
+    category: api
+    description: "Python API to run UV scripts with PEP 723 dependencies"
+    command: "from huggingface_hub import run_uv_job"
+    parameters:
+      - name: script
+        type: string
+        required: true
+        description: "Script path or inline code"
+      - name: flavor
+        type: string
+        required: false
+        default: "cpu-basic"
+        description: "Hardware flavor"
+      - name: timeout
+        type: string
+        required: false
+        default: "30m"
+        description: "Job timeout"
+    examples:
+      - "run_uv_job('script.py', flavor='a10g-large', timeout='2h')"
+
+  - name: run_job
+    category: api
+    description: "Python API to run Docker-based jobs"
+    command: "from huggingface_hub import run_job"
+    parameters:
+      - name: image
+        type: string
+        required: true
+        description: "Docker image"
+      - name: command
+        type: list
+        required: true
+        description: "Command to run"
+      - name: flavor
+        type: string
+        required: false
+        default: "cpu-basic"
+        description: "Hardware flavor"
+    examples:
+      - "run_job(image='python:3.12', command=['python', '-c', 'print(1)'])"
+
+dependencies:
+  skills:
+    - name: hugging-face-cli
+      required: false
+      reason: "For local operations and CLI job management"
+      auto_load: false
+  packages:
+    - name: huggingface-hub
+      version: ">=0.24.0"
+      install: "pip install huggingface-hub>=0.24.0"
+  environment:
+    - name: HF_TOKEN
+      required: false
+      description: "Hugging Face API token for authenticated operations and Hub push"
+
+prerequisites:
+  auth:
+    - hf_authenticated
+  resources:
+    - type: compute
+      required: true
+      recommendation: "cpu-basic for lightweight tasks, t4-small for demos, a10g-large for production"
+  knowledge:
+    - "Python basics"
+    - "Docker concepts (for Docker-based jobs)"
+
+performance:
+  typical_duration: "5m - 24h"
+  cost_range: "$0.01 - $100+"
+  complexity: low
 license: Complete terms in LICENSE.txt
 ---
 
