@@ -10,9 +10,13 @@ The `trackio` CLI provides direct terminal access to query Trackio experiment tr
 | List runs | `trackio list runs --project <name>` |
 | List metrics | `trackio list metrics --project <name> --run <name>` |
 | List system metrics | `trackio list system-metrics --project <name> --run <name>` |
+| List alerts | `trackio list alerts --project <name> [--run <name>] [--level <level>] [--since <timestamp>]` |
 | Get project summary | `trackio get project --project <name>` |
 | Get run summary | `trackio get run --project <name> --run <name>` |
 | Get metric values | `trackio get metric --project <name> --run <name> --metric <name>` |
+| Get metric at step | `trackio get metric ... --metric <name> --step <N>` |
+| Get metric around step | `trackio get metric ... --metric <name> --around <N> --window <W>` |
+| Get all metrics snapshot | `trackio get snapshot --project <name> --run <name> --step <N>` |
 | Get system metrics | `trackio get system-metric --project <name> --run <name>` |
 | Show dashboard | `trackio show [--project <name>]` |
 | Sync to Space | `trackio sync --project <name> --space-id <space_id>` |
@@ -33,6 +37,11 @@ trackio list metrics --project <name> --run <name> --json
 
 trackio list system-metrics --project <name> --run <name>  # List system metrics
 trackio list system-metrics --project <name> --run <name> --json
+
+trackio list alerts --project <name>                       # List alerts
+trackio list alerts --project <name> --run <name> --json   # Filter by run
+trackio list alerts --project <name> --level error --json  # Filter by level
+trackio list alerts --project <name> --json --since <ts>   # Poll since timestamp
 ```
 
 ### Get Commands
@@ -46,6 +55,13 @@ trackio get run --project <name> --run <name> --json
 
 trackio get metric --project <name> --run <name> --metric <name>  # Metric values
 trackio get metric --project <name> --run <name> --metric <name> --json
+trackio get metric ... --metric <name> --step 200                 # At exact step
+trackio get metric ... --metric <name> --around 200 --window 10   # ±10 steps
+trackio get metric ... --metric <name> --at-time <ts> --window 60 # ±60 seconds
+
+trackio get snapshot --project <name> --run <name> --step 200 --json       # All metrics at step
+trackio get snapshot --project <name> --run <name> --around 200 --window 5 --json  # Window
+trackio get snapshot --project <name> --run <name> --at-time <ts> --window 60 --json
 
 trackio get system-metric --project <name> --run <name>           # All system metrics
 trackio get system-metric --project <name> --run <name> --metric <name>  # Specific metric
@@ -145,6 +161,12 @@ trackio get run --project my-project --run my-run --json
 
 # 4. Query metric values
 trackio get metric --project my-project --run my-run --metric accuracy --json
+
+# 5. Poll for alerts (use --since for efficient incremental polling)
+trackio list alerts --project my-project --json --since "2025-06-01T00:00:00"
+
+# 6. When an alert fires at step N, get all metrics around that point
+trackio get snapshot --project my-project --run my-run --around 200 --window 5 --json
 ```
 
 ## Error Handling
@@ -163,6 +185,12 @@ All errors exit with non-zero status code and write to stderr.
 - `--run`: Run name (required for run-specific commands)
 - `--metric`: Metric name (required for metric-specific commands)
 - `--json`: Output in JSON format instead of human-readable
+- `--step`: Exact step filter (for `get metric`, `get snapshot`)
+- `--around`: Center step for window filter (for `get metric`, `get snapshot`)
+- `--at-time`: Center ISO timestamp for window filter (for `get metric`, `get snapshot`)
+- `--window`: Window size: ±steps for `--around`, ±seconds for `--at-time` (default: 10)
+- `--level`: Alert level filter (`info`, `warn`, `error`) (for `list alerts`)
+- `--since`: ISO timestamp to filter alerts after (for `list alerts`)
 - `--theme`: Dashboard theme (for `show` command)
 - `--mcp-server`: Enable MCP server mode (for `show` command)
 - `--color-palette`: Comma-separated hex colors (for `show` command)
