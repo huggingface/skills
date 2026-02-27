@@ -1,0 +1,6 @@
+# Local dependencies for running helper scripts
+# (training.py uses PEP 723 inline metadata and doesn't need this file)
+#
+# Install with: pip install -r requirements.txt
+datasets
+huggingface_hub
