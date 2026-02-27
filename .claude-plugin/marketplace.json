@@ -60,7 +60,7 @@
       "name": "hugging-face-object-detection-trainer",
       "source": "./skills/hugging-face-object-detection-trainer",
       "skills": "./",
-      "description": "Train and fine-tune object detection models (DETR, Conditional DETR) using Transformers on Hugging Face Jobs infrastructure. Includes COCO dataset format support, Albumentations augmentation, mAP/mAR metrics, hardware selection, and Hub persistence."
+      "description": "Train and fine-tune object detection models (RTDETRv2, YOLOS, DETR and others) using Transformers on Hugging Face Jobs infrastructure or locally. Includes COCO dataset format support, Albumentations augmentation, mAP/mAR metrics, trackio tracking, hardware selection, and Hub persistence."
     }
   ]
 }
