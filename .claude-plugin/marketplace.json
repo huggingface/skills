@@ -55,6 +55,12 @@
       "source": "./skills/hugging-face-trackio",
       "skills": "./",
       "description": "Track and visualize ML training experiments with Trackio. Log metrics via Python API and retrieve them via CLI. Supports real-time dashboards synced to HF Spaces."
+    },
+    {
+      "name": "hugging-face-object-detection-trainer",
+      "source": "./skills/hugging-face-object-detection-trainer",
+      "skills": "./",
+      "description": "Train and fine-tune object detection models (DETR, Conditional DETR) using Transformers on Hugging Face Jobs infrastructure. Includes COCO dataset format support, Albumentations augmentation, mAP/mAR metrics, hardware selection, and Hub persistence."
     }
   ]
 }
