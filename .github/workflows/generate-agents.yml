@@ -1,13 +1,20 @@
-name: Check AGENTS.md and marketplace.json
+name: Validate generated agent/plugin artifacts
 
 on:
   pull_request:
     paths:
       - "scripts/AGENTS_TEMPLATE.md"
       - "scripts/generate_agents.py"
+      - "scripts/generate_cursor_plugin.py"
+      - "scripts/publish.sh"
       - "**/SKILL.md"
       - "agents/AGENTS.md"
+      - "README.md"
       - ".claude-plugin/marketplace.json"
+      - ".claude-plugin/plugin.json"
+      - "gemini-extension.json"
+      - ".cursor-plugin/plugin.json"
+      - ".mcp.json"
 
 jobs:
   validate:
@@ -19,12 +26,5 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@v7
 
-      - name: Generate AGENTS.md and validate marketplace.json
-        run: uv run scripts/generate_agents.py
-
-      - name: Ensure AGENTS.md is up to date
-        run: |
-          git diff --quiet -- agents/AGENTS.md || {
-            echo "::error::agents/AGENTS.md is outdated. Run 'python scripts/generate_agents.py' and commit the changes."
-            exit 1
-          }
+      - name: Ensure generated files are up to date
+        run: ./scripts/publish.sh --check
