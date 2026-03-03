@@ -10,10 +10,10 @@ These skills are:
  - hugging-face-evaluation -> "skills/hugging-face-evaluation/SKILL.md"
  - hugging-face-jobs -> "skills/hugging-face-jobs/SKILL.md"
  - hugging-face-model-trainer -> "skills/hugging-face-model-trainer/SKILL.md"
- - hugging-face-object-detection-trainer -> "skills/hugging-face-object-detection-trainer/SKILL.md"
  - hugging-face-paper-publisher -> "skills/hugging-face-paper-publisher/SKILL.md"
  - hugging-face-tool-builder -> "skills/hugging-face-tool-builder/SKILL.md"
  - hugging-face-trackio -> "skills/hugging-face-trackio/SKILL.md"
+ - hugging-face-vision-trainer -> "skills/hugging-face-vision-trainer/SKILL.md"
 
 IMPORTANT: You MUST read the SKILL.md file whenever the description of the skills matches the user intent, or may help accomplish their task. 
 
@@ -26,10 +26,10 @@ hugging-face-datasets: `Create and manage datasets on Hugging Face Hub. Supports
 hugging-face-evaluation: `Add and manage evaluation results in Hugging Face model cards. Supports extracting eval tables from README content, importing scores from Artificial Analysis API, and running custom model evaluations with vLLM/lighteval. Works with the model-index metadata format.`
 hugging-face-jobs: `This skill should be used when users want to run any workload on Hugging Face Jobs infrastructure. Covers UV scripts, Docker-based jobs, hardware selection, cost estimation, authentication with tokens, secrets management, timeout configuration, and result persistence. Designed for general-purpose compute workloads including data processing, inference, experiments, batch jobs, and any Python-based tasks. Should be invoked for tasks involving cloud compute, GPU workloads, or when users mention running jobs on Hugging Face infrastructure without local setup.`
 hugging-face-model-trainer: `This skill should be used when users want to train or fine-tune language models using TRL (Transformer Reinforcement Learning) on Hugging Face Jobs infrastructure. Covers SFT, DPO, GRPO and reward modeling training methods, plus GGUF conversion for local deployment. Includes guidance on the TRL Jobs package, UV scripts with PEP 723 format, dataset preparation and validation, hardware selection, cost estimation, Trackio monitoring, Hub authentication, and model persistence. Should be invoked for tasks involving cloud GPU training, GGUF conversion, or when users mention training on Hugging Face Jobs without local GPU setup.`
-hugging-face-object-detection-trainer: `Trains and fine-tunes object detection models (D-FINE, RT-DETR v2, DETR, YOLOS) using Hugging Face Transformers on Hugging Face Jobs cloud GPUs. Covers COCO-format dataset preparation, Albumentations augmentation, mAP/mAR evaluation, hardware selection, cost estimation, Trackio monitoring, and Hub persistence. Use when users mention training object detection, DETR, D-FINE, RT-DETR, bounding box models, or fine-tuning on Hugging Face Jobs.`
 hugging-face-paper-publisher: `Publish and manage research papers on Hugging Face Hub. Supports creating paper pages, linking papers to models/datasets, claiming authorship, and generating professional markdown-based research articles.`
 hugging-face-tool-builder: `Use this skill when the user wants to build tool/scripts or achieve a task where using data from the Hugging Face API would help. This is especially useful when chaining or combining API calls or the task will be repeated/automated. This Skill creates a reusable script to fetch, enrich or process data.`
 hugging-face-trackio: `Track and visualize ML training experiments with Trackio. Use when logging metrics during training (Python API), firing alerts for training diagnostics, or retrieving/analyzing logged metrics (CLI). Supports real-time dashboard visualization, alerts with webhooks, HF Space syncing, and JSON output for automation.`
+hugging-face-vision-trainer: `Trains and fine-tunes vision models for object detection (D-FINE, RT-DETR v2, DETR, YOLOS) and image classification (timm models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3 — plus any Transformers classifier) using Hugging Face Transformers on Hugging Face Jobs cloud GPUs. Covers COCO-format dataset preparation, Albumentations augmentation, mAP/mAR evaluation, accuracy metrics, hardware selection, cost estimation, Trackio monitoring, and Hub persistence. Use when users mention training object detection, image classification, DETR, D-FINE, RT-DETR, ViT, timm, MobileNet, ResNet, bounding box models, or fine-tuning vision models on Hugging Face Jobs.`
 </available_skills>
 
 Paths referenced within SKILL folders are relative to that SKILL. For example the hf-datasets `scripts/example.py` would be referenced as `hf-datasets/scripts/example.py`. 

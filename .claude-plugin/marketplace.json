@@ -57,10 +57,10 @@
       "description": "Track and visualize ML training experiments with Trackio. Log metrics via Python API and retrieve them via CLI. Supports real-time dashboards synced to HF Spaces."
     },
     {
-      "name": "hugging-face-object-detection-trainer",
-      "source": "./skills/hugging-face-object-detection-trainer",
+      "name": "hugging-face-vision-trainer",
+      "source": "./skills/hugging-face-vision-trainer",
       "skills": "./",
-      "description": "Train and fine-tune object detection models (RTDETRv2, YOLOS, DETR and others) using Transformers on Hugging Face Jobs infrastructure or locally. Includes COCO dataset format support, Albumentations augmentation, mAP/mAR metrics, trackio tracking, hardware selection, and Hub persistence."
+      "description": "Train and fine-tune object detection models (RTDETRv2, YOLOS, DETR and others) and image classification models (timm and transformers models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3) using Transformers Trainer API on Hugging Face Jobs infrastructure or locally. Includes COCO dataset format support, Albumentations augmentation, mAP/mAR metrics, trackio tracking, hardware selection, and Hub persistence."
     },
     {
       "name": "hugging-face-dataset-viewer",
