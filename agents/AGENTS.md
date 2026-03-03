@@ -16,6 +16,7 @@ You have additional SKILLs documented in directories containing a "SKILL.md" fil
 | hugging-face-trackio | Track and visualize ML training experiments with Trackio. Use when logging metrics during training (Python API) or retrieving/analyzing logged metrics (CLI). |
 | gradio | Build Gradio web UIs and demos in Python. Use when creating or editing Gradio apps, components, event listeners, layouts, or chatbots. |
 | hugging-face-dataset-viewer | Use this skill for Hugging Face Dataset Viewer API workflows that fetch subset/split metadata, paginate rows, search text, apply filters, download parquet URLs, and read size or statistics. |
+| hugging-face-object-detection-trainer | Use this skill for to train object detection models using transformers Trainer API. You can use Jobs or train locally. |
 
 ## Usage
 
@@ -38,3 +39,4 @@ The skills are located in:
 - `skills/hugging-face-trackio/SKILL.md`
 - `skills/huggingface-gradio/SKILL.md`
 - `skills/hugging-face-dataset-viewer/SKILL.md`
+- `skills/hugging-face-object-detection-trainer/SKILL.md`
