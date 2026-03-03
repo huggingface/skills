@@ -4,9 +4,10 @@
 # dependencies = []
 # ///
 """
-Dataset Format Inspector for Object Detection Training
+Dataset Format Inspector for Vision Model Training
 
-Inspects Hugging Face datasets to determine object detection training compatibility.
+Inspects Hugging Face datasets to determine compatibility with object detection
+and image classification training.
 Uses Datasets Server API for instant results - no dataset download needed!
 
 ULTRA-EFFICIENT: Uses HF Datasets Server API - completes in <2 seconds.
@@ -27,7 +28,7 @@ from typing import List, Dict, Any, Tuple
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Inspect dataset format for object detection training")
+    parser = argparse.ArgumentParser(description="Inspect dataset format for vision model training")
     parser.add_argument("--dataset", type=str, required=True, help="Dataset name")
     parser.add_argument("--split", type=str, default="train", help="Dataset split (default: train)")
     parser.add_argument("--config", type=str, default="default", help="Dataset config name (default: default)")
@@ -238,6 +239,59 @@ def analyze_annotations(sample_rows: List[Dict], annotation_cols: List[str]) -> 
     return annotations_info
 
 
+def check_image_classification_compatibility(columns: List[str], sample_rows: List[Dict], features: List[Dict]) -> Dict[str, Any]:
+    """Check image classification dataset compatibility"""
+
+    image_cols = find_columns(columns, ["image", "img", "picture", "photo"])
+    has_image = len(image_cols) > 0
+
+    label_cols = find_columns(columns, ["label", "labels", "class", "fine_label", "coarse_label"])
+    has_label = len(label_cols) > 0
+
+    label_info: Dict[str, Any] = {"found": has_label}
+
+    if has_label:
+        label_col = label_cols[0]
+        label_info["column"] = label_col
+
+        # Detect whether label is ClassLabel (int with names) or plain int/string
+        for f in features:
+            if f.get("name") == label_col:
+                ftype = f.get("type", "")
+                if isinstance(ftype, dict) and ftype.get("_type") == "ClassLabel":
+                    label_info["type"] = "ClassLabel"
+                    names = ftype.get("names", [])
+                    label_info["num_classes"] = len(names)
+                    label_info["class_names"] = names[:20]
+                    if len(names) > 20:
+                        label_info["class_names_truncated"] = True
+                elif isinstance(ftype, dict) and ftype.get("dtype") in ("int64", "int32", "int8"):
+                    label_info["type"] = "int"
+                elif isinstance(ftype, dict) and ftype.get("dtype") == "string":
+                    label_info["type"] = "string"
+                break
+
+        # Discover unique labels from samples if ClassLabel info wasn't in features
+        if "num_classes" not in label_info:
+            unique = set()
+            for row in sample_rows:
+                val = row["row"].get(label_col)
+                if val is not None:
+                    unique.add(val)
+            label_info["sample_unique_labels"] = sorted(unique, key=str)[:20]
+            label_info["sample_unique_count"] = len(unique)
+
+    ready = has_image and has_label
+    return {
+        "ready": ready,
+        "has_image": has_image,
+        "image_columns": image_cols,
+        "has_label": has_label,
+        "label_columns": label_cols,
+        "label_info": label_info,
+    }
+
+
 def check_object_detection_compatibility(columns: List[str], sample_rows: List[Dict]) -> Dict[str, Any]:
     """Check object detection dataset compatibility"""
 
@@ -420,6 +474,7 @@ def main():
 
     # Run compatibility checks
     od_info = check_object_detection_compatibility(columns, rows)
+    ic_info = check_image_classification_compatibility(columns, rows, features)
 
     # JSON output mode
     if args.json_output:
@@ -431,13 +486,14 @@ def main():
             "columns": columns,
             "features": [{"name": f["name"], "type": f["type"]} for f in features] if features else [],
             "object_detection_compatibility": od_info,
+            "image_classification_compatibility": ic_info,
         }
         print(json.dumps(result, indent=2))
         sys.exit(0)
 
     # Human-readable output optimized for LLM parsing
     print("=" * 80)
-    print(f"OBJECT DETECTION DATASET INSPECTION")
+    print(f"VISION DATASET INSPECTION")
     print("=" * 80)
 
     print(f"\nDataset: {args.dataset}")
@@ -462,9 +518,48 @@ def main():
         print(f"\n{col}:")
         print(f"  {display}")
 
-    print(f"\n{'OBJECT DETECTION COMPATIBILITY':-<80}")
+    # --- Image Classification ---
+    print(f"\n{'IMAGE CLASSIFICATION COMPATIBILITY':-<80}")
+    print(f"\n[STATUS] {'✓ READY' if ic_info['ready'] else '✗ NOT COMPATIBLE'}")
 
-    print(f"\n[STATUS] {'✓ READY' if od_info['ready'] else '✗ NEEDS FORMATTING'}")
+    print(f"\nImage Column:")
+    if ic_info["has_image"]:
+        print(f"  ✓ Found: {', '.join(ic_info['image_columns'])}")
+    else:
+        print(f"  ✗ No image column detected")
+
+    print(f"\nLabel Column:")
+    if ic_info["has_label"]:
+        print(f"  ✓ Found: {', '.join(ic_info['label_columns'])}")
+        li = ic_info["label_info"]
+        if li.get("type"):
+            print(f"    • Type: {li['type']}")
+        if li.get("num_classes"):
+            print(f"    • Number of Classes: {li['num_classes']}")
+        if li.get("class_names"):
+            names = li["class_names"]
+            display = ", ".join(str(n) for n in names[:10])
+            if len(names) > 10:
+                display += f" ... ({li['num_classes']} total)"
+            print(f"    • Classes: {display}")
+        elif li.get("sample_unique_labels"):
+            labels = li["sample_unique_labels"]
+            display = ", ".join(str(l) for l in labels[:10])
+            if li.get("sample_unique_count", 0) > 10:
+                display += f" ... ({li['sample_unique_count']}+ from sample)"
+            print(f"    • Sample labels: {display}")
+    else:
+        print(f"  ✗ No label column detected")
+        print(f"  Expected column names: 'label', 'labels', 'class', 'fine_label'")
+
+    if ic_info["ready"]:
+        lc = ic_info["label_info"].get("column", "label")
+        print(f"\n  Use with: scripts/image_classification_training.py")
+        print(f"    --image_column_name {ic_info['image_columns'][0]} --label_column_name {lc}")
+
+    # --- Object Detection ---
+    print(f"\n{'OBJECT DETECTION COMPATIBILITY':-<80}")
+    print(f"\n[STATUS] {'✓ READY' if od_info['ready'] else '✗ NOT COMPATIBLE'}")
 
     print(f"\nImage Column:")
     if od_info["has_image"]:
@@ -499,35 +594,30 @@ def main():
         print(f"  ✗ No annotation columns detected")
         print(f"  Expected: 'objects', 'annotations', 'bbox'/'bboxes' + 'category'/'label'")
 
-    # Mapping code
+    # Mapping code (OD only)
     mapping_code = generate_mapping_code(od_info)
 
     if mapping_code:
-        print(f"\n{'PREPROCESSING CODE':-<80}")
+        print(f"\n{'OD PREPROCESSING CODE':-<80}")
         print(mapping_code)
     elif od_info["ready"]:
-        print(f"\n{'PREPROCESSING CODE':-<80}")
-        print("\n✓ Dataset is ready for object detection training!")
-        print("  No preprocessing needed.")
-    else:
-        print(f"\n{'PREPROCESSING CODE':-<80}")
-        print("\n⚠ Cannot generate automatic mapping code.")
-        print("  Manual inspection and formatting required.")
+        print(f"\n  ✓ No OD preprocessing needed.")
 
+    # --- Summary ---
     print(f"\n{'SUMMARY':-<80}")
-    if od_info["ready"]:
-        print(f"✓ Dataset is compatible with object detection training")
-        ann_info = od_info["annotations_info"]
-        if ann_info.get("primary_bbox_format"):
-            print(f"  BBox format: {ann_info['primary_bbox_format']}")
-        if ann_info.get("num_classes", 0) > 0:
-            print(f"  Classes: {ann_info['num_classes']}")
+    if ic_info["ready"]:
+        num_cls = ic_info["label_info"].get("num_classes") or ic_info["label_info"].get("sample_unique_count", "?")
+        print(f"✓ Image Classification: READY ({num_cls} classes)")
     else:
-        print(f"✗ Dataset needs formatting before use")
-        if not od_info["has_image"]:
-            print(f"  - Missing image column")
-        if not od_info["has_annotations"]:
-            print(f"  - Missing or incompatible annotation format")
+        print(f"✗ Image Classification: not compatible")
+
+    if od_info["ready"]:
+        ann_info = od_info["annotations_info"]
+        fmt = ann_info.get("primary_bbox_format", "")
+        cls = ann_info.get("num_classes", "?")
+        print(f"✓ Object Detection: READY ({cls} classes, {fmt})")
+    else:
+        print(f"✗ Object Detection: not compatible")
 
     print(f"\nNote: Used Datasets Server API (instant, no download required)")
 

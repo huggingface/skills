@@ -1,4 +1,4 @@
-# Saving Object Detection Models to Hugging Face Hub
+# Saving Vision Models to Hugging Face Hub
 
 ## Contents
 - Why Hub Push is Required

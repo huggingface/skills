@@ -1,5 +1,16 @@
 # Reliability Principles for Training Jobs
 
+## Contents
+- Principle 1: Always Verify Before Use
+- Principle 2: Prioritize Reliability Over Performance
+- Principle 3: Create Atomic, Self-Contained Scripts
+- Principle 4: Provide Clear Error Context
+- Principle 5: Test the Happy Path on Known-Good Inputs
+- Summary: The Reliability Checklist (pre-flight, script quality, job config)
+- When Principles Conflict
+
+---
+
 These principles are derived from real production failures and successful fixes. Following them prevents common failure modes and ensures reliable job execution.
 
 ## Principle 1: Always Verify Before Use
@@ -144,7 +155,7 @@ TrainingArguments(
 # ✅ COMPLETE: All dependencies explicit
 # /// script
 # dependencies = [
-#     "transformers @ git+https://github.com/huggingface/transformers.git",
+#     "transformers>=5.2.0",
 #     "accelerate>=1.1.0",
 #     "albumentations>=1.4.16",  # Required for augmentation + bbox handling
 #     "timm",                     # Required for vision backbones

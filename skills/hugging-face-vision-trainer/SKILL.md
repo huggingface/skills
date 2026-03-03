@@ -1,18 +1,20 @@
 ---
-name: hugging-face-object-detection-trainer
-description: Trains and fine-tunes object detection models (D-FINE, RT-DETR v2, DETR, YOLOS) using Hugging Face Transformers on Hugging Face Jobs cloud GPUs. Covers COCO-format dataset preparation, Albumentations augmentation, mAP/mAR evaluation, hardware selection, cost estimation, Trackio monitoring, and Hub persistence. Use when users mention training object detection, DETR, D-FINE, RT-DETR, bounding box models, or fine-tuning on Hugging Face Jobs.
+name: hugging-face-vision-trainer
+description: Trains and fine-tunes vision models for object detection (D-FINE, RT-DETR v2, DETR, YOLOS) and image classification (timm models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3 — plus any Transformers classifier) using Hugging Face Transformers on Hugging Face Jobs cloud GPUs. Covers COCO-format dataset preparation, Albumentations augmentation, mAP/mAR evaluation, accuracy metrics, hardware selection, cost estimation, Trackio monitoring, and Hub persistence. Use when users mention training object detection, image classification, DETR, D-FINE, RT-DETR, ViT, timm, MobileNet, ResNet, bounding box models, or fine-tuning vision models on Hugging Face Jobs.
 ---
 
-# Object Detection Training on Hugging Face Jobs
+# Vision Model Training on Hugging Face Jobs
 
-Train object detection models on managed cloud GPUs. No local GPU setup required—results are automatically saved to the Hugging Face Hub.
+Train object detection and image classification models on managed cloud GPUs. No local GPU setup required—results are automatically saved to the Hugging Face Hub.
 
 ## When to Use This Skill
 
 Use this skill when users want to:
 - Fine-tune object detection models (D-FINE, RT-DETR v2, DETR, YOLOS) on cloud GPUs or local
+- Fine-tune image classification models (timm: MobileNetV3, MobileViT, ResNet, ViT/DINOv3, or any Transformers classifier) on cloud GPUs or local
 - Train bounding-box detectors on custom datasets
-- Run object detection training jobs on Hugging Face Jobs infrastructure
+- Train image classifiers on custom datasets
+- Run vision training jobs on Hugging Face Jobs infrastructure
 - Ensure trained vision models are permanently saved to the Hub
 
 ## Related Skills
@@ -37,12 +39,19 @@ Before starting any training job, verify:
 - Token has **write** permissions
 - **MUST pass token in job secrets** — see directive #3 below for syntax (MCP tool vs Python API)
 
-### Dataset Requirements
+### Dataset Requirements — Object Detection
 - Dataset must exist on Hub
 - Annotations must use the `objects` column with `bbox`, `category` (and optionally `area`) sub-fields
 - Bboxes can be in **xywh (COCO)** or **xyxy (Pascal VOC)** format — auto-detected and converted
 - Categories can be **integers or strings** — strings are auto-remapped to integer IDs
 - `image_id` column is **optional** — generated automatically if missing
+- **ALWAYS validate unknown datasets** before GPU training (see Dataset Validation section)
+
+### Dataset Requirements — Image Classification
+- Dataset must exist on Hub
+- Must have an **`image` column** (PIL images) and a **`label` column** (integer class IDs or strings)
+- The label column can be `ClassLabel` type (with names) or plain integers/strings — strings are auto-remapped
+- Common column names auto-detected: `label`, `labels`, `class`, `fine_label`
 - **ALWAYS validate unknown datasets** before GPU training (see Dataset Validation section)
 
 ### Critical Settings
@@ -89,7 +98,7 @@ api.run_uv_job(
 
 ## Automatic Bbox Preprocessing
 
-The training script (`scripts/training.py`) automatically handles bbox format detection (xyxy→xywh conversion), bbox sanitization, `image_id` generation, string category→integer remapping, and dataset truncation. **No manual preprocessing needed** — just ensure the dataset has `objects.bbox` and `objects.category` columns.
+The object detection training script (`scripts/object_detection_training.py`) automatically handles bbox format detection (xyxy→xywh conversion), bbox sanitization, `image_id` generation, string category→integer remapping, and dataset truncation. **No manual preprocessing needed** — just ensure the dataset has `objects.bbox` and `objects.category` columns.
 
 ## Training workflow
 
@@ -100,7 +109,7 @@ Training Progress:
 - [ ] Step 1: Verify prerequisites (account, token, dataset)
 - [ ] Step 2: Validate dataset format (run dataset_inspector.py)
 - [ ] Step 3: Ask user about dataset size and validation split
-- [ ] Step 4: Prepare training script (use scripts/training.py as template)
+- [ ] Step 4: Prepare training script (OD: scripts/object_detection_training.py, IC: scripts/image_classification_training.py)
 - [ ] Step 5: Save script locally, submit job, and report details
 ```
 
@@ -154,7 +163,7 @@ AskUserQuestion({
 
 **Step 4: Prepare training script**
 
-Use [scripts/training.py](scripts/training.py) as the production-ready template. This script uses `HfArgumentParser` — all configuration is passed via CLI arguments in `script_args`, NOT by editing Python variables.
+For object detection, use [scripts/object_detection_training.py](scripts/object_detection_training.py) as the production-ready template. For image classification, use [scripts/image_classification_training.py](scripts/image_classification_training.py). Both scripts use `HfArgumentParser` — all configuration is passed via CLI arguments in `script_args`, NOT by editing Python variables. For timm model details, see [references/timm_trainer.md](references/timm_trainer.md).
 
 **Step 5: Save script, submit job, and report**
 
@@ -207,7 +216,7 @@ print(f"Job ID: {job_info.id}")
 
 **Job config** MUST include the token in secrets — syntax depends on submission method (see table above).
 
-**Object-detection-specific requirement:** The Transformers `Trainer` calls `create_repo(token=self.args.hub_token)` during `__init__()` when `push_to_hub=True`. The training script MUST inject `HF_TOKEN` into `training_args.hub_token` AFTER parsing args but BEFORE creating the `Trainer`. The template `scripts/training.py` already includes this:
+**Training script requirement:** The Transformers `Trainer` calls `create_repo(token=self.args.hub_token)` during `__init__()` when `push_to_hub=True`. The training script MUST inject `HF_TOKEN` into `training_args.hub_token` AFTER parsing args but BEFORE creating the `Trainer`. The template `scripts/object_detection_training.py` already includes this:
 
 ```python
 hf_token = os.environ.get("HF_TOKEN")
@@ -218,7 +227,7 @@ if training_args.push_to_hub and not training_args.hub_token:
 
 If you write a custom script, you MUST include this token injection before the `Trainer(...)` call.
 
-- Do NOT call `login()` in custom scripts unless replicating the full pattern from `scripts/training.py`
+- Do NOT call `login()` in custom scripts unless replicating the full pattern from `scripts/object_detection_training.py`
 - Do NOT rely on implicit token resolution (`hub_token=None`) — unreliable in Jobs
 - See the `hugging-face-jobs` skill → *Token Usage Guide* for full details
 
@@ -233,7 +242,7 @@ job_id = job_info.id  # Correct -- returns string like "687fb701029421ae5549d998
 
 ### 4. Required training flags and HfArgumentParser boolean syntax
 
-`scripts/training.py` uses `HfArgumentParser` — all config is passed via `script_args`. Boolean arguments have two syntaxes:
+`scripts/object_detection_training.py` uses `HfArgumentParser` — all config is passed via `script_args`. Boolean arguments have two syntaxes:
 
 - **`bool` fields** (e.g., `push_to_hub`, `do_train`): Use as bare flags (`--push_to_hub`) or negate with `--no_` prefix (`--no_remove_unused_columns`)
 - **`Optional[bool]` fields** (e.g., `greater_is_better`): MUST pass explicit value (`--greater_is_better True`). Bare `--greater_is_better` causes `error: expected one argument`
@@ -246,6 +255,18 @@ Required flags for object detection:
 --push_to_hub                       # MUST: environment is ephemeral
 --hub_model_id username/model-name
 --metric_for_best_model eval_map
+--greater_is_better True            # MUST pass "True" explicitly (Optional[bool])
+--do_train
+--do_eval
+```
+
+Required flags for image classification:
+
+```
+--no_remove_unused_columns          # MUST: preserves image column for pixel_values
+--push_to_hub                       # MUST: environment is ephemeral
+--hub_model_id username/model-name
+--metric_for_best_model eval_accuracy
 --greater_is_better True            # MUST pass "True" explicitly (Optional[bool])
 --do_train
 --do_eval
@@ -264,13 +285,13 @@ Default 30 min is TOO SHORT for object detection. Set minimum 2-4 hours. Add 30%
 
 ### 6. Trackio monitoring
 
-Trackio is **always enabled** — the training script calls `trackio.init()` and `trackio.finish()` automatically. No need to pass `--report_to trackio`. The project name is taken from `--output_dir` and the run name from `--run_name`.
+Trackio is **always enabled** in the object detection training script — it calls `trackio.init()` and `trackio.finish()` automatically. No need to pass `--report_to trackio`. The project name is taken from `--output_dir` and the run name from `--run_name`. For image classification, pass `--report_to trackio` in `TrainingArguments`.
 
 Dashboard at: `https://huggingface.co/spaces/{username}/trackio`
 
 ## Model & hardware selection
 
-### Recommended models
+### Recommended object detection models
 
 | Model | Params | Use case |
 |-------|--------|----------|
@@ -283,18 +304,31 @@ Dashboard at: `https://huggingface.co/spaces/{username}/trackio`
 
 Start with `ustc-community/dfine-small-coco` for fast iteration. Move to D-FINE Large or RT-DETR v2 R50 for better accuracy.
 
+### Recommended image classification models
+
+All `timm/` models work out of the box via `AutoModelForImageClassification` (loaded as `TimmWrapperForImageClassification`). See [references/timm_trainer.md](references/timm_trainer.md) for details.
+
+| Model | Params | Use case |
+|-------|--------|----------|
+| `timm/mobilenetv3_small_100.lamb_in1k` | 2.5M | Ultra-lightweight — mobile/edge, fastest training |
+| `timm/mobilevit_s.cvnets_in1k` | 5.6M | Mobile transformer — good accuracy/speed trade-off |
+| `timm/resnet50.a1_in1k` | 25.6M | Strong CNN baseline — reliable, well-studied |
+| `timm/vit_base_patch16_dinov3.lvd1689m` | 86.6M | Best accuracy — DINOv3 self-supervised ViT |
+
+Start with `timm/mobilenetv3_small_100.lamb_in1k` for fast iteration. Move to `timm/resnet50.a1_in1k` or `timm/vit_base_patch16_dinov3.lvd1689m` for better accuracy.
+
 ### Hardware recommendation
 
-All these models are under 100M params — **`t4-small` (16 GB VRAM, $0.40/hr) is sufficient for all of them.** Only upgrade if you hit OOM from large image sizes, dense annotations, or large batch sizes — reduce batch size first before switching hardware. Common upgrade path: `t4-small` → `l4x1` ($0.80/hr, 24 GB) → `a10g-large` ($1.50/hr, 24 GB).
+All recommended models are under 100M params — **`t4-small` (16 GB VRAM, $0.40/hr) is sufficient for all of them.** Image classification models are generally smaller and faster than object detection models — `t4-small` handles even ViT-Base comfortably. Only upgrade if you hit OOM from large batch sizes — reduce batch size first before switching hardware. Common upgrade path: `t4-small` → `l4x1` ($0.80/hr, 24 GB) → `a10g-large` ($1.50/hr, 24 GB).
 
 For full hardware flavor list: refer to the `hugging-face-jobs` skill. For cost estimation: run `scripts/estimate_cost.py`.
 
-## Quick start
+## Quick start — Object Detection
 
 The `script_args` below are the same for both submission methods. See directive #1 for the critical differences between them.
 
 ```python
-SCRIPT_ARGS = [
+OD_SCRIPT_ARGS = [
     "--model_name_or_path", "ustc-community/dfine-small-coco",
     "--dataset_name", "cppe-5",
     "--image_square_size", "640",
@@ -317,14 +351,12 @@ SCRIPT_ARGS = [
 ]
 ```
 
-**Via `HfApi().run_uv_job()` (recommended when script is local):**
-
 ```python
 from huggingface_hub import HfApi, get_token
 api = HfApi()
 job_info = api.run_uv_job(
-    script="scripts/training.py",
-    script_args=SCRIPT_ARGS,
+    script="scripts/object_detection_training.py",
+    script_args=OD_SCRIPT_ARGS,
     flavor="t4-small",
     timeout=14400,
     env={"PYTHONUNBUFFERED": "1"},
@@ -333,19 +365,7 @@ job_info = api.run_uv_job(
 print(f"Job ID: {job_info.id}")
 ```
 
-**Via `hf_jobs` MCP tool:**
-
-```python
-hf_jobs("uv", {
-    "script": open("scripts/training.py").read(),
-    "script_args": SCRIPT_ARGS,
-    "flavor": "t4-small",
-    "timeout": "4h",
-    "secrets": {"HF_TOKEN": "$HF_TOKEN"}
-})
-```
-
-### Key `script_args` to customize per task
+### Key OD `script_args`
 
 - `--model_name_or_path` — recommended: `"ustc-community/dfine-small-coco"` (see model table above)
 - `--dataset_name` — the Hub dataset ID
@@ -355,6 +375,57 @@ hf_jobs("uv", {
 - `--train_val_split` — fraction to split for validation (default 0.15), set if dataset lacks a validation split
 - `--max_train_samples` — truncate training set (useful for quick test runs, e.g. `"785"` for ~10% of a 7.8K dataset)
 - `--max_eval_samples` — truncate evaluation set
+
+## Quick start — Image Classification
+
+```python
+IC_SCRIPT_ARGS = [
+    "--model_name_or_path", "timm/mobilenetv3_small_100.lamb_in1k",
+    "--dataset_name", "ethz/food101",
+    "--output_dir", "food101_classifier",
+    "--num_train_epochs", "5",
+    "--per_device_train_batch_size", "32",
+    "--per_device_eval_batch_size", "32",
+    "--learning_rate", "5e-5",
+    "--eval_strategy", "epoch",
+    "--save_strategy", "epoch",
+    "--save_total_limit", "2",
+    "--load_best_model_at_end",
+    "--metric_for_best_model", "eval_accuracy",
+    "--greater_is_better", "True",
+    "--no_remove_unused_columns",
+    "--push_to_hub",
+    "--hub_model_id", "username/food101-classifier",
+    "--do_train",
+    "--do_eval",
+]
+```
+
+```python
+from huggingface_hub import HfApi, get_token
+api = HfApi()
+job_info = api.run_uv_job(
+    script="scripts/image_classification_training.py",
+    script_args=IC_SCRIPT_ARGS,
+    flavor="t4-small",
+    timeout=7200,
+    env={"PYTHONUNBUFFERED": "1"},
+    secrets={"HF_TOKEN": get_token()},
+)
+print(f"Job ID: {job_info.id}")
+```
+
+### Key IC `script_args`
+
+- `--model_name_or_path` — any `timm/` model or Transformers classification model (see model table above)
+- `--dataset_name` — the Hub dataset ID
+- `--image_column_name` — column containing PIL images (default: `"image"`)
+- `--label_column_name` — column containing class labels (default: `"label"`)
+- `--hub_model_id` — `"username/model-name"` for Hub persistence
+- `--num_train_epochs` — 3-5 typical for classification (fewer than OD)
+- `--per_device_train_batch_size` — 16-64 (classification models use less memory than OD)
+- `--train_val_split` — fraction to split for validation (default 0.15), set if dataset lacks a validation split
+- `--max_train_samples` / `--max_eval_samples` — truncate for quick tests
 
 ## Checking job status
 
@@ -389,10 +460,10 @@ Verify: (1) job secrets include token (see directive #2), (2) script sets `train
 Increase timeout (see directive #5 table), reduce epochs/dataset, or use checkpoint strategy with `hub_strategy="every_save"`.
 
 ### KeyError: 'test' (missing test split)
-The training script handles this gracefully — it falls back to the `validation` split. Ensure you're using the latest `scripts/training.py`.
+The object detection training script handles this gracefully — it falls back to the `validation` split. Ensure you're using the latest `scripts/object_detection_training.py`.
 
 ### Single-class dataset: "iteration over a 0-d tensor"
-`torchmetrics.MeanAveragePrecision` returns scalar (0-d) tensors for per-class metrics when there's only one class. The template `scripts/training.py` handles this by calling `.unsqueeze(0)` on these tensors. Ensure you're using the latest template.
+`torchmetrics.MeanAveragePrecision` returns scalar (0-d) tensors for per-class metrics when there's only one class. The template `scripts/object_detection_training.py` handles this by calling `.unsqueeze(0)` on these tensors. Ensure you're using the latest template.
 
 ### Poor detection performance (mAP < 0.15)
 Increase epochs (30-50), ensure 500+ images, check per-class mAP for imbalanced classes, try different learning rates (1e-5 to 1e-4), increase image size.
@@ -401,19 +472,26 @@ For comprehensive troubleshooting: see [references/reliability_principles.md](re
 
 ## Reference files
 
-- [scripts/training.py](scripts/training.py) — Production-ready training script with all configurations
-- [scripts/dataset_inspector.py](scripts/dataset_inspector.py) — Validate dataset format before GPU training
-- [scripts/estimate_cost.py](scripts/estimate_cost.py) — Estimate training costs
-- [references/training_notebook.md](references/training_notebook.md) — Complete training workflow, augmentation strategies, and training patterns
+- [scripts/object_detection_training.py](scripts/object_detection_training.py) — Production-ready object detection training script
+- [scripts/image_classification_training.py](scripts/image_classification_training.py) — Production-ready image classification training script (supports timm models)
+- [scripts/dataset_inspector.py](scripts/dataset_inspector.py) — Validate dataset format for both OD and classification
+- [scripts/estimate_cost.py](scripts/estimate_cost.py) — Estimate training costs for any vision model
+- [references/object_detection_training_notebook.md](references/object_detection_training_notebook.md) — Object detection training workflow, augmentation strategies, and training patterns
+- [references/image_classification_training_notebook.md](references/image_classification_training_notebook.md) — Image classification training workflow with ViT, preprocessing, and evaluation
+- [references/timm_trainer.md](references/timm_trainer.md) — Using timm models with HF Trainer (TimmWrapper, transforms, full example)
 - [references/hub_saving.md](references/hub_saving.md) — Detailed Hub persistence guide and verification checklist
 - [references/reliability_principles.md](references/reliability_principles.md) — Failure prevention principles from production experience
 
 ## External links
 
 - [Transformers Object Detection Guide](https://huggingface.co/docs/transformers/tasks/object_detection)
+- [Transformers Image Classification Guide](https://huggingface.co/docs/transformers/tasks/image_classification)
 - [DETR Model Documentation](https://huggingface.co/docs/transformers/model_doc/detr)
+- [ViT Model Documentation](https://huggingface.co/docs/transformers/model_doc/vit)
 - [HF Jobs Guide](https://huggingface.co/docs/huggingface_hub/guides/jobs) — Main Jobs documentation
 - [HF Jobs Configuration](https://huggingface.co/docs/hub/en/jobs-configuration) — Hardware, secrets, timeouts, namespaces
 - [HF Jobs CLI Reference](https://huggingface.co/docs/huggingface_hub/guides/cli#hf-jobs) — Command line interface
 - [Object Detection Models](https://huggingface.co/models?pipeline_tag=object-detection)
+- [Image Classification Models](https://huggingface.co/models?pipeline_tag=image-classification)
 - [Object Detection Datasets](https://huggingface.co/datasets?task_categories=task_categories:object-detection)
+- [Image Classification Datasets](https://huggingface.co/datasets?task_categories=task_categories:image-classification)

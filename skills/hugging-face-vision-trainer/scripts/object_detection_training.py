@@ -1,6 +1,6 @@
 # /// script
 # dependencies = [
-#     "transformers @ git+https://github.com/huggingface/transformers.git",
+#     "transformers>=5.2.0",
 #     "accelerate>=1.1.0",
 #     "albumentations >= 1.4.16",
 #     "timm",

@@ -4,11 +4,12 @@
 # dependencies = []
 # ///
 """
-Estimate training time and cost for object detection jobs on Hugging Face Jobs.
+Estimate training time and cost for vision model training jobs on Hugging Face Jobs.
 
 Usage:
     uv run estimate_cost.py --model ustc-community/dfine-small-coco --dataset cppe-5 --hardware t4-small
     uv run estimate_cost.py --model PekingU/rtdetr_v2_r50vd --dataset-size 5000 --hardware t4-small --epochs 30
+    uv run estimate_cost.py --model google/vit-base-patch16-224-in21k --dataset ethz/food101 --hardware t4-small --epochs 3
 """
 
 import argparse
@@ -28,8 +29,9 @@ HARDWARE_COSTS = {
     "a100x4": 10.00,
 }
 
-# Object detection model sizes in millions of parameters
+# Vision model sizes in millions of parameters
 MODEL_PARAMS_M = {
+    # Object detection
     "dfine-small": 10.4,
     "dfine-large": 31.4,
     "dfine-xlarge": 63.5,
@@ -40,11 +42,19 @@ MODEL_PARAMS_M = {
     "detr-resnet-101": 60.2,
     "yolos-small": 30.7,
     "yolos-tiny": 6.5,
+    # Image classification
+    "mobilenetv3_small": 2.5,
+    "mobilevit_s": 5.6,
+    "resnet50": 25.6,
+    "vit_base_patch16": 86.6,
 }
 
 KNOWN_DATASETS = {
+    # Object detection
     "cppe-5": 1000,
     "merve/license-plate": 6180,
+    # Image classification
+    "ethz/food101": 75750,
 }
 
 
@@ -54,12 +64,12 @@ def extract_model_params(model_name: str) -> float:
     for key, params in MODEL_PARAMS_M.items():
         if key.lower() in name_lower:
             return params
-    return 30.0  # reasonable default for OD models
+    return 30.0  # reasonable default for vision models
 
 
 def estimate_training_time(model_params_m: float, dataset_size: int, epochs: int,
                            image_size: int, batch_size: int, hardware: str) -> float:
-    """Estimate training time in hours for object detection training."""
+    """Estimate training time in hours for vision model training."""
     # Steps per epoch
     steps_per_epoch = dataset_size / batch_size
     # empirical calibration values
@@ -100,7 +110,7 @@ def estimate_training_time(model_params_m: float, dataset_size: int, epochs: int
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Estimate training cost for object detection jobs")
+    parser = argparse.ArgumentParser(description="Estimate training cost for vision model training jobs")
     parser.add_argument("--model", required=True,
                         help="Model name (e.g., 'ustc-community/dfine-small-coco' or 'detr-resnet-50')")
     parser.add_argument("--dataset", default=None, help="Dataset name (for known size lookup)")
@@ -167,7 +177,7 @@ def main():
     print(f"Example job configuration (MCP tool):")
     print(f"""
 hf_jobs("uv", {{
-    "script": "scripts/training.py",
+    "script": "scripts/object_detection_training.py",
     "script_args": [
         "--model_name_or_path", "{args.model}",
         "--dataset_name", "{args.dataset or 'your-dataset'}",
@@ -184,7 +194,7 @@ hf_jobs("uv", {{
     print(f"Example job configuration (Python API):")
     print(f"""
 api.run_uv_job(
-    script="scripts/training.py",
+    script="scripts/object_detection_training.py",
     script_args=[...],
     flavor="{args.hardware}",
     timeout={timeout_secs},
