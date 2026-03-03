@@ -40,11 +40,15 @@ Usage:
 
 import os
 import json
+import re
 import argparse
 from typing import Optional, List, Dict, Any, Union
 
 import duckdb
 from huggingface_hub import HfApi
+
+# Regex for valid SQL identifiers (column names, view names)
+_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 # Configuration
@@ -68,11 +72,26 @@ class HFDatasetSQL:
         self.conn = duckdb.connect()
         self._setup_connection()
 
+    @staticmethod
+    def _quote_identifier(name: str) -> str:
+        """Quote a SQL identifier, escaping embedded double-quotes."""
+        return '"' + name.replace('"', '""') + '"'
+
+    @staticmethod
+    def _validate_identifier(name: str) -> None:
+        """Raise ValueError if *name* is not a safe SQL identifier."""
+        if not _IDENTIFIER_RE.match(name):
+            raise ValueError(
+                f"Invalid identifier: {name!r}. "
+                "Identifiers must start with a letter or underscore and contain only "
+                "alphanumeric characters and underscores."
+            )
+
     def _setup_connection(self):
         """Configure DuckDB connection for HF access."""
         # Set HF token if available (for private datasets)
         if self.token:
-            self.conn.execute(f"CREATE SECRET hf_token (TYPE HUGGINGFACE, TOKEN '{self.token}');")
+            self.conn.execute("CREATE SECRET hf_token (TYPE HUGGINGFACE, TOKEN $1);", [self.token])
 
     def _build_hf_path(
         self, dataset_id: str, split: str = "*", config: Optional[str] = None, revision: str = "~parquet"
@@ -307,7 +326,8 @@ class HFDatasetSQL:
         """
         hf_path = self._build_hf_path(dataset_id, split=split, config=config)
 
-        sql = f"SELECT DISTINCT {column} FROM '{hf_path}' LIMIT {limit}"
+        quoted_col = self._quote_identifier(column)
+        sql = f"SELECT DISTINCT {quoted_col} FROM '{hf_path}' LIMIT {limit}"
         result = self.conn.execute(sql).fetchall()
 
         return [row[0] for row in result]
@@ -330,12 +350,13 @@ class HFDatasetSQL:
         """
         hf_path = self._build_hf_path(dataset_id, split=split, config=config)
 
+        quoted_col = self._quote_identifier(column)
         sql = f"""
         SELECT 
-            {column},
+            {quoted_col},
             COUNT(*) as count
         FROM '{hf_path}'
-        GROUP BY {column}
+        GROUP BY {quoted_col}
         ORDER BY count DESC
         LIMIT {bins}
         """
@@ -470,6 +491,8 @@ class HFDatasetSQL:
         else:
             processed_sql = f"SELECT * FROM '{hf_path}'"
 
+        if "'" in output_path:
+            raise ValueError(f"Invalid output path: paths must not contain single quotes")
         export_sql = f"COPY ({processed_sql}) TO '{output_path}' (FORMAT PARQUET)"
         self.conn.execute(export_sql)
 
@@ -571,8 +594,10 @@ class HFDatasetSQL:
             split: Dataset split
             config: Optional config
         """
+        self._validate_identifier(name)
         hf_path = self._build_hf_path(dataset_id, split=split, config=config)
-        self.conn.execute(f"CREATE OR REPLACE VIEW {name} AS SELECT * FROM '{hf_path}'")
+        quoted_name = self._quote_identifier(name)
+        self.conn.execute(f"CREATE OR REPLACE VIEW {quoted_name} AS SELECT * FROM '{hf_path}'")
         print(f"✅ Created view '{name}' for {dataset_id}")
 
     def info(self, dataset_id: str) -> Dict[str, Any]:

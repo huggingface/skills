@@ -63,6 +63,12 @@
       "description": "Train and fine-tune object detection models (RTDETRv2, YOLOS, DETR and others) using Transformers on Hugging Face Jobs infrastructure or locally. Includes COCO dataset format support, Albumentations augmentation, mAP/mAR metrics, trackio tracking, hardware selection, and Hub persistence."
     },
     {
+      "name": "hugging-face-dataset-viewer",
+      "source": "./skills/hugging-face-dataset-viewer",
+      "skills": "./",
+      "description": "Explore, query, and extract data from any Hugging Face dataset using the Dataset Viewer REST API and npx tooling. Zero Python dependencies — covers split/config discovery, row pagination, text search, filtering, SQL via parquetlens, and dataset upload via CLI."
+    },
+    {
       "name": "gradio",
       "source": "./skills/huggingface-gradio",
       "skills": "./",

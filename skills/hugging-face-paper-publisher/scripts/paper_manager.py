@@ -56,8 +56,12 @@ class PaperManager:
         Returns:
             dict: Status information
         """
-        # Clean arXiv ID
-        arxiv_id = self._clean_arxiv_id(arxiv_id)
+        # Clean and validate arXiv ID
+        try:
+            arxiv_id = self._clean_arxiv_id(arxiv_id)
+        except ValueError as e:
+            print(f"Error: {e}")
+            return {"status": "error", "message": str(e)}
 
         print(f"Indexing paper {arxiv_id} on Hugging Face...")
 
@@ -87,7 +91,10 @@ class PaperManager:
         Returns:
             dict: Paper status and metadata
         """
-        arxiv_id = self._clean_arxiv_id(arxiv_id)
+        try:
+            arxiv_id = self._clean_arxiv_id(arxiv_id)
+        except ValueError as e:
+            return {"exists": False, "error": str(e)}
         paper_url = f"https://huggingface.co/papers/{arxiv_id}"
 
         try:
@@ -130,7 +137,11 @@ class PaperManager:
         Returns:
             dict: Operation status
         """
-        arxiv_id = self._clean_arxiv_id(arxiv_id)
+        try:
+            arxiv_id = self._clean_arxiv_id(arxiv_id)
+        except ValueError as e:
+            print(f"Error: {e}")
+            return {"status": "error", "message": str(e)}
 
         print(f"Linking paper {arxiv_id} to {repo_type} {repo_id}...")
 
@@ -223,14 +234,18 @@ class PaperManager:
             before = yaml_content
             after = content
 
-        # Add paper reference section
-        paper_section = f"\n## Paper\n\n"
+        # Add paper reference section with boundary markers
+        paper_section = "\n<!-- paper-manager:start -->\n"
+        paper_section += f"## Paper\n\n"
         paper_section += f"This {'model' if 'model' in content.lower() else 'work'} is based on research presented in:\n\n"
         paper_section += f"**[View on arXiv]({arxiv_url})** | "
         paper_section += f"**[View on Hugging Face]({hf_paper_url})**\n\n"
 
         if citation:
-            paper_section += f"### Citation\n\n```bibtex\n{citation}\n```\n\n"
+            safe_citation = self._sanitize_text(citation)
+            paper_section += f"### Citation\n\n```bibtex\n{safe_citation}\n```\n\n"
+
+        paper_section += "<!-- paper-manager:end -->\n"
 
         # Insert after YAML, before main content
         updated_content = before + paper_section + after
@@ -273,19 +288,40 @@ class PaperManager:
         with open(template_file, 'r', encoding='utf-8') as f:
             template_content = f.read()
 
-        # Replace placeholders
-        content = template_content.replace("{{TITLE}}", title)
-        content = content.replace("{{DATE}}", datetime.now().strftime("%Y-%m-%d"))
+        # Prepare safe values for different contexts
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        safe_title_body = self._sanitize_text(title)
+        authors_val = authors if authors else "Your Name"
+        safe_authors_body = self._sanitize_text(authors_val)
+        abstract_val = abstract if abstract else "Abstract to be written..."
+        safe_abstract_body = self._sanitize_text(abstract_val)
 
-        if authors:
-            content = content.replace("{{AUTHORS}}", authors)
-        else:
-            content = content.replace("{{AUTHORS}}", "Your Name")
+        # Split frontmatter from body for context-aware escaping
+        fm_pattern = r'^(---\s*\n)(.*?\n)(---\s*\n)'
+        fm_match = re.match(fm_pattern, template_content, re.DOTALL)
 
-        if abstract:
-            content = content.replace("{{ABSTRACT}}", abstract)
+        if fm_match:
+            fm_open, fm_body, fm_close = fm_match.group(1), fm_match.group(2), fm_match.group(3)
+            body = template_content[fm_match.end():]
+
+            # YAML-escape values in frontmatter
+            fm_body = fm_body.replace("{{TITLE}}", self._escape_yaml_value(title))
+            fm_body = fm_body.replace("{{AUTHORS}}", self._escape_yaml_value(authors_val))
+            fm_body = fm_body.replace("{{DATE}}", date_str)
+
+            # Sanitize values in body
+            body = body.replace("{{TITLE}}", safe_title_body)
+            body = body.replace("{{AUTHORS}}", safe_authors_body)
+            body = body.replace("{{ABSTRACT}}", safe_abstract_body)
+            body = body.replace("{{DATE}}", date_str)
+
+            content = fm_open + fm_body + fm_close + body
         else:
-            content = content.replace("{{ABSTRACT}}", "Abstract to be written...")
+            # No frontmatter — sanitize everything
+            content = template_content.replace("{{TITLE}}", safe_title_body)
+            content = content.replace("{{DATE}}", date_str)
+            content = content.replace("{{AUTHORS}}", safe_authors_body)
+            content = content.replace("{{ABSTRACT}}", safe_abstract_body)
 
         # Write output
         with open(output, 'w', encoding='utf-8') as f:
@@ -309,8 +345,11 @@ class PaperManager:
         Returns:
             dict: Paper metadata
         """
-        arxiv_id = self._clean_arxiv_id(arxiv_id)
-        api_url = f"http://export.arxiv.org/api/query?id_list={arxiv_id}"
+        try:
+            arxiv_id = self._clean_arxiv_id(arxiv_id)
+        except ValueError as e:
+            return {"error": str(e)}
+        api_url = f"https://export.arxiv.org/api/query?id_list={arxiv_id}"
 
         try:
             response = requests.get(api_url, timeout=10)
@@ -324,11 +363,16 @@ class PaperManager:
             authors_matches = re.findall(r'<name>(.*?)</name>', content)
             summary_match = re.search(r'<summary>(.*?)</summary>', content, re.DOTALL)
 
+            # Sanitize all text extracted from the external API
+            raw_title = title_match.group(1).strip() if title_match else None
+            raw_authors = authors_matches[1:] if len(authors_matches) > 1 else []
+            raw_abstract = summary_match.group(1).strip() if summary_match else None
+
             return {
                 "arxiv_id": arxiv_id,
-                "title": title_match.group(1).strip() if title_match else None,
-                "authors": authors_matches[1:] if len(authors_matches) > 1 else [],  # Skip first (feed title)
-                "abstract": summary_match.group(1).strip() if summary_match else None,
+                "title": self._sanitize_text(raw_title) if raw_title else None,
+                "authors": [self._sanitize_text(a) for a in raw_authors],
+                "abstract": self._sanitize_text(raw_abstract) if raw_abstract else None,
                 "arxiv_url": f"https://arxiv.org/abs/{arxiv_id}",
                 "pdf_url": f"https://arxiv.org/pdf/{arxiv_id}.pdf"
             }
@@ -350,6 +394,11 @@ class PaperManager:
         Returns:
             str: Formatted citation
         """
+        try:
+            arxiv_id = self._clean_arxiv_id(arxiv_id)
+        except ValueError as e:
+            return f"Error: {e}"
+
         info = self.get_arxiv_info(arxiv_id)
 
         if "error" in info:
@@ -358,14 +407,18 @@ class PaperManager:
         if format == "bibtex":
             # Generate BibTeX citation
             key = f"arxiv{arxiv_id.replace('.', '_')}"
-            authors = " and ".join(info.get("authors", ["Unknown"]))
-            title = info.get("title", "Untitled")
+            raw_authors = " and ".join(info.get("authors", ["Unknown"]))
+            raw_title = info.get("title", "Untitled")
             year = arxiv_id.split(".")[0][:2]  # Extract year from ID (simplified)
             year = f"20{year}" if int(year) < 50 else f"19{year}"
 
+            # Escape BibTeX structural characters in untrusted values
+            safe_title = raw_title.replace('{', r'\{').replace('}', r'\}')
+            safe_authors = raw_authors.replace('{', r'\{').replace('}', r'\}')
+
             citation = f"""@article{{{key},
-  title={{{title}}},
-  author={{{authors}}},
+  title={{{safe_title}}},
+  author={{{safe_authors}}},
   journal={{arXiv preprint arXiv:{arxiv_id}}},
   year={{{year}}}
 }}"""
@@ -373,15 +426,60 @@ class PaperManager:
 
         return f"Format '{format}' not yet implemented"
 
+    # Patterns for valid arXiv IDs
+    _ARXIV_ID_MODERN = re.compile(r'^\d{4}\.\d{4,5}(v\d+)?$')
+    _ARXIV_ID_LEGACY = re.compile(r'^[a-zA-Z\-]+/\d{7}(v\d+)?$')
+
     @staticmethod
     def _clean_arxiv_id(arxiv_id: str) -> str:
-        """Clean and normalize arXiv ID."""
+        """Clean, normalize, and validate arXiv ID.
+
+        Raises:
+            ValueError: If the cleaned ID does not match a valid arXiv format.
+        """
         # Remove common prefixes and whitespace
         arxiv_id = arxiv_id.strip()
         arxiv_id = re.sub(r'^(arxiv:|arXiv:)', '', arxiv_id, flags=re.IGNORECASE)
         arxiv_id = re.sub(r'https?://arxiv\.org/(abs|pdf)/', '', arxiv_id)
         arxiv_id = arxiv_id.replace('.pdf', '')
+
+        # Validate format
+        if not (PaperManager._ARXIV_ID_MODERN.match(arxiv_id)
+                or PaperManager._ARXIV_ID_LEGACY.match(arxiv_id)):
+            raise ValueError(
+                f"Invalid arXiv ID: {arxiv_id!r}. "
+                "Expected format: YYMM.NNNNN[vN] or category/YYMMNNN[vN]"
+            )
+
         return arxiv_id
+
+    @staticmethod
+    def _escape_yaml_value(value: str) -> str:
+        """Escape a string for safe use as a YAML scalar value.
+
+        Wraps in double quotes and escapes internal quotes and backslashes
+        to prevent YAML injection via crafted titles/authors.
+        """
+        value = value.replace('\\', '\\\\').replace('"', '\\"')
+        return f'"{value}"'
+
+    @staticmethod
+    def _sanitize_text(text: str) -> str:
+        """Sanitize untrusted text for safe inclusion in Markdown/YAML output.
+
+        Normalizes whitespace, strips control characters, and neutralizes
+        markdown code-fence breakout and YAML document delimiters.
+        """
+        # Remove control characters (keep newlines and tabs)
+        text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
+        # Normalize whitespace runs (collapse multiple spaces/tabs, preserve single newlines)
+        text = re.sub(r'[^\S\n]+', ' ', text)
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        # Neutralize markdown code fence breakout
+        text = text.replace('```', r'\`\`\`')
+        # Neutralize YAML document delimiters at line start
+        text = re.sub(r'^---', r'\\---', text, flags=re.MULTILINE)
+        return text.strip()
 
 
 def main():
