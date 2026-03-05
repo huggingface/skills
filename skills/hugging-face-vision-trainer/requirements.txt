@@ -4,3 +4,4 @@
 # Install with: pip install -r requirements.txt
 datasets
 huggingface_hub
+torchvision

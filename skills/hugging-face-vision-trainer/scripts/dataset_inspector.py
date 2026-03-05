@@ -20,6 +20,7 @@ Usage with HF Jobs:
 """
 
 import argparse
+import math
 import sys
 import json
 import urllib.request
@@ -325,6 +326,134 @@ def check_object_detection_compatibility(columns: List[str], sample_rows: List[D
     }
 
 
+def check_sam_segmentation_compatibility(columns: List[str], sample_rows: List[Dict], features: List[Dict]) -> Dict[str, Any]:
+    """Check SAM/SAM2 segmentation dataset compatibility.
+
+    A valid SAM segmentation dataset needs:
+    - An image column
+    - A mask column (binary ground-truth segmentation mask)
+    - A prompt: either a bbox prompt or point prompt (in a JSON prompt column, or dedicated columns)
+    """
+
+    image_cols = find_columns(columns, ["image", "img", "picture", "photo"])
+    has_image = len(image_cols) > 0
+
+    mask_cols = find_columns(columns, ["mask", "segmentation", "alpha", "matte"])
+    has_mask = len(mask_cols) > 0
+
+    prompt_cols = find_columns(columns, ["prompt"])
+    bbox_cols = [c for c in columns if c in ("bbox", "bboxes", "box", "boxes")]
+    point_cols = [c for c in columns if c in ("point", "points", "input_point", "input_points")]
+
+    prompt_info: Dict[str, Any] = {
+        "has_prompt": False,
+        "prompt_type": None,
+        "source": None,
+        "bbox_valid": None,
+    }
+
+    # Try JSON prompt column first
+    if prompt_cols:
+        for row in sample_rows:
+            raw = row["row"].get(prompt_cols[0])
+            if raw is None:
+                continue
+            parsed = raw if isinstance(raw, dict) else _try_json(raw)
+            if parsed is None:
+                continue
+
+            if isinstance(parsed, dict):
+                if "bbox" in parsed or "box" in parsed:
+                    prompt_info["has_prompt"] = True
+                    prompt_info["prompt_type"] = "bbox"
+                    prompt_info["source"] = f"JSON column '{prompt_cols[0]}'"
+                    bbox = parsed.get("bbox") or parsed.get("box")
+                    prompt_info["bbox_valid"] = _validate_bbox(bbox, _extract_image_size(row["row"]))
+                    break
+                elif "point" in parsed or "points" in parsed:
+                    prompt_info["has_prompt"] = True
+                    prompt_info["prompt_type"] = "point"
+                    prompt_info["source"] = f"JSON column '{prompt_cols[0]}'"
+                    break
+
+    if not prompt_info["has_prompt"] and bbox_cols:
+        prompt_info["has_prompt"] = True
+        prompt_info["prompt_type"] = "bbox"
+        prompt_info["source"] = f"column '{bbox_cols[0]}'"
+        for row in sample_rows:
+            bbox = row["row"].get(bbox_cols[0])
+            if bbox is not None:
+                prompt_info["bbox_valid"] = _validate_bbox(bbox, _extract_image_size(row["row"]))
+                break
+
+    if not prompt_info["has_prompt"] and point_cols:
+        prompt_info["has_prompt"] = True
+        prompt_info["prompt_type"] = "point"
+        prompt_info["source"] = f"column '{point_cols[0]}'"
+
+    ready = has_image and has_mask and prompt_info["has_prompt"]
+
+    return {
+        "ready": ready,
+        "has_image": has_image,
+        "image_columns": image_cols,
+        "has_mask": has_mask,
+        "mask_columns": mask_cols,
+        "prompt_columns": prompt_cols,
+        "bbox_columns": bbox_cols,
+        "point_columns": point_cols,
+        "prompt_info": prompt_info,
+    }
+
+
+def _try_json(value) -> Any:
+    if not isinstance(value, str):
+        return None
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return None
+
+
+def _validate_bbox(bbox, image_size=None) -> Dict[str, Any]:
+    """Validate a single bounding box and return diagnostics."""
+    result: Dict[str, Any] = {"valid": False}
+    if not isinstance(bbox, (list, tuple)):
+        result["error"] = "bbox is not a list"
+        return result
+    if len(bbox) != 4:
+        result["error"] = f"expected 4 values, got {len(bbox)}"
+        return result
+    try:
+        vals = [float(v) for v in bbox]
+    except (TypeError, ValueError):
+        result["error"] = "non-numeric values"
+        return result
+
+    if not all(math.isfinite(v) for v in vals):
+        result["error"] = "contains non-finite values"
+        return result
+
+    x0, y0, x1, y1 = vals
+    if x1 <= x0 or y1 <= y0:
+        if vals[2] > 0 and vals[3] > 0:
+            result["format_hint"] = "likely xywh"
+        else:
+            result["error"] = "degenerate bbox (zero or negative area)"
+            return result
+    else:
+        result["format_hint"] = "likely xyxy"
+
+    if image_size is not None:
+        img_w, img_h = image_size
+        if any(v > max(img_w, img_h) * 1.5 for v in vals):
+            result["warning"] = "coordinates exceed image bounds"
+
+    result["valid"] = True
+    result["values"] = vals
+    return result
+
+
 def generate_mapping_code(info: Dict[str, Any]) -> str:
     """Generate mapping code if needed"""
     if info["ready"]:
@@ -475,6 +604,7 @@ def main():
     # Run compatibility checks
     od_info = check_object_detection_compatibility(columns, rows)
     ic_info = check_image_classification_compatibility(columns, rows, features)
+    sam_info = check_sam_segmentation_compatibility(columns, rows, features)
 
     # JSON output mode
     if args.json_output:
@@ -487,6 +617,7 @@ def main():
             "features": [{"name": f["name"], "type": f["type"]} for f in features] if features else [],
             "object_detection_compatibility": od_info,
             "image_classification_compatibility": ic_info,
+            "sam_segmentation_compatibility": sam_info,
         }
         print(json.dumps(result, indent=2))
         sys.exit(0)
@@ -594,6 +725,49 @@ def main():
         print(f"  ✗ No annotation columns detected")
         print(f"  Expected: 'objects', 'annotations', 'bbox'/'bboxes' + 'category'/'label'")
 
+    # --- SAM Segmentation ---
+    print(f"\n{'SAM SEGMENTATION COMPATIBILITY':-<80}")
+    print(f"\n[STATUS] {'✓ READY' if sam_info['ready'] else '✗ NOT COMPATIBLE'}")
+
+    print(f"\nImage Column:")
+    if sam_info["has_image"]:
+        print(f"  ✓ Found: {', '.join(sam_info['image_columns'])}")
+    else:
+        print(f"  ✗ No image column detected")
+
+    print(f"\nMask Column:")
+    if sam_info["has_mask"]:
+        print(f"  ✓ Found: {', '.join(sam_info['mask_columns'])}")
+    else:
+        print(f"  ✗ No mask column detected")
+        print(f"  Expected column names: 'mask', 'segmentation', 'alpha', 'matte'")
+
+    print(f"\nPrompt:")
+    pi = sam_info["prompt_info"]
+    if pi["has_prompt"]:
+        print(f"  ✓ Type: {pi['prompt_type']} (from {pi['source']})")
+        if pi.get("bbox_valid"):
+            bv = pi["bbox_valid"]
+            if bv["valid"]:
+                print(f"    • BBox values: {bv.get('values')}")
+                if bv.get("format_hint"):
+                    print(f"    • Format: {bv['format_hint']}")
+                if bv.get("warning"):
+                    print(f"    ⚠ {bv['warning']}")
+            else:
+                print(f"    ✗ Invalid bbox: {bv.get('error', 'unknown error')}")
+    else:
+        print(f"  ✗ No prompt detected")
+        print(f"  Expected: 'prompt' column (JSON with bbox/point), or 'bbox'/'point' column")
+
+    if sam_info["ready"]:
+        pc = sam_info["prompt_columns"][0] if sam_info["prompt_columns"] else None
+        args_hint = f"--prompt_type {pi['prompt_type']}"
+        if pc:
+            args_hint += f" --prompt_column_name {pc}"
+        print(f"\n  Use with: scripts/sam_segmentation_training.py")
+        print(f"    {args_hint}")
+
     # Mapping code (OD only)
     mapping_code = generate_mapping_code(od_info)
 
@@ -618,6 +792,11 @@ def main():
         print(f"✓ Object Detection: READY ({cls} classes, {fmt})")
     else:
         print(f"✗ Object Detection: not compatible")
+
+    if sam_info["ready"]:
+        print(f"✓ SAM Segmentation: READY (prompt: {pi['prompt_type']})")
+    else:
+        print(f"✗ SAM Segmentation: not compatible")
 
     print(f"\nNote: Used Datasets Server API (instant, no download required)")
 

@@ -47,6 +47,14 @@ MODEL_PARAMS_M = {
     "mobilevit_s": 5.6,
     "resnet50": 25.6,
     "vit_base_patch16": 86.6,
+    # SAM / SAM2 segmentation
+    "sam-vit-base": 93.7,
+    "sam-vit-large": 312.3,
+    "sam-vit-huge": 641.1,
+    "sam2.1-hiera-tiny": 38.9,
+    "sam2.1-hiera-small": 46.0,
+    "sam2.1-hiera-base-plus": 80.8,
+    "sam2.1-hiera-large": 224.4,
 }
 
 KNOWN_DATASETS = {
@@ -55,6 +63,8 @@ KNOWN_DATASETS = {
     "merve/license-plate": 6180,
     # Image classification
     "ethz/food101": 75750,
+    # SAM segmentation
+    "merve/MicroMat-mini": 240,
 }
 
 

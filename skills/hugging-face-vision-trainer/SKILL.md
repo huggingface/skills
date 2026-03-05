@@ -1,19 +1,21 @@
 ---
 name: hugging-face-vision-trainer
-description: Trains and fine-tunes vision models for object detection (D-FINE, RT-DETR v2, DETR, YOLOS) and image classification (timm models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3 — plus any Transformers classifier) using Hugging Face Transformers on Hugging Face Jobs cloud GPUs. Covers COCO-format dataset preparation, Albumentations augmentation, mAP/mAR evaluation, accuracy metrics, hardware selection, cost estimation, Trackio monitoring, and Hub persistence. Use when users mention training object detection, image classification, DETR, D-FINE, RT-DETR, ViT, timm, MobileNet, ResNet, bounding box models, or fine-tuning vision models on Hugging Face Jobs.
+description: Trains and fine-tunes vision models for object detection (D-FINE, RT-DETR v2, DETR, YOLOS), image classification (timm models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3 — plus any Transformers classifier), and SAM/SAM2 segmentation using Hugging Face Transformers on Hugging Face Jobs cloud GPUs. Covers COCO-format dataset preparation, Albumentations augmentation, mAP/mAR evaluation, accuracy metrics, SAM segmentation with bbox/point prompts, DiceCE loss, hardware selection, cost estimation, Trackio monitoring, and Hub persistence. Use when users mention training object detection, image classification, SAM, SAM2, segmentation, image matting, DETR, D-FINE, RT-DETR, ViT, timm, MobileNet, ResNet, bounding box models, or fine-tuning vision models on Hugging Face Jobs.
 ---
 
 # Vision Model Training on Hugging Face Jobs
 
-Train object detection and image classification models on managed cloud GPUs. No local GPU setup required—results are automatically saved to the Hugging Face Hub.
+Train object detection, image classification, and SAM/SAM2 segmentation models on managed cloud GPUs. No local GPU setup required—results are automatically saved to the Hugging Face Hub.
 
 ## When to Use This Skill
 
 Use this skill when users want to:
 - Fine-tune object detection models (D-FINE, RT-DETR v2, DETR, YOLOS) on cloud GPUs or local
 - Fine-tune image classification models (timm: MobileNetV3, MobileViT, ResNet, ViT/DINOv3, or any Transformers classifier) on cloud GPUs or local
+- Fine-tune SAM or SAM2 models for segmentation / image matting using bbox or point prompts
 - Train bounding-box detectors on custom datasets
 - Train image classifiers on custom datasets
+- Train segmentation models on custom mask datasets with prompts
 - Run vision training jobs on Hugging Face Jobs infrastructure
 - Ensure trained vision models are permanently saved to the Hub
 
@@ -52,6 +54,17 @@ Before starting any training job, verify:
 - Must have an **`image` column** (PIL images) and a **`label` column** (integer class IDs or strings)
 - The label column can be `ClassLabel` type (with names) or plain integers/strings — strings are auto-remapped
 - Common column names auto-detected: `label`, `labels`, `class`, `fine_label`
+- **ALWAYS validate unknown datasets** before GPU training (see Dataset Validation section)
+
+### Dataset Requirements — SAM/SAM2 Segmentation
+- Dataset must exist on Hub
+- Must have an **`image` column** (PIL images) and a **`mask` column** (binary ground-truth segmentation mask)
+- Must have a **prompt** — either:
+  - A **`prompt` column** with JSON containing `{"bbox": [x0,y0,x1,y1]}` or `{"point": [x,y]}`
+  - OR a dedicated **`bbox`** column with `[x0,y0,x1,y1]` values
+  - OR a dedicated **`point`** column with `[x,y]` or `[[x,y],...]` values
+- Bboxes should be in **xyxy** format (absolute pixel coordinates)
+- Example dataset: `merve/MicroMat-mini` (image matting with bbox prompts)
 - **ALWAYS validate unknown datasets** before GPU training (see Dataset Validation section)
 
 ### Critical Settings
@@ -109,7 +122,7 @@ Training Progress:
 - [ ] Step 1: Verify prerequisites (account, token, dataset)
 - [ ] Step 2: Validate dataset format (run dataset_inspector.py)
 - [ ] Step 3: Ask user about dataset size and validation split
-- [ ] Step 4: Prepare training script (OD: scripts/object_detection_training.py, IC: scripts/image_classification_training.py)
+- [ ] Step 4: Prepare training script (OD: scripts/object_detection_training.py, IC: scripts/image_classification_training.py, SAM: scripts/sam_segmentation_training.py)
 - [ ] Step 5: Save script locally, submit job, and report details
 ```
 
@@ -163,7 +176,7 @@ AskUserQuestion({
 
 **Step 4: Prepare training script**
 
-For object detection, use [scripts/object_detection_training.py](scripts/object_detection_training.py) as the production-ready template. For image classification, use [scripts/image_classification_training.py](scripts/image_classification_training.py). Both scripts use `HfArgumentParser` — all configuration is passed via CLI arguments in `script_args`, NOT by editing Python variables. For timm model details, see [references/timm_trainer.md](references/timm_trainer.md).
+For object detection, use [scripts/object_detection_training.py](scripts/object_detection_training.py) as the production-ready template. For image classification, use [scripts/image_classification_training.py](scripts/image_classification_training.py). For SAM/SAM2 segmentation, use [scripts/sam_segmentation_training.py](scripts/sam_segmentation_training.py). All scripts use `HfArgumentParser` — all configuration is passed via CLI arguments in `script_args`, NOT by editing Python variables. For timm model details, see [references/timm_trainer.md](references/timm_trainer.md). For SAM2 training details, see [references/finetune_sam2_trainer.md](references/finetune_sam2_trainer.md).
 
 **Step 5: Save script, submit job, and report**
 
@@ -272,6 +285,17 @@ Required flags for image classification:
 --do_eval
 ```
 
+Required flags for SAM/SAM2 segmentation:
+
+```
+--remove_unused_columns False       # MUST: preserves input_boxes/input_points
+--push_to_hub                       # MUST: environment is ephemeral
+--hub_model_id username/model-name
+--do_train
+--prompt_type bbox                  # or "point"
+--dataloader_pin_memory False       # MUST: avoids pin_memory issues with custom collator
+```
+
 ### 5. Timeout management
 
 Default 30 min is TOO SHORT for object detection. Set minimum 2-4 hours. Add 30% buffer for model loading, preprocessing, and Hub push.
@@ -317,9 +341,23 @@ All `timm/` models work out of the box via `AutoModelForImageClassification` (lo
 
 Start with `timm/mobilenetv3_small_100.lamb_in1k` for fast iteration. Move to `timm/resnet50.a1_in1k` or `timm/vit_base_patch16_dinov3.lvd1689m` for better accuracy.
 
+### Recommended SAM/SAM2 segmentation models
+
+| Model | Params | Use case |
+|-------|--------|----------|
+| `facebook/sam2.1-hiera-tiny` | 38.9M | Fastest SAM2 — good for quick experiments |
+| `facebook/sam2.1-hiera-small` | 46.0M | Best starting point — good quality/speed balance |
+| `facebook/sam2.1-hiera-base-plus` | 80.8M | Higher capacity for complex segmentation |
+| `facebook/sam2.1-hiera-large` | 224.4M | Best SAM2 accuracy — requires more VRAM |
+| `facebook/sam-vit-base` | 93.7M | Original SAM — ViT-B backbone |
+| `facebook/sam-vit-large` | 312.3M | Original SAM — ViT-L backbone |
+| `facebook/sam-vit-huge` | 641.1M | Original SAM — ViT-H, best SAM v1 accuracy |
+
+Start with `facebook/sam2.1-hiera-small` for fast iteration. SAM2 models are generally more efficient than SAM v1 at similar quality. Only the mask decoder is trained by default (vision and prompt encoders are frozen).
+
 ### Hardware recommendation
 
-All recommended models are under 100M params — **`t4-small` (16 GB VRAM, $0.40/hr) is sufficient for all of them.** Image classification models are generally smaller and faster than object detection models — `t4-small` handles even ViT-Base comfortably. Only upgrade if you hit OOM from large batch sizes — reduce batch size first before switching hardware. Common upgrade path: `t4-small` → `l4x1` ($0.80/hr, 24 GB) → `a10g-large` ($1.50/hr, 24 GB).
+All recommended OD and IC models are under 100M params — **`t4-small` (16 GB VRAM, $0.40/hr) is sufficient for all of them.** Image classification models are generally smaller and faster than object detection models — `t4-small` handles even ViT-Base comfortably. For SAM2 models up to `hiera-base-plus`, `t4-small` is sufficient since only the mask decoder is trained. For `sam2.1-hiera-large` or SAM v1 models, use `l4x1` or `a10g-large`. Only upgrade if you hit OOM from large batch sizes — reduce batch size first before switching hardware. Common upgrade path: `t4-small` → `l4x1` ($0.80/hr, 24 GB) → `a10g-large` ($1.50/hr, 24 GB).
 
 For full hardware flavor list: refer to the `hugging-face-jobs` skill. For cost estimation: run `scripts/estimate_cost.py`.
 
@@ -427,6 +465,59 @@ print(f"Job ID: {job_info.id}")
 - `--train_val_split` — fraction to split for validation (default 0.15), set if dataset lacks a validation split
 - `--max_train_samples` / `--max_eval_samples` — truncate for quick tests
 
+## Quick start — SAM/SAM2 Segmentation
+
+```python
+SAM_SCRIPT_ARGS = [
+    "--model_name_or_path", "facebook/sam2.1-hiera-small",
+    "--dataset_name", "merve/MicroMat-mini",
+    "--prompt_type", "bbox",
+    "--prompt_column_name", "prompt",
+    "--output_dir", "sam2-finetuned",
+    "--num_train_epochs", "30",
+    "--per_device_train_batch_size", "4",
+    "--learning_rate", "1e-5",
+    "--logging_steps", "1",
+    "--save_strategy", "epoch",
+    "--save_total_limit", "2",
+    "--remove_unused_columns", "False",
+    "--dataloader_pin_memory", "False",
+    "--push_to_hub",
+    "--hub_model_id", "username/sam2-finetuned",
+    "--do_train",
+    "--report_to", "trackio",
+]
+```
+
+```python
+from huggingface_hub import HfApi, get_token
+api = HfApi()
+job_info = api.run_uv_job(
+    script="scripts/sam_segmentation_training.py",
+    script_args=SAM_SCRIPT_ARGS,
+    flavor="t4-small",
+    timeout=7200,
+    env={"PYTHONUNBUFFERED": "1"},
+    secrets={"HF_TOKEN": get_token()},
+)
+print(f"Job ID: {job_info.id}")
+```
+
+### Key SAM `script_args`
+
+- `--model_name_or_path` — SAM or SAM2 model (see model table above); auto-detects SAM vs SAM2
+- `--dataset_name` — the Hub dataset ID (e.g., `"merve/MicroMat-mini"`)
+- `--prompt_type` — `"bbox"` or `"point"` — type of prompt in the dataset
+- `--prompt_column_name` — column with JSON-encoded prompts (default: `"prompt"`)
+- `--bbox_column_name` — dedicated bbox column (alternative to JSON prompt column)
+- `--point_column_name` — dedicated point column (alternative to JSON prompt column)
+- `--mask_column_name` — column with ground-truth masks (default: `"mask"`)
+- `--hub_model_id` — `"username/model-name"` for Hub persistence
+- `--num_train_epochs` — 20-30 typical for SAM fine-tuning
+- `--per_device_train_batch_size` — 2-4 (SAM models use significant memory)
+- `--freeze_vision_encoder` / `--freeze_prompt_encoder` — freeze encoder weights (default: both frozen, only mask decoder trains)
+- `--train_val_split` — fraction to split for validation (default 0.1)
+
 ## Checking job status
 
 **MCP tool (if available):**
@@ -474,10 +565,12 @@ For comprehensive troubleshooting: see [references/reliability_principles.md](re
 
 - [scripts/object_detection_training.py](scripts/object_detection_training.py) — Production-ready object detection training script
 - [scripts/image_classification_training.py](scripts/image_classification_training.py) — Production-ready image classification training script (supports timm models)
-- [scripts/dataset_inspector.py](scripts/dataset_inspector.py) — Validate dataset format for both OD and classification
-- [scripts/estimate_cost.py](scripts/estimate_cost.py) — Estimate training costs for any vision model
+- [scripts/sam_segmentation_training.py](scripts/sam_segmentation_training.py) — Production-ready SAM/SAM2 segmentation training script (bbox & point prompts)
+- [scripts/dataset_inspector.py](scripts/dataset_inspector.py) — Validate dataset format for OD, classification, and SAM segmentation
+- [scripts/estimate_cost.py](scripts/estimate_cost.py) — Estimate training costs for any vision model (includes SAM/SAM2)
 - [references/object_detection_training_notebook.md](references/object_detection_training_notebook.md) — Object detection training workflow, augmentation strategies, and training patterns
 - [references/image_classification_training_notebook.md](references/image_classification_training_notebook.md) — Image classification training workflow with ViT, preprocessing, and evaluation
+- [references/finetune_sam2_trainer.md](references/finetune_sam2_trainer.md) — SAM2 fine-tuning walkthrough with MicroMat dataset, DiceCE loss, and Trainer integration
 - [references/timm_trainer.md](references/timm_trainer.md) — Using timm models with HF Trainer (TimmWrapper, transforms, full example)
 - [references/hub_saving.md](references/hub_saving.md) — Detailed Hub persistence guide and verification checklist
 - [references/reliability_principles.md](references/reliability_principles.md) — Failure prevention principles from production experience
@@ -493,5 +586,7 @@ For comprehensive troubleshooting: see [references/reliability_principles.md](re
 - [HF Jobs CLI Reference](https://huggingface.co/docs/huggingface_hub/guides/cli#hf-jobs) — Command line interface
 - [Object Detection Models](https://huggingface.co/models?pipeline_tag=object-detection)
 - [Image Classification Models](https://huggingface.co/models?pipeline_tag=image-classification)
+- [SAM2 Model Documentation](https://huggingface.co/docs/transformers/model_doc/sam2)
+- [SAM Model Documentation](https://huggingface.co/docs/transformers/model_doc/sam)
 - [Object Detection Datasets](https://huggingface.co/datasets?task_categories=task_categories:object-detection)
 - [Image Classification Datasets](https://huggingface.co/datasets?task_categories=task_categories:image-classification)

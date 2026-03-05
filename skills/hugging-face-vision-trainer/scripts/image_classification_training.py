@@ -252,7 +252,9 @@ def main():
                 lambda ex: {label_col: label2id[ex[label_col]]},
             )
 
-    # --- Train/val split ---
+    # --- Shuffle + Train/val split ---
+    dataset["train"] = dataset["train"].shuffle(seed=training_args.seed)
+
     data_args.train_val_split = None if "validation" in dataset else data_args.train_val_split
     if isinstance(data_args.train_val_split, float) and data_args.train_val_split > 0.0:
         split = dataset["train"].train_test_split(data_args.train_val_split, seed=training_args.seed)
