@@ -19,4 +19,6 @@ IMPORTANT: You MUST read the SKILL.md file whenever the description of the skill
 
 Paths referenced within SKILL folders are relative to that SKILL. For example the hf-datasets `scripts/example.py` would be referenced as `hf-datasets/scripts/example.py`. 
 
+OpenCode compatibility: this repository also ships `opencode.json` at repo root. It points OpenCode to `skills/`, `agents/AGENTS.md`, and MCP servers so OpenCode can load all skills consistently with other agents.
+
 </skills>

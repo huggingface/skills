@@ -16,7 +16,7 @@ In practice, skills are self-contained folders that package instructions, script
 
 ## Installation
 
-Hugging Face skills are compatible with Claude Code, Codex, Gemini CLI, and Cursor.
+Hugging Face skills are compatible with Claude Code, Codex, Gemini CLI, Cursor, and OpenCode.
 
 ### Claude Code
 
@@ -45,6 +45,18 @@ For example:
 2. Once a skill is available in one of those locations, Codex will discover it using the Agent Skills standard and load the `SKILL.md` instructions when it decides to use that skill or when you explicitly invoke it.
 
 3. If your Codex setup still relies on `AGENTS.md`, you can use the generated [`agents/AGENTS.md`](agents/AGENTS.md) file in this repo as a fallback bundle of instructions.
+
+### OpenCode
+
+1. This repo includes an OpenCode config file at [`opencode.json`](opencode.json), generated from the same metadata sources as other agent integrations.
+
+2. Install or reference this repository in OpenCode using your normal extension/plugin workflow, then point OpenCode to the repo root so it can read:
+   - `opencode.json`
+   - `skills/`
+   - `agents/AGENTS.md`
+   - `.mcp.json`
+
+3. For field-level details and validation workflow, see [`docs/opencode.md`](docs/opencode.md).
 
 ### Gemini CLI
 
@@ -78,6 +90,8 @@ For contributors, regenerate manifests with:
 ```bash
 ./scripts/publish.sh
 ```
+
+This also regenerates `opencode.json`.
 
 ## Skills
 
