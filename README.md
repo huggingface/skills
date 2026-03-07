@@ -141,3 +141,4 @@ The `.claude-plugin/marketplace.json` file lists skills with human-readable desc
 ### Additional references
 - Browse the latest instructions, scripts, and templates directly at [huggingface/skills](https://github.com/huggingface/skills).
 - Review Hugging Face documentation for the specific libraries or workflows you reference inside each skill.
+- Explore cross-agent community examples such as [NoizAI/skills](https://github.com/NoizAI/skills) for voice workflow patterns.
