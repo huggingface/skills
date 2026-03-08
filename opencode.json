@@ -1,0 +1,96 @@
+{
+  "name": "huggingface-skills",
+  "description": "Agent Skills for AI/ML tasks including dataset creation, model training, evaluation, and research paper publishing on Hugging Face Hub",
+  "version": "1.0.0",
+  "context": {
+    "agents": "agents/AGENTS.md",
+    "skills": "skills/"
+  },
+  "mcpServers": {
+    "huggingface-skills": {
+      "url": "https://huggingface.co/mcp?login"
+    }
+  },
+  "skills": [
+    "hf-cli",
+    "hugging-face-dataset-viewer",
+    "hugging-face-datasets",
+    "hugging-face-evaluation",
+    "hugging-face-jobs",
+    "hugging-face-model-trainer",
+    "hugging-face-paper-publisher",
+    "hugging-face-tool-builder",
+    "hugging-face-trackio",
+    "gradio"
+  ],
+  "skillDetails": [
+    {
+      "name": "hf-cli",
+      "path": "skills/hf-cli",
+      "description": "\"Hugging Face Hub CLI (`hf`) for downloading, uploading, and managing repositories, models, datasets, and Spaces on the Hugging Face Hub. Replaces now deprecated `huggingface-cli` command.\""
+    },
+    {
+      "name": "hugging-face-dataset-viewer",
+      "path": "skills/hugging-face-dataset-viewer",
+      "description": "Use this skill for Hugging Face Dataset Viewer API workflows that fetch subset/split metadata, paginate rows, search text, apply filters, download parquet URLs, and read size or statistics."
+    },
+    {
+      "name": "hugging-face-datasets",
+      "path": "skills/hugging-face-datasets",
+      "description": "Create and manage datasets on Hugging Face Hub. Supports initializing repos, defining configs/system prompts, streaming row updates, and SQL-based dataset querying/transformation. Designed to work alongside HF MCP server for comprehensive dataset workflows."
+    },
+    {
+      "name": "hugging-face-evaluation",
+      "path": "skills/hugging-face-evaluation",
+      "description": "Add and manage evaluation results in Hugging Face model cards. Supports extracting eval tables from README content, importing scores from Artificial Analysis API, and running custom model evaluations with vLLM/lighteval. Works with the model-index metadata format."
+    },
+    {
+      "name": "hugging-face-jobs",
+      "path": "skills/hugging-face-jobs",
+      "description": "This skill should be used when users want to run any workload on Hugging Face Jobs infrastructure. Covers UV scripts, Docker-based jobs, hardware selection, cost estimation, authentication with tokens, secrets management, timeout configuration, and result persistence. Designed for general-purpose compute workloads including data processing, inference, experiments, batch jobs, and any Python-based tasks. Should be invoked for tasks involving cloud compute, GPU workloads, or when users mention running jobs on Hugging Face infrastructure without local setup."
+    },
+    {
+      "name": "hugging-face-model-trainer",
+      "path": "skills/hugging-face-model-trainer",
+      "description": "This skill should be used when users want to train or fine-tune language models using TRL (Transformer Reinforcement Learning) on Hugging Face Jobs infrastructure. Covers SFT, DPO, GRPO and reward modeling training methods, plus GGUF conversion for local deployment. Includes guidance on the TRL Jobs package, UV scripts with PEP 723 format, dataset preparation and validation, hardware selection, cost estimation, Trackio monitoring, Hub authentication, and model persistence. Should be invoked for tasks involving cloud GPU training, GGUF conversion, or when users mention training on Hugging Face Jobs without local GPU setup."
+    },
+    {
+      "name": "hugging-face-paper-publisher",
+      "path": "skills/hugging-face-paper-publisher",
+      "description": "Publish and manage research papers on Hugging Face Hub. Supports creating paper pages, linking papers to models/datasets, claiming authorship, and generating professional markdown-based research articles."
+    },
+    {
+      "name": "hugging-face-tool-builder",
+      "path": "skills/hugging-face-tool-builder",
+      "description": "Use this skill when the user wants to build tool/scripts or achieve a task where using data from the Hugging Face API would help. This is especially useful when chaining or combining API calls or the task will be repeated/automated. This Skill creates a reusable script to fetch, enrich or process data."
+    },
+    {
+      "name": "hugging-face-trackio",
+      "path": "skills/hugging-face-trackio",
+      "description": "Track and visualize ML training experiments with Trackio. Use when logging metrics during training (Python API), firing alerts for training diagnostics, or retrieving/analyzing logged metrics (CLI). Supports real-time dashboard visualization, alerts with webhooks, HF Space syncing, and JSON output for automation."
+    },
+    {
+      "name": "gradio",
+      "path": "skills/huggingface-gradio",
+      "description": "Build Gradio web UIs and demos in Python. Use when creating or editing Gradio apps, components, event listeners, layouts, or chatbots."
+    }
+  ],
+  "metadata": {
+    "author": {
+      "name": "Hugging Face"
+    },
+    "homepage": "https://github.com/huggingface/skills",
+    "repository": "https://github.com/huggingface/skills",
+    "license": "Apache-2.0",
+    "keywords": [
+      "huggingface",
+      "machine-learning",
+      "datasets",
+      "training",
+      "evaluation",
+      "papers",
+      "fine-tuning",
+      "llm"
+    ]
+  }
+}
