@@ -1,3 +1,8 @@
+---
+name: huggingface-skills
+description: Hugging Face Agent Skills - specialized instructions and domain-specific knowledge for AI agents
+---
+
 <skills>
 
 You have additional SKILLs documented in directories containing a "SKILL.md" file.
