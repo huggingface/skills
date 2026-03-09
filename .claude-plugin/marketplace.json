@@ -67,6 +67,12 @@
       "source": "./skills/huggingface-gradio",
       "skills": "./",
       "description": "Build Gradio web UIs and demos in Python. Use when creating or editing Gradio apps, components, event listeners, layouts, or chatbots."
+    },
+    {
+      "name": "transformers-js",
+      "source": "./skills/transformers.js",
+      "skills": "./",
+      "description": "Run state-of-the-art machine learning models directly in JavaScript/TypeScript for NLP, computer vision, audio processing, and multimodal tasks. Works in Node.js and browsers with WebGPU/WASM using Hugging Face models."
     }
   ]
 }
