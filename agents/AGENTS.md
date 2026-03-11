@@ -4,7 +4,7 @@ You have additional SKILLs documented in directories containing a "SKILL.md" fil
 
 These skills are:
  - gradio -> "skills/huggingface-gradio/SKILL.md"
- - hugging-face-cli -> "skills/hugging-face-cli/SKILL.md"
+ - hf-cli -> "skills/hf-cli/SKILL.md"
  - hugging-face-dataset-viewer -> "skills/hugging-face-dataset-viewer/SKILL.md"
  - hugging-face-datasets -> "skills/hugging-face-datasets/SKILL.md"
  - hugging-face-evaluation -> "skills/hugging-face-evaluation/SKILL.md"
@@ -14,13 +14,15 @@ These skills are:
  - hugging-face-paper-publisher -> "skills/hugging-face-paper-publisher/SKILL.md"
  - hugging-face-tool-builder -> "skills/hugging-face-tool-builder/SKILL.md"
  - hugging-face-trackio -> "skills/hugging-face-trackio/SKILL.md"
+ - hugging-face-vision-trainer -> "skills/hugging-face-vision-trainer/SKILL.md"
+ - transformers-js -> "skills/transformers.js/SKILL.md"
 
 IMPORTANT: You MUST read the SKILL.md file whenever the description of the skills matches the user intent, or may help accomplish their task. 
 
 <available_skills>
 
 gradio: `Build Gradio web UIs and demos in Python. Use when creating or editing Gradio apps, components, event listeners, layouts, or chatbots.`
-hugging-face-cli: `Execute Hugging Face Hub operations using the `hf` CLI. Use when the user needs to download models/datasets/spaces, upload files to Hub repositories, create repos, manage local cache, or run compute jobs on HF infrastructure. Covers authentication, file transfers, repository creation, cache operations, and cloud compute.`
+hf-cli: `"Hugging Face Hub CLI (`hf`) for downloading, uploading, and managing repositories, models, datasets, and Spaces on the Hugging Face Hub. Replaces now deprecated `huggingface-cli` command."`
 hugging-face-dataset-viewer: `Use this skill for Hugging Face Dataset Viewer API workflows that fetch subset/split metadata, paginate rows, search text, apply filters, download parquet URLs, and read size or statistics.`
 hugging-face-datasets: `Create and manage datasets on Hugging Face Hub. Supports initializing repos, defining configs/system prompts, streaming row updates, and SQL-based dataset querying/transformation. Designed to work alongside HF MCP server for comprehensive dataset workflows.`
 hugging-face-evaluation: `Add and manage evaluation results in Hugging Face model cards. Supports extracting eval tables from README content, importing scores from Artificial Analysis API, and running custom model evaluations with vLLM/lighteval. Works with the model-index metadata format.`
@@ -30,6 +32,8 @@ hugging-face-object-detection-trainer: `Trains and fine-tunes object detection m
 hugging-face-paper-publisher: `Publish and manage research papers on Hugging Face Hub. Supports creating paper pages, linking papers to models/datasets, claiming authorship, and generating professional markdown-based research articles.`
 hugging-face-tool-builder: `Use this skill when the user wants to build tool/scripts or achieve a task where using data from the Hugging Face API would help. This is especially useful when chaining or combining API calls or the task will be repeated/automated. This Skill creates a reusable script to fetch, enrich or process data.`
 hugging-face-trackio: `Track and visualize ML training experiments with Trackio. Use when logging metrics during training (Python API), firing alerts for training diagnostics, or retrieving/analyzing logged metrics (CLI). Supports real-time dashboard visualization, alerts with webhooks, HF Space syncing, and JSON output for automation.`
+hugging-face-vision-trainer: `Trains and fine-tunes vision models for object detection (D-FINE, RT-DETR v2, DETR, YOLOS), image classification (timm models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3 — plus any Transformers classifier), and SAM/SAM2 segmentation using Hugging Face Transformers on Hugging Face Jobs cloud GPUs. Covers COCO-format dataset preparation, Albumentations augmentation, mAP/mAR evaluation, accuracy metrics, SAM segmentation with bbox/point prompts, DiceCE loss, hardware selection, cost estimation, Trackio monitoring, and Hub persistence. Use when users mention training object detection, image classification, SAM, SAM2, segmentation, image matting, DETR, D-FINE, RT-DETR, ViT, timm, MobileNet, ResNet, bounding box models, or fine-tuning vision models on Hugging Face Jobs.`
+transformers-js: `Use Transformers.js to run state-of-the-art machine learning models directly in JavaScript/TypeScript. Supports NLP (text classification, translation, summarization), computer vision (image classification, object detection), audio (speech recognition, audio classification), and multimodal tasks. Works in Node.js and browsers (with WebGPU/WASM) using pre-trained models from Hugging Face Hub.`
 </available_skills>
 
 Paths referenced within SKILL folders are relative to that SKILL. For example the hf-datasets `scripts/example.py` would be referenced as `hf-datasets/scripts/example.py`. 

@@ -2,7 +2,7 @@
 
 Hugging Face Skills are definitions for AI/ML tasks like dataset creation, model training, and evaluation. They are interoperable with all major coding agent tools like OpenAI Codex, Anthropic's Claude Code, Google DeepMind's Gemini CLI, and Cursor.
 
-The Skills in this repository follow the standardized format [Agent Skill](https://agentskills.io/home) format.
+The skills in this repository follow the standardized [Agent Skills](https://agentskills.io/home) format.
 
 ## How do Skills work?
 
@@ -35,7 +35,7 @@ Hugging Face skills are compatible with Claude Code, Codex, Gemini CLI, and Curs
 For example:  
 
 ```
-/plugin install hugging-face-cli@huggingface/skills
+/plugin install hf-cli@huggingface/skills
 ```
 
 ### Codex
@@ -90,7 +90,7 @@ This repository contains a few skills to get you started. You can also contribut
 | Name | Description | Documentation |
 |------|-------------|---------------|
 | `gradio` | Build Gradio web UIs and demos in Python. Use when creating or editing Gradio apps, components, event listeners, layouts, or chatbots. | [SKILL.md](skills/huggingface-gradio/SKILL.md) |
-| `hugging-face-cli` | Execute Hugging Face Hub operations using the hf CLI. Download models/datasets, upload files, manage repos, and run cloud compute jobs. | [SKILL.md](skills/hugging-face-cli/SKILL.md) |
+| `hf-cli` | Execute Hugging Face Hub operations using the hf CLI. Download models/datasets, upload files, manage repos, and run cloud compute jobs. | [SKILL.md](skills/hf-cli/SKILL.md) |
 | `hugging-face-dataset-viewer` | Explore, query, and extract data from any Hugging Face dataset using the Dataset Viewer REST API and npx tooling. Zero Python dependencies — covers split/config discovery, row pagination, text search, filtering, SQL via parquetlens, and dataset upload via CLI. | [SKILL.md](skills/hugging-face-dataset-viewer/SKILL.md) |
 | `hugging-face-datasets` | Create and manage datasets on Hugging Face Hub. Supports initializing repos, defining configs/system prompts, streaming row updates, and SQL-based dataset querying/transformation. | [SKILL.md](skills/hugging-face-datasets/SKILL.md) |
 | `hugging-face-evaluation` | Add and manage evaluation results in Hugging Face model cards. Supports extracting eval tables from README content, importing scores from Artificial Analysis API, and running custom evaluations with vLLM/lighteval. | [SKILL.md](skills/hugging-face-evaluation/SKILL.md) |
@@ -100,6 +100,8 @@ This repository contains a few skills to get you started. You can also contribut
 | `hugging-face-paper-publisher` | Publish and manage research papers on Hugging Face Hub. Supports creating paper pages, linking papers to models/datasets, claiming authorship, and generating professional markdown-based research articles. | [SKILL.md](skills/hugging-face-paper-publisher/SKILL.md) |
 | `hugging-face-tool-builder` | Build reusable scripts for Hugging Face API operations. Useful for chaining API calls or automating repeated tasks. | [SKILL.md](skills/hugging-face-tool-builder/SKILL.md) |
 | `hugging-face-trackio` | Track and visualize ML training experiments with Trackio. Log metrics via Python API and retrieve them via CLI. Supports real-time dashboards synced to HF Spaces. | [SKILL.md](skills/hugging-face-trackio/SKILL.md) |
+| `hugging-face-vision-trainer` | Train and fine-tune object detection models (RTDETRv2, YOLOS, DETR and others) and image classification models (timm and transformers models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3) using Transformers Trainer API on Hugging Face Jobs infrastructure or locally. Includes COCO dataset format support, Albumentations augmentation, mAP/mAR metrics, trackio tracking, hardware selection, and Hub persistence. | [SKILL.md](skills/hugging-face-vision-trainer/SKILL.md) |
+| `transformers-js` | Run state-of-the-art machine learning models directly in JavaScript/TypeScript for NLP, computer vision, audio processing, and multimodal tasks. Works in Node.js and browsers with WebGPU/WASM using Hugging Face models. | [SKILL.md](skills/transformers.js/SKILL.md) |
 <!-- END_SKILLS_TABLE -->
 
 ### Using skills in your coding agent

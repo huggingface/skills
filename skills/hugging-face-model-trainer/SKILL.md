@@ -683,6 +683,7 @@ Add to PEP 723 header:
 - `references/hardware_guide.md` - Hardware specs and selection
 - `references/hub_saving.md` - Hub authentication troubleshooting
 - `references/troubleshooting.md` - Common issues and solutions
+- `references/local_training_macos.md` - Local training on macOS
 
 ### Scripts (In This Skill)
 - `scripts/train_sft_example.py` - Production SFT template
