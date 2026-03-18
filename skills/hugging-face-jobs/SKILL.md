@@ -562,24 +562,23 @@ Fix:
 - Push to the Hub or another storage backend
 
 ### Scheduled Job Issues
-
 Symptom: the recurring run does not fire or no longer runs.
-
 Fix:
 - Check `hf jobs scheduled ps -a`
 - Inspect the scheduled job configuration
 - Resume it if it was suspended
 
 ### Webhook Issues
-
 Symptom: repo events happen but the Job is not triggered.
-
 Fix:
 - Verify the webhook watches the correct user or org
 - Confirm the right event domains are configured
 - Check the target Job and any secret or auth requirements
 
 ## Official References
+- [Jobs Overview](https://huggingface.co/docs/hub/jobs-overview)
+- [Quickstart](https://huggingface.co/docs/hub/jobs-quickstart)
+- [Pricing and Billing](https://huggingface.co/docs/hub/jobs-pricing)
 - [Examples & Tutorials](https://huggingface.co/docs/hub/jobs-examples)
 - [Manage Jobs](https://huggingface.co/docs/hub/jobs-manage)
 - [Configuration](https://huggingface.co/docs/hub/jobs-configuration)
@@ -587,7 +586,6 @@ Fix:
 - [Webhooks Automation](https://huggingface.co/docs/hub/jobs-webhooks)
 - [Jobs Reference](https://huggingface.co/docs/hub/jobs-reference)
 - [Popular Images](https://huggingface.co/docs/hub/jobs-popular-images)
-
 ## Key Takeaways
 1. Prefer `hf jobs uv run` for most Python jobs.
 2. Use `hf jobs run` for custom containers or non-Python commands.
