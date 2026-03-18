@@ -29,9 +29,7 @@ When helping with Hugging Face Jobs:
 Keep answers short and practical. Prefer a concrete command the user can run.
 
 ## Overview
-
 Hugging Face Jobs runs compute on managed infrastructure with a UV-like or Docker-like interface.
-
 - UV mode: `hf jobs uv run ...`
 - Docker mode: `hf jobs run ...`
 - Monitoring: `hf jobs ps`, `hf jobs logs`, `hf jobs stats`, `hf jobs inspect`
@@ -44,10 +42,13 @@ Jobs are a good fit for:
 - Synthetic data generation
 - Evaluation runs
 
+## Python SDK
+Jobs can also be run and managed from Python via `huggingface_hub`.
+Useful helpers: `run_job`, `run_uv_job`, `inspect_job`, `fetch_job_logs`, `fetch_job_metrics`, and `cancel_job`.
+Docs: [Run and manage Jobs](https://huggingface.co/docs/huggingface_hub/guides/jobs)
+
 ## Prerequisites
-
 Jobs require Hugging Face authentication.
-
 Install the CLI:
 
 ```bash
@@ -586,6 +587,7 @@ Fix:
 - [Webhooks Automation](https://huggingface.co/docs/hub/jobs-webhooks)
 - [Jobs Reference](https://huggingface.co/docs/hub/jobs-reference)
 - [Popular Images](https://huggingface.co/docs/hub/jobs-popular-images)
+
 ## Key Takeaways
 1. Prefer `hf jobs uv run` for most Python jobs.
 2. Use `hf jobs run` for custom containers or non-Python commands.
