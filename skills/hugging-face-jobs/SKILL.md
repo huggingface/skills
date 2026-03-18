@@ -18,17 +18,18 @@ Use this skill when users want to:
 
 When helping with Hugging Face Jobs:
 
-1. Default to the `hf jobs` CLI.
+1. Default to the `hf jobs` CLI. Only use the `huggingface_hub` Python SDK when the user explicitly requests it.
 2. Use `hf jobs uv run` for most Python workloads.
 3. Use `hf jobs run` for non-Python workloads or custom Docker images.
 4. Always set a timeout for real workloads. The default is 30 minutes.
 5. Jobs are ephemeral. If outputs are not uploaded elsewhere, they are lost.
-6. If the job needs Hub access, pass `--secrets HF_TOKEN`.
+6. If the job needs Hub access, pass `--secrets HF_TOKEN`. If you don't have a `HF_TOKEN` with the appropriate permissions available in the environment, ask the user for it.
 7. If the user wants org billing or org-owned jobs, add `--namespace <org>`.
 
 Keep answers short and practical. Prefer a concrete command the user can run.
 
 ## Overview
+
 Hugging Face Jobs runs compute on managed infrastructure with a UV-like or Docker-like interface.
 - UV mode: `hf jobs uv run ...`
 - Docker mode: `hf jobs run ...`
@@ -43,13 +44,15 @@ Jobs are a good fit for:
 - Evaluation runs
 
 ## Python SDK
+
 Jobs can also be run and managed from Python via `huggingface_hub`.
+
 Useful helpers: `run_job`, `run_uv_job`, `inspect_job`, `fetch_job_logs`, `fetch_job_metrics`, and `cancel_job`.
 Docs: [Run and manage Jobs](https://huggingface.co/docs/huggingface_hub/guides/jobs)
 
 ## Prerequisites
-Jobs require Hugging Face authentication.
-Install the CLI:
+
+Jobs require Hugging Face authentication. Install the CLI:
 
 ```bash
 curl -LsSf https://hf.co/cli/install.sh | bash
@@ -163,7 +166,7 @@ hf jobs uv run \
   train.py
 ```
 
-Use `--secrets HF_TOKEN` when the script pushes a model or dataset, or reads private Hub assets. Ask the user in case you don't have a `HF_TOKEN` with the appropriate read or write access.
+Use `--secrets HF_TOKEN` when the script pushes a model or dataset, or reads private Hub assets. Ask the user in case you don't have a `HF_TOKEN` with the appropriate read or write access in your environment.
 
 ### Custom UV Image
 
@@ -495,19 +498,80 @@ hf jobs uv run --image huggingface/trl --flavor a100-large --secrets HF_TOKEN tr
 
 ## Local Scripts in This Skill
 
-This skill includes example scripts in `scripts/`:
+This skill includes example scripts in `scripts/`. Treat them like any other local script and prefer them when the user asks for a workflow that already matches one of these demos.
 
-- `scripts/generate-responses.py`
-- `scripts/cot-self-instruct.py`
-- `scripts/finepdfs-stats.py`
+### `scripts/generate-responses.py`
 
-Treat them like any other local script:
+Use this when the user wants to run large-scale batch inference over a Hub dataset and save generated responses back to a new dataset repo.
+
+- Purpose: load a dataset from the Hub, format prompts from a chat or prompt column, generate responses with vLLM, and push the enriched dataset plus a dataset card back to the Hub
+- Key dependencies: `vllm`, `datasets`, `transformers`, `torch`, `huggingface-hub`
+- Hardware: GPU required; prefer multi-GPU flavors such as `l4x4` or larger GPUs for big models
+- Key arguments: positional `src_dataset_hub_id` and `output_dataset_hub_id`, `--model-id`, `--messages-column`, `--prompt-column`, `--output-column`, `--temperature`, `--max-tokens`, `--tensor-parallel-size`, `--max-samples`
+
+Recommended HF Jobs command:
 
 ```bash
-hf jobs uv run --timeout 2h --flavor cpu-upgrade scripts/finepdfs-stats.py
+hf jobs uv run \
+  --flavor l4x4 \
+  --timeout 4h \
+  --secrets HF_TOKEN \
+  scripts/generate-responses.py \
+  username/input-dataset \
+  username/output-dataset \
+  --model-id Qwen/Qwen3-30B-A3B-Instruct-2507 \
+  --messages-column messages \
+  --temperature 0.7 \
+  --max-tokens 4096
 ```
 
-If a script writes back to the Hub, add `--secrets HF_TOKEN`.
+### `scripts/cot-self-instruct.py`
+
+Use this when the user wants to generate synthetic reasoning or instruction data from a seed dataset and optionally filter the outputs for quality.
+
+- Purpose: implement CoT-Self-Instruct for synthetic data generation, supporting reasoning Q&A generation, instruction prompt generation, and post-generation filtering
+- Key dependencies: `vllm`, `datasets`, `transformers`, `torch`, `numpy`, `scikit-learn`, `huggingface-hub`
+- Hardware: GPU required; prefer multi-GPU flavors such as `l4x4`
+- Key arguments: `--seed-dataset`, `--output-dataset`, `--task-type`, `--task-column`, `--generation-model`, `--filter-model`, `--filter-method`, `--num-samples`, `--k-responses`, `--quality-threshold`, `--tensor-parallel-size`
+
+Recommended HF Jobs command:
+
+```bash
+hf jobs uv run \
+  --flavor l4x4 \
+  --timeout 6h \
+  --secrets HF_TOKEN \
+  scripts/cot-self-instruct.py \
+  --seed-dataset davanstrien/s1k-reasoning \
+  --output-dataset username/synthetic-reasoning \
+  --task-type reasoning \
+  --generation-model Qwen/Qwen3-30B-A3B-Thinking-2507 \
+  --filter-method answer-consistency \
+  --num-samples 5000
+```
+
+### `scripts/finepdfs-stats.py`
+
+Use this when the user wants a CPU-friendly analytics job over `HuggingFaceFW/finepdfs-edu` or a similar parquet-backed Hub dataset without downloading everything locally.
+
+- Purpose: compute temporal educational-quality statistics across CommonCrawl dumps with Polars streaming and optionally upload the results to a dataset repo
+- Key dependencies: `polars`, `datasets`, `huggingface-hub`, `ascii-graph`
+- Hardware: CPU is enough; prefer `cpu-upgrade` for larger scans
+- Key arguments: `--source-dataset`, `--lang`, `--all-languages`, `--show-plan`, `--limit`, `--output-repo`, `--output-dir`, `--private`
+
+Recommended HF Jobs command:
+
+```bash
+hf jobs uv run \
+  --flavor cpu-upgrade \
+  --timeout 2h \
+  --secrets HF_TOKEN \
+  -e HF_XET_HIGH_PERFORMANCE=1 \
+  scripts/finepdfs-stats.py \
+  --output-repo username/finepdfs-temporal-stats
+```
+
+If a script reads private Hub assets or writes back to the Hub, add `--secrets HF_TOKEN`.
 
 ## Troubleshooting
 
