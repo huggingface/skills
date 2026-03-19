@@ -89,6 +89,7 @@ This repository contains a few skills to get you started. You can also contribut
 <!-- BEGIN_SKILLS_TABLE -->
 | Name | Description | Documentation |
 |------|-------------|---------------|
+| `civic-mcp-gateway` | Connect AI agents to 85+ tools (Gmail, Google Calendar, PostgreSQL, Slack, and more) through Civic's MCP Gateway with guardrails, scoped permissions, audit trails, and revocable access. | [SKILL.md](skills/civic-mcp-gateway/SKILL.md) |
 | `gradio` | Build Gradio web UIs and demos in Python. Use when creating or editing Gradio apps, components, event listeners, layouts, or chatbots. | [SKILL.md](skills/huggingface-gradio/SKILL.md) |
 | `hf-cli` | Execute Hugging Face Hub operations using the hf CLI. Download models/datasets, upload files, manage repos, and run cloud compute jobs. | [SKILL.md](skills/hf-cli/SKILL.md) |
 | `hugging-face-dataset-viewer` | Explore, query, and extract data from any Hugging Face dataset using the Dataset Viewer REST API and npx tooling. Zero Python dependencies — covers split/config discovery, row pagination, text search, filtering, SQL via parquetlens, and dataset upload via CLI. | [SKILL.md](skills/hugging-face-dataset-viewer/SKILL.md) |

@@ -86,6 +86,12 @@
       "source": "./skills/hugging-face-vision-trainer",
       "skills": "./",
       "description": "Train and fine-tune object detection models (RTDETRv2, YOLOS, DETR and others) and image classification models (timm and transformers models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3) using Transformers Trainer API on Hugging Face Jobs infrastructure or locally. Includes COCO dataset format support, Albumentations augmentation, mAP/mAR metrics, trackio tracking, hardware selection, and Hub persistence."
+    },
+    {
+      "name": "civic-mcp-gateway",
+      "source": "./skills/civic-mcp-gateway",
+      "skills": "./",
+      "description": "Connect AI agents to 85+ tools (Gmail, Google Calendar, PostgreSQL, Slack, and more) through Civic's MCP Gateway with guardrails, scoped permissions, audit trails, and revocable access."
     }
   ]
 }
