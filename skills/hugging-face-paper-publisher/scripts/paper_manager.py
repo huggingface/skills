@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
@@ -23,13 +23,13 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 try:
-    from huggingface_hub import HfApi, hf_hub_download, HfFolder
+    from huggingface_hub import HfApi, hf_hub_download, get_token
     import yaml
     import requests
     from dotenv import load_dotenv
 except ImportError as e:
     print(f"Error: Missing required dependency: {e}")
-    print("Install with: uv add huggingface_hub pyyaml requests python-dotenv")
+    print("Tip: run this script with `uv run scripts/paper_manager.py ...`.")
     sys.exit(1)
 
 # Load environment variables
@@ -41,7 +41,7 @@ class PaperManager:
 
     def __init__(self, hf_token: Optional[str] = None):
         """Initialize Paper Manager with HF token."""
-        self.token = hf_token or os.getenv("HF_TOKEN") or HfFolder.get_token()
+        self.token = hf_token or os.getenv("HF_TOKEN") or get_token()
         if not self.token:
             print("Warning: No HF_TOKEN found. Some operations will fail.")
         self.api = HfApi(token=self.token)

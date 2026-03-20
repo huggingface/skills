@@ -124,12 +124,12 @@ For more detailed results and methodology, see our [paper](link).
 
 ```bash
 # Extract from this example
-python scripts/evaluation_manager.py extract-readme \
+uv run scripts/evaluation_manager.py extract-readme \
   --repo-id "your-username/your-model" \
   --dry-run
 
 # Apply to your model card
-python scripts/evaluation_manager.py extract-readme \
+uv run scripts/evaluation_manager.py extract-readme \
   --repo-id "your-username/your-model" \
   --task-type "text-generation"
 ```

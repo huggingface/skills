@@ -17,8 +17,6 @@ This document provides practical examples for both methods of adding evaluations
 # Navigate to skill directory
 cd hf_evaluation_skill
 
-# Install dependencies
-uv add huggingface_hub python-dotenv pyyaml requests
 
 # Configure environment variables
 cp examples/.env.example .env
@@ -34,8 +32,7 @@ AA_API_KEY=aa_your_api_key_here  # Optional for AA imports
 ### Verify Installation
 
 ```bash
-cd scripts
-python3 test_extraction.py
+uv run scripts/test_extraction.py
 ```
 
 ## Method 1: Extract from README
@@ -46,7 +43,7 @@ Extract evaluation tables from your model's existing README.
 
 ```bash
 # Preview what will be extracted (dry run)
-python3 scripts/evaluation_manager.py extract-readme \
+uv run scripts/evaluation_manager.py extract-readme \
   --repo-id "meta-llama/Llama-3.3-70B-Instruct" \
   --dry-run
 ```
@@ -55,14 +52,14 @@ python3 scripts/evaluation_manager.py extract-readme \
 
 ```bash
 # Extract and update model card directly
-python3 scripts/evaluation_manager.py extract-readme \
+uv run scripts/evaluation_manager.py extract-readme \
   --repo-id "your-username/your-model-7b"
 ```
 
 ### Custom Task and Dataset Names
 
 ```bash
-python3 scripts/evaluation_manager.py extract-readme \
+uv run scripts/evaluation_manager.py extract-readme \
   --repo-id "your-username/your-model-7b" \
   --task-type "text-generation" \
   --dataset-name "Standard Benchmarks" \
@@ -72,7 +69,7 @@ python3 scripts/evaluation_manager.py extract-readme \
 ### Create Pull Request (for models you don't own)
 
 ```bash
-python3 scripts/evaluation_manager.py extract-readme \
+uv run scripts/evaluation_manager.py extract-readme \
   --repo-id "organization/community-model" \
   --create-pr
 ```
@@ -100,7 +97,7 @@ Fetch benchmark scores directly from Artificial Analysis API.
 
 ```bash
 # Import scores for Claude Sonnet 4.5
-python3 scripts/evaluation_manager.py import-aa \
+uv run scripts/evaluation_manager.py import-aa \
   --creator-slug "anthropic" \
   --model-name "claude-sonnet-4" \
   --repo-id "your-username/claude-mirror"
@@ -110,7 +107,7 @@ python3 scripts/evaluation_manager.py import-aa \
 
 ```bash
 # Create PR instead of direct commit
-python3 scripts/evaluation_manager.py import-aa \
+uv run scripts/evaluation_manager.py import-aa \
   --creator-slug "openai" \
   --model-name "gpt-4" \
   --repo-id "your-username/gpt-4-mirror" \
@@ -127,7 +124,7 @@ cd examples
 
 # Run standalone script
 AA_API_KEY="your-key" HF_TOKEN="your-token" \
-python3 artificial_analysis_to_hub.py \
+uv run artificial_analysis_to_hub.py \
   --creator-slug "anthropic" \
   --model-name "claude-sonnet-4" \
   --repo-id "your-username/your-repo"
@@ -175,20 +172,20 @@ You've just created a model with evaluation tables in the README.
 
 ```bash
 # Step 1: Preview extraction
-python3 scripts/evaluation_manager.py extract-readme \
+uv run scripts/evaluation_manager.py extract-readme \
   --repo-id "your-username/new-model-7b" \
   --dry-run
 
 # Step 2: Apply if it looks good
-python3 scripts/evaluation_manager.py extract-readme \
+uv run scripts/evaluation_manager.py extract-readme \
   --repo-id "your-username/new-model-7b"
 
 # Step 3: Validate
-python3 scripts/evaluation_manager.py validate \
+uv run scripts/evaluation_manager.py validate \
   --repo-id "your-username/new-model-7b"
 
 # Step 4: View results
-python3 scripts/evaluation_manager.py show \
+uv run scripts/evaluation_manager.py show \
   --repo-id "your-username/new-model-7b"
 ```
 
@@ -198,7 +195,7 @@ Your model appears on Artificial Analysis with fresh benchmarks.
 
 ```bash
 # Import scores and create PR for review
-python3 scripts/evaluation_manager.py import-aa \
+uv run scripts/evaluation_manager.py import-aa \
   --creator-slug "your-org" \
   --model-name "your-model" \
   --repo-id "your-org/your-model-hf" \
@@ -211,17 +208,17 @@ You have README tables AND AA scores.
 
 ```bash
 # Step 1: Extract from README
-python3 scripts/evaluation_manager.py extract-readme \
+uv run scripts/evaluation_manager.py extract-readme \
   --repo-id "your-username/hybrid-model"
 
 # Step 2: Import from AA (will merge with existing)
-python3 scripts/evaluation_manager.py import-aa \
+uv run scripts/evaluation_manager.py import-aa \
   --creator-slug "your-org" \
   --model-name "hybrid-model" \
   --repo-id "your-username/hybrid-model"
 
 # Step 3: View combined results
-python3 scripts/evaluation_manager.py show \
+uv run scripts/evaluation_manager.py show \
   --repo-id "your-username/hybrid-model"
 ```
 
@@ -234,7 +231,7 @@ Help improve community models by adding missing evaluations.
 # Example: community/awesome-7b
 
 # Create PR with extracted evaluations
-python3 scripts/evaluation_manager.py extract-readme \
+uv run scripts/evaluation_manager.py extract-readme \
   --repo-id "community/awesome-7b" \
   --create-pr
 
@@ -257,7 +254,7 @@ EOF
 # Process each
 while read repo_id; do
   echo "Processing $repo_id..."
-  python3 scripts/evaluation_manager.py extract-readme \
+  uv run scripts/evaluation_manager.py extract-readme \
     --repo-id "$repo_id"
 done < models.txt
 ```
@@ -280,21 +277,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-
-      - name: Install dependencies
-        run: |
-          pip install huggingface-hub python-dotenv pyyaml requests
 
       - name: Update from Artificial Analysis
         env:
           AA_API_KEY: ${{ secrets.AA_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          python scripts/evaluation_manager.py import-aa \
+          uv run scripts/evaluation_manager.py import-aa \
             --creator-slug "${{ vars.AA_CREATOR_SLUG }}" \
             --model-name "${{ vars.AA_MODEL_NAME }}" \
             --repo-id "${{ github.repository }}" \
@@ -306,14 +302,14 @@ jobs:
 ### Check Current Evaluations
 
 ```bash
-python3 scripts/evaluation_manager.py show \
+uv run scripts/evaluation_manager.py show \
   --repo-id "your-username/your-model"
 ```
 
 ### Validate Format
 
 ```bash
-python3 scripts/evaluation_manager.py validate \
+uv run scripts/evaluation_manager.py validate \
   --repo-id "your-username/your-model"
 ```
 
@@ -332,7 +328,7 @@ The evaluation widget should display your scores automatically.
 
 ```bash
 # Check what tables exist in your README
-python3 scripts/evaluation_manager.py extract-readme \
+uv run scripts/evaluation_manager.py extract-readme \
   --repo-id "your-username/your-model" \
   --dry-run
 
@@ -369,11 +365,11 @@ curl -H "x-api-key: $AA_API_KEY" \
 
 ```bash
 # General help
-python3 scripts/evaluation_manager.py --help
+uv run scripts/evaluation_manager.py --help
 
 # Command-specific help
-python3 scripts/evaluation_manager.py extract-readme --help
-python3 scripts/evaluation_manager.py import-aa --help
+uv run scripts/evaluation_manager.py extract-readme --help
+uv run scripts/evaluation_manager.py import-aa --help
 ```
 
 For issues or questions, consult:

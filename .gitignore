@@ -207,3 +207,6 @@ marimo/_lsp/
 __marimo__/
 .claude
 .fast-agent/
+
+# MacOS
+.DS_Store

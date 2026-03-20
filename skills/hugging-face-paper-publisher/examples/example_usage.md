@@ -8,13 +8,13 @@ If you've already published a paper on arXiv and want to make it discoverable on
 
 ```bash
 # Check if paper exists
-python scripts/paper_manager.py check --arxiv-id "2301.12345"
+uv run scripts/paper_manager.py check --arxiv-id "2301.12345"
 
 # Index the paper
-python scripts/paper_manager.py index --arxiv-id "2301.12345"
+uv run scripts/paper_manager.py index --arxiv-id "2301.12345"
 
 # Get paper information
-python scripts/paper_manager.py info --arxiv-id "2301.12345"
+uv run scripts/paper_manager.py info --arxiv-id "2301.12345"
 ```
 
 Expected output:
@@ -33,13 +33,13 @@ After indexing a paper, link it to your model repository:
 
 ```bash
 # Link single paper
-python scripts/paper_manager.py link \
+uv run scripts/paper_manager.py link \
   --repo-id "username/my-awesome-model" \
   --repo-type "model" \
   --arxiv-id "2301.12345"
 
 # Link multiple papers
-python scripts/paper_manager.py link \
+uv run scripts/paper_manager.py link \
   --repo-id "username/my-awesome-model" \
   --repo-type "model" \
   --arxiv-ids "2301.12345,2302.67890"
@@ -57,7 +57,7 @@ This will:
 Same process for datasets:
 
 ```bash
-python scripts/paper_manager.py link \
+uv run scripts/paper_manager.py link \
   --repo-id "username/my-dataset" \
   --repo-type "dataset" \
   --arxiv-id "2301.12345" \
@@ -70,7 +70,7 @@ Generate a research paper from template:
 
 ```bash
 # Create with standard template
-python scripts/paper_manager.py create \
+uv run scripts/paper_manager.py create \
   --template "standard" \
   --title "Efficient Fine-Tuning of Large Language Models" \
   --authors "Jane Doe, John Smith" \
@@ -78,13 +78,13 @@ python scripts/paper_manager.py create \
   --output "paper.md"
 
 # Create with modern template
-python scripts/paper_manager.py create \
+uv run scripts/paper_manager.py create \
   --template "modern" \
   --title "Vision Transformers for Medical Imaging" \
   --output "medical_vit_paper.md"
 
 # Create ML experiment report
-python scripts/paper_manager.py create \
+uv run scripts/paper_manager.py create \
   --template "ml-report" \
   --title "BERT Fine-tuning Experiment Results" \
   --output "bert_experiment_report.md"
@@ -96,7 +96,7 @@ Get formatted citations for papers:
 
 ```bash
 # BibTeX format
-python scripts/paper_manager.py citation \
+uv run scripts/paper_manager.py citation \
   --arxiv-id "2301.12345" \
   --format "bibtex"
 ```
@@ -117,7 +117,7 @@ Full workflow from paper creation to publication:
 
 ```bash
 # Step 1: Create research article
-python scripts/paper_manager.py create \
+uv run scripts/paper_manager.py create \
   --template "modern" \
   --title "Novel Architecture for Multimodal Learning" \
   --authors "Alice Chen, Bob Kumar" \
@@ -130,21 +130,21 @@ python scripts/paper_manager.py create \
 # Upload to arxiv.org, receive arXiv ID: 2312.99999
 
 # Step 4: Index on Hugging Face
-python scripts/paper_manager.py index --arxiv-id "2312.99999"
+uv run scripts/paper_manager.py index --arxiv-id "2312.99999"
 
 # Step 5: Link to your models/datasets
-python scripts/paper_manager.py link \
+uv run scripts/paper_manager.py link \
   --repo-id "alice/multimodal-model-v1" \
   --repo-type "model" \
   --arxiv-id "2312.99999"
 
-python scripts/paper_manager.py link \
+uv run scripts/paper_manager.py link \
   --repo-id "alice/multimodal-dataset" \
   --repo-type "dataset" \
   --arxiv-id "2312.99999"
 
 # Step 6: Generate citation for README
-python scripts/paper_manager.py citation \
+uv run scripts/paper_manager.py citation \
   --arxiv-id "2312.99999" \
   --format "bibtex" > citation.bib
 ```
@@ -166,7 +166,7 @@ MODELS=("username/model-a" "username/model-b" "username/model-c")
 for paper in "${PAPERS[@]}"; do
   for model in "${MODELS[@]}"; do
     echo "Linking $paper to $model..."
-    python scripts/paper_manager.py link \
+    uv run scripts/paper_manager.py link \
       --repo-id "$model" \
       --repo-type "model" \
       --arxiv-id "$paper"
@@ -180,7 +180,7 @@ Get paper info and manually update model card:
 
 ```bash
 # Get paper information
-python scripts/paper_manager.py info \
+uv run scripts/paper_manager.py info \
   --arxiv-id "2301.12345" \
   --format "text" > paper_info.txt
 
@@ -194,7 +194,7 @@ cat paper_info.txt
 
 ```bash
 # Search for papers (opens browser)
-python scripts/paper_manager.py search \
+uv run scripts/paper_manager.py search \
   --query "transformer attention mechanism"
 ```
 
@@ -211,8 +211,8 @@ This skill complements [tfrere's research article template](https://huggingface.
 # 3. Submit to arXiv
 
 # 4. Use this skill to index and link
-python scripts/paper_manager.py index --arxiv-id "YOUR_ARXIV_ID"
-python scripts/paper_manager.py link \
+uv run scripts/paper_manager.py index --arxiv-id "YOUR_ARXIV_ID"
+uv run scripts/paper_manager.py link \
   --repo-id "your-username/your-model" \
   --arxiv-id "YOUR_ARXIV_ID"
 ```
@@ -221,15 +221,15 @@ python scripts/paper_manager.py link \
 
 ```bash
 # Check if paper exists before linking
-if python scripts/paper_manager.py check --arxiv-id "2301.12345" | grep -q '"exists": true'; then
+if uv run scripts/paper_manager.py check --arxiv-id "2301.12345" | grep -q '"exists": true'; then
   echo "Paper exists, proceeding with link..."
-  python scripts/paper_manager.py link \
+  uv run scripts/paper_manager.py link \
     --repo-id "username/model" \
     --arxiv-id "2301.12345"
 else
   echo "Paper doesn't exist, indexing first..."
-  python scripts/paper_manager.py index --arxiv-id "2301.12345"
-  python scripts/paper_manager.py link \
+  uv run scripts/paper_manager.py index --arxiv-id "2301.12345"
+  uv run scripts/paper_manager.py link \
     --repo-id "username/model" \
     --arxiv-id "2301.12345"
 fi
@@ -253,20 +253,19 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-
-      - name: Install dependencies
-        run: |
-          pip install huggingface_hub pyyaml requests python-dotenv
 
       - name: Link paper to model
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          python scripts/paper_manager.py link \
+          uv run scripts/paper_manager.py link \
             --repo-id "${{ github.repository_owner }}/model-name" \
             --repo-type "model" \
             --arxiv-id "2301.12345"
@@ -292,7 +291,7 @@ jobs:
 open "https://huggingface.co/papers/2301.12345"
 
 # Wait a few seconds, then check again
-python scripts/paper_manager.py check --arxiv-id "2301.12345"
+uv run scripts/paper_manager.py check --arxiv-id "2301.12345"
 ```
 
 ### Permission denied when linking
@@ -312,9 +311,9 @@ echo "HF_TOKEN=your_token_here" > .env
 
 ```bash
 # The script handles various formats:
-python scripts/paper_manager.py check --arxiv-id "2301.12345"
-python scripts/paper_manager.py check --arxiv-id "arxiv:2301.12345"
-python scripts/paper_manager.py check --arxiv-id "https://arxiv.org/abs/2301.12345"
+uv run scripts/paper_manager.py check --arxiv-id "2301.12345"
+uv run scripts/paper_manager.py check --arxiv-id "arxiv:2301.12345"
+uv run scripts/paper_manager.py check --arxiv-id "https://arxiv.org/abs/2301.12345"
 
 # All are equivalent and will be normalized
 ```

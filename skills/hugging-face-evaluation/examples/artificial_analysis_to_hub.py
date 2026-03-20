@@ -17,13 +17,13 @@ with additional features (README extraction, validation, etc.), use:
 
 STANDALONE USAGE:
 AA_API_KEY="<your-api-key>" HF_TOKEN="<your-huggingface-token>" \
-python artificial_analysis_to_hub.py \
+uv run artificial_analysis_to_hub.py \
 --creator-slug <artificial-analysis-creator-slug> \
 --model-name <artificial-analysis-model-name> \
 --repo-id <huggingface-repo-id>
 
 INTEGRATED USAGE (Recommended):
-python ../scripts/evaluation_manager.py import-aa \
+uv run ../scripts/evaluation_manager.py import-aa \
 --creator-slug <creator-slug> \
 --model-name <model-name> \
 --repo-id <repo-id> \

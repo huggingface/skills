@@ -17,6 +17,9 @@ This skill provides comprehensive tools for AI engineers and researchers to publ
 1.0.0
 
 # Dependencies
+The included script uses PEP 723 inline dependencies. Prefer `uv run` over
+manual environment setup.
+
 - huggingface_hub>=0.26.0
 - pyyaml>=6.0.3
 - requests>=2.32.5
@@ -55,9 +58,8 @@ This skill provides comprehensive tools for AI engineers and researchers to publ
 The skill includes Python scripts in `scripts/` for paper publishing operations.
 
 ### Prerequisites
-- Install dependencies: `uv add huggingface_hub pyyaml requests markdown python-dotenv`
+- Run scripts with `uv run` (dependencies are resolved from the script header)
 - Set `HF_TOKEN` environment variable with Write-access token
-- Activate virtual environment: `source .venv/bin/activate`
 
 > **All paths are relative to the directory containing this SKILL.md
 file.**
@@ -434,7 +436,7 @@ uv run scripts/paper_manager.py link \
 **Workflow 3: Update Model with Paper Reference**
 ```bash
 # 1. Get current README
-huggingface-cli download username/model-name README.md
+hf download username/model-name README.md
 
 # 2. Add paper link
 uv run scripts/paper_manager.py link \

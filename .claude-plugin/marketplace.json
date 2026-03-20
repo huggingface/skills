@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Agent Skills for AI/ML tasks including dataset creation, model training, evaluation, and research paper publishing on Hugging Face Hub",
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "plugins": [
     {
@@ -19,6 +19,12 @@
       "source": "./skills/hugging-face-paper-publisher",
       "skills": "./",
       "description": "Publish and manage research papers on Hugging Face Hub. Supports creating paper pages, linking papers to models/datasets, claiming authorship, and generating professional markdown-based research articles."
+    },
+    {
+      "name": "hugging-face-paper-pages",
+      "source": "./skills/hugging-face-paper-pages",
+      "skills": "./",
+      "description": "Look up and read Hugging Face paper pages in markdown, and use the papers API for structured metadata like authors, linked models, datasets, Spaces, and media URLs when needed."
     },
     {
       "name": "hugging-face-datasets",
@@ -39,8 +45,8 @@
       "description": "Build reusable scripts for Hugging Face API operations. Useful for chaining API calls or automating repeated tasks."
     },
     {
-      "name": "hugging-face-cli",
-      "source": "./skills/hugging-face-cli",
+      "name": "hf-cli",
+      "source": "./skills/hf-cli",
       "skills": "./",
       "description": "Execute Hugging Face Hub operations using the hf CLI. Download models/datasets, upload files, manage repos, and run cloud compute jobs."
     },
@@ -69,10 +75,17 @@
       "description": "Build Gradio web UIs and demos in Python. Use when creating or editing Gradio apps, components, event listeners, layouts, or chatbots."
     },
     {
-      "name": "hugging-face-ml-benchmark",
-      "source": "./skills/hugging-face-ml-benchmark",
+      "name": "transformers-js",
+      "source": "./skills/transformers.js",
       "skills": "./",
-      "description": "Create, prepare, and grade ML benchmark competitions on Hugging Face Hub. Supports train/test splitting with proper methodology (stratified, grouped, temporal), submission grading with robust validation, and publishing benchmarks as HF datasets."
+      "description": "Run state-of-the-art machine learning models directly in JavaScript/TypeScript for NLP, computer vision, audio processing, and multimodal tasks. Works in Node.js and browsers with WebGPU/WASM using Hugging Face models."
+    },
+
+    {
+      "name": "hugging-face-vision-trainer",
+      "source": "./skills/hugging-face-vision-trainer",
+      "skills": "./",
+      "description": "Train and fine-tune object detection models (RTDETRv2, YOLOS, DETR and others) and image classification models (timm and transformers models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3) using Transformers Trainer API on Hugging Face Jobs infrastructure or locally. Includes COCO dataset format support, Albumentations augmentation, mAP/mAR metrics, trackio tracking, hardware selection, and Hub persistence."
     }
   ]
 }

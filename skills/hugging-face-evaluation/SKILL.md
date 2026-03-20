@@ -144,7 +144,7 @@ The skill includes Python scripts in `scripts/` to perform operations.
 
 ### Prerequisites
 - Preferred: use `uv run` (PEP 723 header auto-installs deps)
-- Or install manually: `pip install huggingface-hub markdown-it-py python-dotenv pyyaml requests`
+- Optional manual fallback: `uv pip install huggingface-hub markdown-it-py python-dotenv pyyaml requests`
 - Set `HF_TOKEN` environment variable with Write-access token
 - For Artificial Analysis: Set `AA_API_KEY` environment variable
 - `.env` is loaded automatically if `python-dotenv` is installed

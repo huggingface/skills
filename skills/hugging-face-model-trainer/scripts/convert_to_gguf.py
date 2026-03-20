@@ -355,7 +355,7 @@ This is a GGUF conversion of [{ADAPTER_MODEL}](https://huggingface.co/{ADAPTER_M
 
 ```bash
 # Download model
-huggingface-cli download {OUTPUT_REPO} {model_name}-q4_k_m.gguf
+hf download {OUTPUT_REPO} {model_name}-q4_k_m.gguf
 
 # Run with llama.cpp
 ./llama-cli -m {model_name}-q4_k_m.gguf -p "Your prompt here"
@@ -415,7 +415,7 @@ print("\n" + "=" * 60)
 print("✅ GGUF Conversion Complete!")
 print(f"📦 Repository: https://huggingface.co/{OUTPUT_REPO}")
 print(f"\n📥 Download with:")
-print(f"   huggingface-cli download {OUTPUT_REPO} {model_name}-q4_k_m.gguf")
+print(f"   hf download {OUTPUT_REPO} {model_name}-q4_k_m.gguf")
 print(f"\n🚀 Use with Ollama:")
 print("   1. Download the GGUF file")
 print(f"   2. Create Modelfile: FROM ./{model_name}-q4_k_m.gguf")

@@ -28,7 +28,7 @@ Pass a `space_id` to `trackio.init()` and Trackio will automatically create the 
 **Option B: Create manually**
 - Create Space via Hub UI at https://huggingface.co/new-space
 - Select Gradio SDK
-- OR use command: `huggingface-cli repo create my-trackio-dashboard --type space --space_sdk gradio`
+- OR use command: `hf repos create my-trackio-dashboard --type space --space-sdk gradio`
 
 **Step 3: Initialize Trackio with space_id**
 ```python

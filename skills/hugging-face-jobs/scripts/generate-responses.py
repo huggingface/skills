@@ -231,7 +231,7 @@ def main(
         logger.error("No HuggingFace token found. Please provide token via:")
         logger.error("  1. --hf-token argument")
         logger.error("  2. HF_TOKEN environment variable")
-        logger.error("  3. Run 'huggingface-cli login' or use login() in Python")
+        logger.error("  3. Run 'hf auth login' or use login() in Python")
         sys.exit(1)
 
     logger.info("HuggingFace token found, authenticating...")
@@ -574,7 +574,7 @@ This script requires arguments. For usage information:
     uv run generate-responses.py --help
 
 Example HF Jobs command with multi-GPU:
-    # If you're logged in with huggingface-cli, token will be auto-detected
+    # If you're logged in with hf auth, token will be auto-detected
     hf jobs uv run \\
         --flavor l4x4 \\
         https://huggingface.co/datasets/uv-scripts/vllm/raw/main/generate-responses.py \\

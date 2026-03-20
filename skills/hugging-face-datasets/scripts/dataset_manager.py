@@ -351,9 +351,9 @@ def quick_setup(repo_id: str, template_type: str = "chat", token: Optional[str] 
     # Show next steps
     print(f"\n📋 Next steps:")
     print(
-        f"1. Add more data: python scripts/dataset_manager.py add_rows --repo_id {repo_id} --template {template_type} --rows_json 'your_data.json'"
+        f"1. Add more data: uv run scripts/dataset_manager.py add_rows --repo_id {repo_id} --template {template_type} --rows_json 'your_data.json'"
     )
-    print(f"2. View stats: python scripts/dataset_manager.py stats --repo_id {repo_id}")
+    print(f"2. View stats: uv run scripts/dataset_manager.py stats --repo_id {repo_id}")
     print(f"3. Explore at: https://huggingface.co/datasets/{repo_id}")
 
 
@@ -417,7 +417,7 @@ def list_available_templates() -> None:
             print(f"❌ Error loading template {template_file.name}: {e}")
 
     print(
-        f"\n💡 Usage: python scripts/dataset_manager.py quick_setup --repo_id your-username/dataset-name --template TEMPLATE_NAME"
+        f"\n💡 Usage: uv run scripts/dataset_manager.py quick_setup --repo_id your-username/dataset-name --template TEMPLATE_NAME"
     )
     print(f"📚 Example templates directory: {templates_dir}")
 

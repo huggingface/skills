@@ -205,8 +205,8 @@ api.create_repo(
 
 **Solutions:**
 1. Verify `secrets={"HF_TOKEN": "$HF_TOKEN"}` in job config
-2. Check you're logged in: `huggingface-cli whoami`
-3. Re-login: `huggingface-cli login`
+2. Check you're logged in: `hf auth whoami`
+3. Re-login: `hf auth login`
 
 ### Error: 403 Forbidden
 

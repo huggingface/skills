@@ -166,7 +166,7 @@ Common quantization formats (from smallest to largest):
 ### With Ollama (auto-detects GPU)
 ```bash
 # Download GGUF
-huggingface-cli download username/my-model-gguf model-q4_k_m.gguf
+hf download username/my-model-gguf model-q4_k_m.gguf
 
 # Create Modelfile
 echo "FROM ./model-q4_k_m.gguf" > Modelfile

@@ -5,28 +5,28 @@
 ### Paper Indexing
 ```bash
 # Index from arXiv
-python scripts/paper_manager.py index --arxiv-id "2301.12345"
+uv run scripts/paper_manager.py index --arxiv-id "2301.12345"
 
 # Check if exists
-python scripts/paper_manager.py check --arxiv-id "2301.12345"
+uv run scripts/paper_manager.py check --arxiv-id "2301.12345"
 ```
 
 ### Linking Papers
 ```bash
 # Link to model
-python scripts/paper_manager.py link \
+uv run scripts/paper_manager.py link \
   --repo-id "username/model" \
   --repo-type "model" \
   --arxiv-id "2301.12345"
 
 # Link to dataset
-python scripts/paper_manager.py link \
+uv run scripts/paper_manager.py link \
   --repo-id "username/dataset" \
   --repo-type "dataset" \
   --arxiv-id "2301.12345"
 
 # Link multiple papers
-python scripts/paper_manager.py link \
+uv run scripts/paper_manager.py link \
   --repo-id "username/model" \
   --repo-type "model" \
   --arxiv-ids "2301.12345,2302.67890"
@@ -35,13 +35,13 @@ python scripts/paper_manager.py link \
 ### Creating Papers
 ```bash
 # Standard template
-python scripts/paper_manager.py create \
+uv run scripts/paper_manager.py create \
   --template "standard" \
   --title "Paper Title" \
   --output "paper.md"
 
 # Modern template
-python scripts/paper_manager.py create \
+uv run scripts/paper_manager.py create \
   --template "modern" \
   --title "Paper Title" \
   --authors "Author1, Author2" \
@@ -49,13 +49,13 @@ python scripts/paper_manager.py create \
   --output "paper.md"
 
 # ML Report
-python scripts/paper_manager.py create \
+uv run scripts/paper_manager.py create \
   --template "ml-report" \
   --title "Experiment Report" \
   --output "report.md"
 
 # arXiv style
-python scripts/paper_manager.py create \
+uv run scripts/paper_manager.py create \
   --template "arxiv" \
   --title "Paper Title" \
   --output "paper.md"
@@ -64,7 +64,7 @@ python scripts/paper_manager.py create \
 ### Citations
 ```bash
 # Generate BibTeX
-python scripts/paper_manager.py citation \
+uv run scripts/paper_manager.py citation \
   --arxiv-id "2301.12345" \
   --format "bibtex"
 ```
@@ -72,12 +72,12 @@ python scripts/paper_manager.py citation \
 ### Paper Info
 ```bash
 # JSON format
-python scripts/paper_manager.py info \
+uv run scripts/paper_manager.py info \
   --arxiv-id "2301.12345" \
   --format "json"
 
 # Text format
-python scripts/paper_manager.py info \
+uv run scripts/paper_manager.py info \
   --arxiv-id "2301.12345" \
   --format "text"
 ```
@@ -145,23 +145,23 @@ echo "HF_TOKEN=your_token" > .env
 
 ### 1. Index & Link
 ```bash
-python scripts/paper_manager.py index --arxiv-id "2301.12345"
-python scripts/paper_manager.py link --repo-id "user/model" --arxiv-id "2301.12345"
+uv run scripts/paper_manager.py index --arxiv-id "2301.12345"
+uv run scripts/paper_manager.py link --repo-id "user/model" --arxiv-id "2301.12345"
 ```
 
 ### 2. Create & Publish
 ```bash
-python scripts/paper_manager.py create --template "modern" --title "Title" --output "paper.md"
+uv run scripts/paper_manager.py create --template "modern" --title "Title" --output "paper.md"
 # Edit paper.md
 # Submit to arXiv → get ID
-python scripts/paper_manager.py index --arxiv-id "NEW_ID"
-python scripts/paper_manager.py link --repo-id "user/model" --arxiv-id "NEW_ID"
+uv run scripts/paper_manager.py index --arxiv-id "NEW_ID"
+uv run scripts/paper_manager.py link --repo-id "user/model" --arxiv-id "NEW_ID"
 ```
 
 ### 3. Batch Link
 ```bash
 for id in "2301.12345" "2302.67890"; do
-  python scripts/paper_manager.py link --repo-id "user/model" --arxiv-id "$id"
+  uv run scripts/paper_manager.py link --repo-id "user/model" --arxiv-id "$id"
 done
 ```
 
@@ -202,10 +202,10 @@ Wait a moment and retry - arXiv has rate limits
 
 ```bash
 # Command help
-python scripts/paper_manager.py --help
+uv run scripts/paper_manager.py --help
 
 # Subcommand help
-python scripts/paper_manager.py link --help
+uv run scripts/paper_manager.py link --help
 ```
 
 ## Additional Resources

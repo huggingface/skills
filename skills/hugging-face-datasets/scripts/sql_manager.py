@@ -559,7 +559,10 @@ class HFDatasetSQL:
         try:
             from datasets import Dataset
         except ImportError:
-            raise ImportError("datasets library required for push_to_hub. Install with: pip install datasets")
+            raise ImportError(
+                "datasets library required for push_to_hub. "
+                "Run with `uv run ...` or install with `uv pip install datasets`."
+            )
 
         # Execute query
         results = self.query(dataset_id, sql or "SELECT * FROM data", split=split, config=config)

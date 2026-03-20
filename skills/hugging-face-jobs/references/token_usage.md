@@ -31,7 +31,7 @@ Hugging Face tokens are authentication credentials that allow your jobs to inter
 
 ## Providing Tokens to Jobs
 
-### Method 1: Automatic Token (Recommended) ⭐
+### Method 1: `hf_jobs` MCP tool with `$HF_TOKEN` (Recommended) ⭐
 
 ```python
 hf_jobs("uv", {
@@ -56,6 +56,30 @@ hf_jobs("uv", {
 **Requirements:**
 - Must be logged in: `hf auth login` or `hf_whoami()` works
 - Token must have required permissions
+
+**⚠️ CRITICAL:** `$HF_TOKEN` auto-replacement is an `hf_jobs` MCP tool feature ONLY. It does NOT work with `HfApi().run_uv_job()` — see Method 1b below.
+
+### Method 1b: `HfApi().run_uv_job()` with `get_token()` (Required for Python API)
+
+```python
+from huggingface_hub import HfApi, get_token
+api = HfApi()
+api.run_uv_job(
+    script="your_script.py",
+    secrets={"HF_TOKEN": get_token()},  # ✅ Passes actual token value
+)
+```
+
+**How it works:**
+1. `get_token()` retrieves the token from your logged-in session
+2. The actual token value is passed to the `secrets` parameter
+3. Token is encrypted server-side
+
+**Why `"$HF_TOKEN"` fails with `HfApi().run_uv_job()`:**
+- The Python API passes the literal string `"$HF_TOKEN"` (9 characters) as the token
+- The Jobs server receives this invalid string instead of a real token
+- Result: `401 Unauthorized` errors when the script tries to authenticate
+- You MUST use `get_token()` from `huggingface_hub` to get the real token
 
 ### Method 2: Explicit Token (Not Recommended)
 

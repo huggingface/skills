@@ -17,7 +17,7 @@ Common issues and solutions for Hugging Face Jobs.
 - Token not passed correctly
 
 **Solutions:**
-1. Add `secrets={"HF_TOKEN": "$HF_TOKEN"}` to job config
+1. Add token to secrets: `hf_jobs` MCP uses `"$HF_TOKEN"` (auto-replaced); `HfApi().run_uv_job()` MUST use `get_token()` from `huggingface_hub` (the literal string `"$HF_TOKEN"` will NOT work with the Python API)
 2. Verify `hf_whoami()` works locally
 3. Re-login: `hf auth login`
 4. Check token hasn't expired
@@ -61,7 +61,7 @@ ValueError: HF_TOKEN not found
 - Using `env` instead of `secrets`
 
 **Solutions:**
-1. Use `secrets={"HF_TOKEN": "$HF_TOKEN"}` (not `env`)
+1. Use `secrets` (not `env`) — with `hf_jobs` MCP: `"$HF_TOKEN"`; with `HfApi().run_uv_job()`: `get_token()`
 2. Verify key name is exactly `HF_TOKEN`
 3. Check job config syntax
 
@@ -437,14 +437,14 @@ if job_info.status.stage == "ERROR":
 
 | Code | Meaning | Solution |
 |------|---------|----------|
-| 401 | Unauthorized | Add `secrets={"HF_TOKEN": "$HF_TOKEN"}` |
+| 401 | Unauthorized | Add token to secrets: MCP uses `"$HF_TOKEN"`, Python API uses `get_token()` |
 | 403 | Forbidden | Check token permissions |
 | 404 | Not Found | Verify repository exists |
 | 500 | Server Error | Retry or contact support |
 
 ### Checklist Before Submitting
 
-- [ ] Token configured: `secrets={"HF_TOKEN": "$HF_TOKEN"}`
+- [ ] Token configured: MCP uses `secrets={"HF_TOKEN": "$HF_TOKEN"}`, Python API uses `secrets={"HF_TOKEN": get_token()}`
 - [ ] Script checks for token: `assert "HF_TOKEN" in os.environ`
 - [ ] Timeout set appropriately
 - [ ] Hardware selected correctly
@@ -465,7 +465,7 @@ If issues persist:
 
 ## Key Takeaways
 
-1. **Always include token** - `secrets={"HF_TOKEN": "$HF_TOKEN"}`
+1. **Always include token** - MCP: `secrets={"HF_TOKEN": "$HF_TOKEN"}`, Python API: `secrets={"HF_TOKEN": get_token()}`
 2. **Set appropriate timeout** - Default 30min may be insufficient
 3. **Verify persistence** - Results won't persist without code
 4. **Check logs** - Most issues visible in job logs

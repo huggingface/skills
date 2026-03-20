@@ -64,12 +64,15 @@ Before starting any job, verify:
 
 **How to provide tokens:**
 ```python
-{
-    "secrets": {"HF_TOKEN": "$HF_TOKEN"}  # Recommended: automatic token
-}
+# hf_jobs MCP tool — $HF_TOKEN is auto-replaced with real token:
+{"secrets": {"HF_TOKEN": "$HF_TOKEN"}}
+
+# HfApi().run_uv_job() — MUST pass actual token:
+from huggingface_hub import get_token
+secrets={"HF_TOKEN": get_token()}
 ```
 
-**⚠️ CRITICAL:** The `$HF_TOKEN` placeholder is automatically replaced with your logged-in token. Never hardcode tokens in scripts.
+**⚠️ CRITICAL:** The `$HF_TOKEN` placeholder is ONLY auto-replaced by the `hf_jobs` MCP tool. When using `HfApi().run_uv_job()`, you MUST pass the real token via `get_token()`. Passing the literal string `"$HF_TOKEN"` results in a 9-character invalid token and 401 errors.
 
 ## Token Usage Guide
 
@@ -537,9 +540,12 @@ requests.post("https://your-api.com/results", json=results)
 
 **In job submission:**
 ```python
-{
-    "secrets": {"HF_TOKEN": "$HF_TOKEN"}  # Enables authentication
-}
+# hf_jobs MCP tool:
+{"secrets": {"HF_TOKEN": "$HF_TOKEN"}}  # auto-replaced
+
+# HfApi().run_uv_job():
+from huggingface_hub import get_token
+secrets={"HF_TOKEN": get_token()}  # must pass real token
 ```
 
 **In script:**
@@ -558,7 +564,7 @@ api.upload_file(...)
 
 Before submitting:
 - [ ] Results persistence method chosen
-- [ ] `secrets={"HF_TOKEN": "$HF_TOKEN"}` if using Hub
+- [ ] Token in secrets if using Hub (MCP: `"$HF_TOKEN"`, Python API: `get_token()`)
 - [ ] Script handles missing token gracefully
 - [ ] Test persistence path works
 
@@ -948,7 +954,7 @@ hf_jobs("uv", {
 ### Hub Push Failures
 
 **Fix:**
-1. Add to job: `secrets={"HF_TOKEN": "$HF_TOKEN"}`
+1. Add token to secrets: MCP uses `"$HF_TOKEN"` (auto-replaced), Python API uses `get_token()` (must pass real token)
 2. Verify token in script: `assert "HF_TOKEN" in os.environ`
 3. Check token permissions
 4. Verify repo exists or can be created
@@ -967,7 +973,7 @@ Add to PEP 723 header:
 
 **Fix:**
 1. Check `hf_whoami()` works locally
-2. Verify `secrets={"HF_TOKEN": "$HF_TOKEN"}` in job config
+2. Verify token in secrets — MCP: `"$HF_TOKEN"`, Python API: `get_token()` (NOT `"$HF_TOKEN"`)
 3. Re-login: `hf auth login`
 4. Check token has required permissions
 
@@ -1015,7 +1021,7 @@ Add to PEP 723 header:
 2. **Jobs are asynchronous** - Don't wait/poll; let user check when ready
 3. **Always set timeout** - Default 30 min may be insufficient; set appropriate timeout
 4. **Always persist results** - Environment is ephemeral; without persistence, all work is lost
-5. **Use tokens securely** - Always use `secrets={"HF_TOKEN": "$HF_TOKEN"}` for Hub operations
+5. **Use tokens securely** - MCP: `secrets={"HF_TOKEN": "$HF_TOKEN"}`, Python API: `secrets={"HF_TOKEN": get_token()}` — `"$HF_TOKEN"` only works with MCP tool
 6. **Choose appropriate hardware** - Start small, scale up based on needs (see hardware guide)
 7. **Use UV scripts** - Default to `hf_jobs("uv", {...})` with inline scripts for Python workloads
 8. **Handle authentication** - Verify tokens are available before Hub operations

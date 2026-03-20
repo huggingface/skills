@@ -41,7 +41,7 @@ def require_markdown_it():
     except ModuleNotFoundError as exc:
         raise ModuleNotFoundError(
             "markdown-it-py is required for table parsing. "
-            "Install with `uv add markdown-it-py` or `pip install markdown-it-py`."
+            "Run with `uv run ...` or install with `uv pip install markdown-it-py`."
         ) from exc
     return MarkdownIt
 
@@ -52,7 +52,7 @@ def require_model_card():
     except ModuleNotFoundError as exc:
         raise ModuleNotFoundError(
             "huggingface-hub is required for model card operations. "
-            "Install with `uv add huggingface_hub` or `pip install huggingface-hub`."
+            "Run with `uv run ...` or install with `uv pip install huggingface-hub`."
         ) from exc
     return ModelCard
 
@@ -63,7 +63,7 @@ def require_requests():
     except ModuleNotFoundError as exc:
         raise ModuleNotFoundError(
             "requests is required for Artificial Analysis import. "
-            "Install with `uv add requests` or `pip install requests`."
+            "Run with `uv run ...` or install with `uv pip install requests`."
         ) from exc
     return requests
 
@@ -74,7 +74,7 @@ def require_yaml():
     except ModuleNotFoundError as exc:
         raise ModuleNotFoundError(
             "PyYAML is required for YAML output. "
-            "Install with `uv add pyyaml` or `pip install pyyaml`."
+            "Run with `uv run ...` or install with `uv pip install pyyaml`."
         ) from exc
     return yaml
 

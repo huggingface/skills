@@ -58,11 +58,12 @@ When assisting with training jobs:
 
 4. **Use example scripts as templates** - Reference `scripts/train_sft_example.py`, `scripts/train_dpo_example.py`, etc. as starting points.
 
-## Local Script Dependencies
+## Local Script Execution
 
-To run scripts locally (like `estimate_cost.py`), install dependencies:
+Repository scripts use PEP 723 inline dependencies. Run them with `uv run`:
 ```bash
-pip install -r requirements.txt
+uv run scripts/estimate_cost.py --help
+uv run scripts/dataset_inspector.py --help
 ```
 
 ## Prerequisites Checklist
@@ -238,8 +239,8 @@ hf_jobs("uv", {"script": "https://gist.githubusercontent.com/user/id/raw/train.p
 
 **To use local scripts:** Upload to HF Hub first:
 ```bash
-huggingface-cli repo create my-training-scripts --type model
-huggingface-cli upload my-training-scripts ./train.py train.py
+hf repos create my-training-scripts --type model
+hf upload my-training-scripts ./train.py train.py
 # Use: https://huggingface.co/USERNAME/my-training-scripts/resolve/main/train.py
 ```
 
@@ -329,13 +330,10 @@ hf jobs cancel <job-id>           # Cancel a job
 The `trl-jobs` package provides optimized defaults and one-liner training.
 
 ```bash
-# Install
-pip install trl-jobs
-
-# Train with SFT (simplest possible)
-trl-jobs sft \
+uvx trl-jobs sft \
   --model_name Qwen/Qwen2.5-0.5B \
   --dataset_name trl-lib/Capybara
+
 ```
 
 **Benefits:** Pre-configured settings, automatic Trackio integration, automatic Hub push, one-line commands
@@ -683,6 +681,7 @@ Add to PEP 723 header:
 - `references/hardware_guide.md` - Hardware specs and selection
 - `references/hub_saving.md` - Hub authentication troubleshooting
 - `references/troubleshooting.md` - Common issues and solutions
+- `references/local_training_macos.md` - Local training on macOS
 
 ### Scripts (In This Skill)
 - `scripts/train_sft_example.py` - Production SFT template
