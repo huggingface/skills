@@ -3,6 +3,7 @@
 You have additional SKILLs documented in directories containing a "SKILL.md" file.
 
 These skills are:
+ - civic-mcp-gateway -> "skills/civic-mcp-gateway/SKILL.md"
  - gradio -> "skills/huggingface-gradio/SKILL.md"
  - hf-cli -> "skills/hf-cli/SKILL.md"
  - hugging-face-dataset-viewer -> "skills/hugging-face-dataset-viewer/SKILL.md"
@@ -21,6 +22,7 @@ IMPORTANT: You MUST read the SKILL.md file whenever the description of the skill
 
 <available_skills>
 
+civic-mcp-gateway: `"Connect AI agents to 85+ tools (Gmail, Google Calendar, PostgreSQL, Slack, and more) through Civic's MCP Gateway with guardrails, scoped permissions, audit trails, and revocable access. Civic separates the permission layer from the AI agent so they can't get around restrictions."`
 gradio: `Build Gradio web UIs and demos in Python. Use when creating or editing Gradio apps, components, event listeners, layouts, or chatbots.`
 hf-cli: `"Hugging Face Hub CLI (`hf`) for downloading, uploading, and managing repositories, models, datasets, and Spaces on the Hugging Face Hub. Replaces now deprecated `huggingface-cli` command."`
 hugging-face-dataset-viewer: `Use this skill for Hugging Face Dataset Viewer API workflows that fetch subset/split metadata, paginate rows, search text, apply filters, download parquet URLs, and read size or statistics.`
