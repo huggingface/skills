@@ -78,7 +78,6 @@ Generated with `huggingface_hub v1.7.1`. Run `hf skills add --force` to regenera
 
 ### `hf endpoints` — Manage Hugging Face Inference Endpoints.
 
-- `hf endpoints catalog` — Interact with the Inference Endpoints catalog.
 - `hf endpoints delete NAME` — Delete an Inference Endpoint permanently.
 - `hf endpoints deploy NAME repo framework accelerator instance_size instance_type region vendor` — Deploy an Inference Endpoint from a Hub repository.
 - `hf endpoints describe NAME` — Get information about an existing endpoint.
@@ -87,6 +86,11 @@ Generated with `huggingface_hub v1.7.1`. Run `hf skills add --force` to regenera
 - `hf endpoints resume NAME` — Resume an Inference Endpoint.
 - `hf endpoints scale-to-zero NAME` — Scale an Inference Endpoint to zero.
 - `hf endpoints update NAME` — Update an existing endpoint.
+
+#### `hf endpoints catalog` — Interact with the Inference Endpoints catalog.
+
+- `hf endpoints catalog deploy` — Deploy an Inference Endpoint from the Model Catalog.
+- `hf endpoints catalog list` — List available Catalog models.
 
 ### `hf extensions` — Manage hf CLI extensions.
 
@@ -104,9 +108,18 @@ Generated with `huggingface_hub v1.7.1`. Run `hf skills add --force` to regenera
 - `hf jobs logs JOB_ID` — Fetch the logs of a Job.
 - `hf jobs ps` — List Jobs.
 - `hf jobs run IMAGE COMMAND` — Run a Job.
-- `hf jobs scheduled` — Create and manage scheduled Jobs on the Hub.
 - `hf jobs stats` — Fetch the resource usage statistics and metrics of Jobs
-- `hf jobs uv` — Run UV scripts (Python with inline dependencies) on HF infrastructure.
+- `hf jobs uv run SCRIPT` — Run a UV script (local file or URL) on HF infrastructure.
+
+#### `hf jobs scheduled` — Create and manage scheduled Jobs on the Hub.
+
+- `hf jobs scheduled run SCHEDULE IMAGE COMMAND` — Schedule a Job.
+- `hf jobs scheduled ps` — List scheduled Jobs.
+- `hf jobs scheduled inspect SCHEDULED_JOB_IDS` — Display detailed information on one or more scheduled Jobs.
+- `hf jobs scheduled delete SCHEDULED_JOB_ID` — Delete a scheduled Job.
+- `hf jobs scheduled suspend SCHEDULED_JOB_ID` — Suspend (pause) a scheduled Job.
+- `hf jobs scheduled resume SCHEDULED_JOB_ID` — Resume (unpause) a scheduled Job.
+- `hf jobs scheduled uv run SCHEDULE SCRIPT` — Schedule a UV script on HF infrastructure.
 
 ### `hf models` — Interact with models on the Hub.
 
@@ -119,14 +132,23 @@ Generated with `huggingface_hub v1.7.1`. Run `hf skills add --force` to regenera
 
 ### `hf repos` — Manage repos on the Hub.
 
-- `hf repos branch` — Manage branches for a repo on the Hub.
 - `hf repos create REPO_ID` — Create a new repo on the Hub.
 - `hf repos delete REPO_ID` — Delete a repo from the Hub. This is an irreversible operation.
 - `hf repos delete-files REPO_ID PATTERNS` — Delete files from a repo on the Hub.
 - `hf repos duplicate FROM_ID` — Duplicate a repo on the Hub (model, dataset, or Space).
 - `hf repos move FROM_ID TO_ID` — Move a repository from a namespace to another namespace.
 - `hf repos settings REPO_ID` — Update the settings of a repository.
-- `hf repos tag` — Manage tags for a repo on the Hub.
+
+#### `hf repos branch` — Manage branches for a repo on the Hub.
+
+- `hf repos branch create REPO_ID BRANCH` — Create a new branch for a repo on the Hub.
+- `hf repos branch delete REPO_ID BRANCH` — Delete a branch from a repo on the Hub.
+
+#### `hf repos tag` — Manage tags for a repo on the Hub.
+
+- `hf repos tag create REPO_ID TAG` — Create a tag for a repo.
+- `hf repos tag list REPO_ID` — List tags for a repo.
+- `hf repos tag delete REPO_ID TAG` — Delete a tag for a repo.
 
 ### `hf skills` — Manage skills for AI assistants.
 
