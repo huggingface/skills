@@ -95,16 +95,26 @@ Options:
 
 Commands:
   auth                 Manage authentication (login, logout, etc.).
+  buckets              Commands to interact with buckets.
   cache                Manage local cache directory.
+  collections          Interact with collections on the Hub.
+  datasets             Interact with datasets on the Hub.
+  discussions          Manage discussions and pull requests on the Hub.
   download             Download files from the Hub.
   endpoints            Manage Hugging Face Inference Endpoints.
   env                  Print information about the environment.
+  extensions           Manage hf CLI extensions.
   jobs                 Run and manage Jobs on the Hub.
-  repo                 Manage repos on the Hub.
-  repo-files           Manage files in a repo on the Hub.
+  models               Interact with models on the Hub.
+  papers               Interact with papers on the Hub.
+  repos                Manage repos on the Hub.
+  skills               Manage skills for AI assistants.
+  spaces               Interact with spaces on the Hub.
+  sync                 Sync files between local directory and a bucket.
   upload               Upload a file or a folder to the Hub.
   upload-large-folder  Upload a large folder to the Hub.
   version              Print information about the hf version.
+  webhooks             Manage webhooks on the Hub.
 ```
 
-The `hf` CLI command has replaced the now deprecated `huggingface_hub` CLI command.
+The `hf` CLI command has replaced the now deprecated `huggingface-cli` command.

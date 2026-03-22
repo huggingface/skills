@@ -1037,6 +1037,8 @@ Add to PEP 723 header:
 | List jobs | `hf_jobs("ps")` | `hf jobs ps` | `list_jobs()` |
 | View logs | `hf_jobs("logs", {...})` | `hf jobs logs <id>` | `fetch_job_logs(job_id)` |
 | Cancel job | `hf_jobs("cancel", {...})` | `hf jobs cancel <id>` | `cancel_job(job_id)` |
-| Schedule UV | `hf_jobs("scheduled uv", {...})` | - | `create_scheduled_uv_job()` |
-| Schedule Docker | `hf_jobs("scheduled run", {...})` | - | `create_scheduled_job()` |
+| Schedule UV | `hf_jobs("scheduled uv", {...})` | `hf jobs scheduled uv run SCHEDULE script.py` | `create_scheduled_uv_job()` |
+| Schedule Docker | `hf_jobs("scheduled run", {...})` | `hf jobs scheduled run SCHEDULE image cmd` | `create_scheduled_job()` |
+| List scheduled | `hf_jobs("scheduled ps")` | `hf jobs scheduled ps` | `list_scheduled_jobs()` |
+| Delete scheduled | `hf_jobs("scheduled delete", {...})` | `hf jobs scheduled delete <id>` | `delete_scheduled_job()` |
 
