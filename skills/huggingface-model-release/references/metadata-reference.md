@@ -18,7 +18,7 @@ Quick reference for YAML frontmatter fields in Hugging Face model cards.
 
 ## pipeline_tag
 
-Determines the inference widget, search filtering, and code snippets. Pick the
+Determines the task model solves, inference related functions (Inference Providers), search filtering, and code snippets. Pick the
 single most accurate tag.
 
 ### Text and NLP
@@ -26,11 +26,10 @@ single most accurate tag.
 | Tag | Use when |
 |-----|----------|
 | `text-generation` | Autoregressive LLMs (GPT, LLaMA, Mistral) |
-| `text2text-generation` | Encoder-decoder models (T5, BART) |
 | `text-classification` | Sentiment analysis, topic classification |
 | `token-classification` | NER, POS tagging |
 | `question-answering` | Extractive QA |
-| `fill-mask` | Masked language models (BERT, RoBERTa) |
+| `fill-mask` | Masked language models (BERT, RoBERTa, DeBERTa) |
 | `summarization` | Text summarization |
 | `translation` | Machine translation |
 | `conversational` | Dialogue / chat models |
@@ -47,14 +46,14 @@ single most accurate tag.
 | `object-detection` | Detect and localize objects |
 | `image-segmentation` | Semantic / instance / panoptic segmentation |
 | `depth-estimation` | Monocular depth prediction |
-| `image-feature-extraction` | Image embeddings (CLIP, DINOv2) |
+| `image-feature-extraction` | Image embeddings (DINOv2, AIMv2, ViT) |
 | `zero-shot-image-classification` | CLIP-style zero-shot classification |
 
 ### Vision-Language
 
 | Tag | Use when |
 |-----|----------|
-| `image-text-to-text` | VLMs that take image+text and output text (LLaVA, Qwen-VL) |
+| `image-text-to-text` | VLMs that take image+text and output text (LLaVA, Qwen-VL) and some OCR models that take in task prompts |
 | `visual-question-answering` | Answer questions about images |
 | `document-question-answering` | Answer questions about documents/scans |
 | `image-to-text` | Image captioning |
@@ -63,7 +62,7 @@ single most accurate tag.
 
 | Tag | Use when |
 |-----|----------|
-| `text-to-image` | Generate images from text (Stable Diffusion, DALL-E) |
+| `text-to-image` | Generate images from text (FLUX.1, Z-Image, Qwen-Image) |
 | `image-to-image` | Image transformation (style transfer, super-resolution) |
 | `text-to-video` | Video generation from text |
 | `unconditional-image-generation` | Generate images without conditioning |
@@ -81,7 +80,7 @@ single most accurate tag.
 
 | Tag | Use when |
 |-----|----------|
-| `any-to-any` | Models handling arbitrary input/output modalities |
+| `any-to-any` | Models handling arbitrary input/output modalities (Gemma-3n, Qwen-Omni, Janus-Pro, MiniCPM-o) |
 
 ### Reinforcement Learning
 
@@ -178,8 +177,6 @@ and dataset pages:
 ```yaml
 datasets:
   - username/my-dataset
-  - squad
-  - glue
 ```
 
 Use the full `org/dataset-name` format for non-canonical datasets.
@@ -230,7 +227,6 @@ Free-form tags for discoverability. Use lowercase, hyphenated strings:
 
 ```yaml
 tags:
-  - text-generation
   - medical
   - code
   - biology
@@ -239,7 +235,6 @@ tags:
   - rlhf
   - dpo
   - lora
-  - quantized
   - chat
 ```
 
