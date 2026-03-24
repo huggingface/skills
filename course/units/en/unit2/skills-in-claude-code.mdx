@@ -1,0 +1,86 @@
+# Skills in Claude Code
+
+Unit 1 showed you `/plugin install` and moved on. Here's what's actually happening.
+
+## Three Ways to Install a Skill
+
+### Manual (start here)
+
+Drop a directory into Claude Code's skills folder. That's it.
+
+```bash
+mkdir -p ~/.claude/skills/my-skill
+# put your SKILL.md in there
+```
+
+Next time you run `claude`, the skill is available. The `name` in your frontmatter becomes a slash command — if your SKILL.md says `name: dataset-publisher`, you now have `/dataset-publisher`.
+
+This is the simplest path, and it's what you'll use most while learning.
+
+### Project-local
+
+Same thing, but in your repo instead of your home directory:
+
+```bash
+mkdir -p .claude/skills/my-skill
+```
+
+These skills are versioned with your code. Anyone who clones the repo and opens Claude Code gets them. Good for team conventions — "this is how we write tests here."
+
+### Plugin marketplace
+
+For skills someone else maintains and distributes:
+
+```bash
+/plugin marketplace add huggingface/skills
+/plugin install hugging-face-model-trainer@huggingface/skills
+```
+
+Plugin skills are namespaced — they show up as `/huggingface:model-trainer`, not `/model-trainer`. This avoids collisions when you have many installed.
+
+> [!NOTE]
+> Unit 1 started with plugins because it was demonstrating HF's published skills. For your own skills, the manual path is simpler. You can always package them as a plugin later — that's Unit 3.
+
+## How Activation Works
+
+When you open Claude Code, it reads every installed skill's `description` field. Not the whole SKILL.md — just the description. Those descriptions sit in context.
+
+When you ask something, Claude matches your request against those descriptions and loads the relevant skills' full content. That's progressive disclosure — the thing Unit 1 described conceptually.
+
+**The description is the entire selection mechanism.** Not one input. The only input.
+
+This means the difference between a skill that activates reliably and one that never fires is usually a single line of frontmatter:
+
+```yaml
+# Won't activate — too vague
+description: A helper for datasets
+
+# Will activate — says when
+description: Create and publish datasets to the HF Hub. Use when the user mentions
+  publishing a dataset, uploading data to the Hub, or writing a dataset card.
+```
+
+You'll debug exactly this in the next section.
+
+## Slash Commands vs Auto-Activation
+
+Two ways a skill gets used:
+
+- **Auto:** You ask about datasets. Claude matches the description. Loads the skill. You never said its name.
+- **Explicit:** You type `/dataset-publisher`. The skill loads no matter what. Useful when auto-matching misses, or when you want to force a specific workflow.
+
+Most of the time you want auto. Slash commands are the fallback.
+
+## Seeing What Loaded
+
+There's no `--verbose` flag that shows which skills fired. Instead:
+
+- `/context` shows what's in the context window, including skill content
+- Just ask: *"Which skills did you load for that last response?"* — Claude will tell you
+- If the skill has a distinctive workflow ("Step 1: Initialize the repository..."), you'll see it in the response
+
+## Skills vs MCP — One Paragraph
+
+You'll see both mentioned in Claude Code docs and it's easy to confuse them. **Skills are instructions** — markdown that goes into context and tells Claude *how* to do something. **MCP servers are tools** — external programs that give Claude new *capabilities*, like "query this database" or "post to Slack." A skill might say "here's how to use our internal deploy tool." An MCP server *is* the deploy tool. Skills need a `.md` file. MCP needs a server process and `.mcp.json` config.
+
+Now let's use your Unit 1 skill and see if it actually works.

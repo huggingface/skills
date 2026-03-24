@@ -1,0 +1,65 @@
+# Hands-on: Optimize the Description
+
+Your skill works when it's loaded. The question is whether Claude loads it when it should.
+
+## Why This Step Exists
+
+The `description` field in your frontmatter is the only thing Claude sees when deciding whether to consult a skill. Not the body, not the scripts — just the description. If it's vague, the skill never fires. If it's too broad, it fires when it shouldn't.
+
+Unit 1 gave you descriptions like *"Create, populate, and publish datasets on the Hugging Face Hub"* — accurate but unhelpful for matching. A real user asking "help me share some Q&A with my team" won't trigger that. The description says what the skill *is*, not when to *use* it.
+
+skill-creator has an automated loop to fix this.
+
+## Generate Trigger Queries
+
+In Claude Code:
+
+```
+Let's optimize the description for triggering.
+```
+
+Claude generates 20 eval queries — half should trigger, half shouldn't. The tricky part: the should-not-trigger cases need to be *near-misses*, not obviously irrelevant. "Write a fibonacci function" as a negative for a PDF skill is too easy. "Show me the text on page 3" (simple enough to handle without a skill) is a real test.
+
+## Review the Queries
+
+Claude opens an HTML form in your browser. You can edit queries, flip should/shouldn't, add or remove. When you're done, click **Export Eval Set** — it downloads `eval_set.json` to `~/Downloads/`.
+
+This step matters. Bad eval queries → bad optimized description. Spend a minute here.
+
+## Run the Loop
+
+```bash
+python -m scripts.run_loop \
+  --eval-set ~/Downloads/eval_set.json \
+  --skill-path ./your-skill \
+  --model claude-sonnet-4-6 \
+  --max-iterations 5 \
+  --verbose
+```
+
+This runs in the background. What it does:
+
+1. Split your eval set 60/40 into train and held-out test
+2. Evaluate the current description — runs each query 3 times, measures trigger rate
+3. Ask Claude to rewrite the description based on what failed
+4. Re-evaluate the new description on both train *and* test
+5. Repeat up to 5 times
+6. Pick the best by **test** score, not train — to avoid overfitting
+
+It opens an HTML report when done. You'll see something like:
+
+```
+Iteration 0 (original):  train 65%  test 60%
+Iteration 1:             train 80%  test 75%
+Iteration 2:             train 85%  test 80%  ← best
+Iteration 3:             train 90%  test 75%  (overfit — discarded)
+```
+
+## Apply It
+
+The output JSON has a `best_description` field. Claude updates your `SKILL.md` frontmatter with it. Show the before/after.
+
+> [!TIP]
+> **What a good optimized description looks like:** It's pushier than you'd expect. Not just "helps with X" but "Use this whenever the user mentions X, Y, or Z, even if they don't explicitly ask." Claude undertriggers by default — the description has to compensate.
+
+Your skill now fires when it should. Time to package it.

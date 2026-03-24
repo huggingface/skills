@@ -1,0 +1,74 @@
+# The Real SDK
+
+You built skill loading by hand. Here's how the Agent SDK does it — same `skills/` directory, zero loader code.
+
+## Native Skill Discovery
+
+The Claude Agent SDK reads `.claude/skills/` automatically, if you tell it to:
+
+```python
+import asyncio
+from claude_agent_sdk import query, ClaudeAgentOptions
+
+async def main():
+    options = ClaudeAgentOptions(
+        cwd="/path/to/your/project",         # dir containing .claude/skills/
+        setting_sources=["project"],         # REQUIRED — see the gotcha below
+        allowed_tools=["Skill", "Read", "Bash"],
+    )
+    async for message in query(
+        prompt="Build me a Gradio demo for my sentiment classifier",
+        options=options,
+    ):
+        print(message)
+
+asyncio.run(main())
+```
+
+Same directory layout your hand-rolled agent reads:
+
+```
+your-project/
+└── .claude/
+    └── skills/
+        ├── hf-brand/SKILL.md
+        └── domain-qwen/SKILL.md
+```
+
+No `skill_loader.py`. No `select_skills()`. The SDK handles discovery, selection, and progressive disclosure.
+
+## The Gotcha
+
+> [!WARNING]
+> **`setting_sources` defaults to `None`, which loads nothing.** You'll put SKILL.md on disk, run your code, and wonder why no skills fire. This is the most common issue in the SDK docs' troubleshooting section. Always set `setting_sources=["project"]` (or `["user", "project"]` to include `~/.claude/skills/` too).
+
+Also: `"Skill"` must be in `allowed_tools`. That's the tool Claude uses to invoke a skill. Not in the allowlist → it can't.
+
+## Plugin Packaging
+
+Want your skills portable — not tied to a `.claude/` dir in one project? Package as a plugin:
+
+```python
+options = ClaudeAgentOptions(
+    plugins=[{"type": "local", "path": "/abs/path/to/my-plugin"}],
+    allowed_tools=["Skill", "Read", "Bash"],
+)
+```
+
+```
+my-plugin/
+├── .claude-plugin/plugin.json
+└── skills/
+    └── hf-brand/SKILL.md
+```
+
+This is the same plugin format Claude Code reads. One skill bundle, works in both.
+
+## Why You Built It By Hand First
+
+Your `skill_loader.py` is the SDK's skill-loading code — simplified, visible. When `setting_sources` doesn't do what you expect, you know which three steps to check: did it find the files, did it match the descriptions, did it compose the prompt. You've written all three.
+
+> [!TIP]
+> **Canonical docs:** [platform.claude.com/docs/en/api/agent-sdk/skills](https://platform.claude.com/docs/en/api/agent-sdk/skills). Full Python and TypeScript examples, plus the troubleshooting section you'll want bookmarked.
+
+Next: deploy.

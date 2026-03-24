@@ -1,0 +1,70 @@
+# The Loop
+
+Before you run it, see what one iteration looks like.
+
+## You Say
+
+```
+I want a skill for writing commit messages in my team's style. We use emoji
+prefixes, the ticket number goes at the start in brackets, and there's a
+Reviewed-by footer.
+```
+
+## skill-creator Does
+
+**Captures intent.** Asks a few follow-ups — which emoji for which change type? Example ticket format? Who counts as a reviewer?
+
+**Drafts the skill.** Writes `commit-style/SKILL.md` with your conventions encoded. Shows it to you.
+
+**Writes test cases.** Two or three realistic diffs, saves them to `evals/evals.json`:
+
+```json
+{
+  "skill_name": "commit-style",
+  "evals": [
+    {"id": 1, "prompt": "Write a commit for this diff: ...", "expected_output": "..."},
+    {"id": 2, "prompt": "...", "expected_output": "..."}
+  ]
+}
+```
+
+**Runs everything in parallel.** For each test case, spawns two subagents in the same turn — one *with* the skill, one *without*. All at once, so you're not waiting for one batch to finish before the next starts.
+
+**While you wait, drafts assertions.** "Does the commit start with `[TICKET-NNN]`?" "Is there a valid emoji?" "Is there a Reviewed-by footer?" Saves these to `eval_metadata.json`.
+
+**Grades and aggregates.** When the runs finish, a grader subagent checks each assertion. Then:
+
+```bash
+python -m scripts.aggregate_benchmark commit-style-workspace/iteration-1 --skill-name commit-style
+```
+
+This produces `benchmark.json` — pass rates, timing, tokens, with-skill vs baseline, mean ± stddev.
+
+**Opens the viewer in your browser:**
+
+```bash
+python eval-viewer/generate_review.py commit-style-workspace/iteration-1 \
+  --skill-name "commit-style" \
+  --benchmark commit-style-workspace/iteration-1/benchmark.json
+```
+
+## You See
+
+Two tabs:
+
+**Outputs** — click through each test case. Prompt, with-skill output, baseline output. A textbox for feedback that auto-saves as you type.
+
+**Benchmark** — the numbers. Pass rate per assertion, time per run, token usage. With-skill vs baseline side by side.
+
+You leave feedback: *"Test 2's emoji is wrong — it used 🔧 for a bug fix, should be 🐛."* Click Submit.
+
+## skill-creator Reads Your Feedback
+
+Opens `feedback.json`, sees your note about test 2, rewrites the skill's emoji table to be clearer about fix vs chore. Reruns into `iteration-2/`. Opens the viewer again — this time with a "previous output" section so you can see the delta.
+
+Repeat until you're happy.
+
+> [!TIP]
+> Skills with objective outputs (file formats, code generation, structured text) benefit from assertions. Skills with subjective outputs (writing style, design) are better reviewed qualitatively — don't force assertions onto taste.
+
+Now do it yourself.

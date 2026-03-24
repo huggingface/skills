@@ -1,0 +1,84 @@
+# Hands-on: Fix It Mid-Session
+
+The Space is close. But something's off.
+
+## The Annoyance
+
+Look at what Claude generated. Somewhere in there — probably at the bottom — there's something like:
+
+```python
+gr.Markdown(
+    "⚠️ **Note:** This demo uses keyword-based mock inference for "
+    "illustration purposes. In a production system, replace this with "
+    "a real NLP model (e.g., a fine-tuned BERT or RoBERTa classifier)."
+)
+```
+
+You didn't ask for that. Claude adds disclaimers by default because it's being careful. Sometimes you want that. Right now you don't.
+
+You could say "remove the disclaimer." That fixes it once. Next time you ask Claude to edit the app, the disclaimer might come back.
+
+## Write the Skill — Right Now
+
+Don't close Claude Code. In a second terminal:
+
+```bash
+mkdir -p .claude/skills/no-fluff
+```
+
+Create `.claude/skills/no-fluff/SKILL.md`:
+
+```markdown
+---
+name: no-fluff
+description: Strip disclaimers and filler from demos. Use when building
+  Gradio apps, demo Spaces, or example code.
+---
+
+# No Fluff
+
+When generating demo code:
+
+- No "⚠️ Note: this is a demo" footers
+- No "In production, you would..." disclaimers
+- No TODO placeholders unless asked
+- Trust the user knows it's a demo
+
+The user is a developer. They understand the difference between a demo
+and production. Let the code speak.
+```
+
+Twelve lines. Thirty seconds.
+
+## Reload and Continue
+
+Back in Claude Code — the *same* session, same conversation:
+
+```
+/reload-plugins
+```
+
+Then:
+
+```
+Regenerate app.py. Same requirements.
+```
+
+The disclaimer is gone. And it stays gone, because the skill loads every time Claude touches this project.
+
+## What Just Happened
+
+This is how skills actually get written. Not in advance, from a spec. When Claude does the annoying thing for the third time and you decide you're done explaining.
+
+The pattern:
+
+1. Claude does X
+2. You say "don't do X"
+3. Next session, Claude does X again
+4. You write a skill: "don't do X"
+5. It stops
+
+> [!TIP]
+> Skills you write this way tend to be small and specific. That's good. A skill that fixes one thing reliably is more useful than a skill that tries to fix everything and sometimes misfires. You'll accumulate many small ones over time.
+
+Now let's ship it.

@@ -1,0 +1,72 @@
+# Install and Tour
+
+## Install
+
+Add the Anthropic skills marketplace (if you haven't already) and install `skill-creator`:
+
+```
+/plugin marketplace add anthropics/skills
+/plugin install skill-creator@anthropics/skills
+```
+
+Or manually — clone and copy:
+
+```bash
+git clone https://github.com/anthropics/skills
+cp -r skills/skills/skill-creator ~/.claude/skills/
+```
+
+Verify:
+
+```
+/help
+```
+
+You should see `skill-creator` in the list.
+
+## What You Got
+
+The skill is a full toolkit, not just a SKILL.md:
+
+```
+skill-creator/
+├── SKILL.md                          — the instructions Claude follows
+├── scripts/
+│   ├── aggregate_benchmark.py        — rolls test results into pass rates + timing
+│   ├── run_loop.py                   — automates description optimization
+│   ├── package_skill.py              — bundles your skill into a .skill file
+│   └── ...
+├── eval-viewer/
+│   └── generate_review.py            — the browser viewer for test results
+├── agents/
+│   ├── grader.md                     — how subagents grade outputs
+│   ├── comparator.md                 — blind A/B comparison
+│   └── analyzer.md                   — why did one version win
+└── references/
+    └── schemas.md                    — JSON shapes for evals.json, grading.json
+```
+
+This is progressive disclosure from Unit 1, in practice. The SKILL.md is the router. The scripts execute. The agents/ files load only when a grader subagent needs instructions. The reference docs load only when Claude needs to look up a schema.
+
+## Read the SKILL.md
+
+Open it:
+
+```bash
+cat ~/.claude/skills/skill-creator/SKILL.md
+```
+
+It's about 500 lines. You don't need to read it all now, but skim the structure — it's the workflow you'll follow for the rest of this unit:
+
+1. Capture intent → what should the skill do, when should it trigger
+2. Draft → write SKILL.md + test prompts
+3. Run → spawn with-skill and baseline subagents in parallel
+4. Review → browser viewer, leave feedback
+5. Improve → rewrite based on feedback, repeat
+6. Optimize description → automated loop to fix triggering
+7. Package → `.skill` file
+
+> [!NOTE]
+> The skill is written as instructions *to Claude*, not to you. When you tell Claude "I want to make a skill for X," it reads this SKILL.md and follows the workflow. You're steering, it's driving.
+
+Next: what the loop looks like before you do it.

@@ -1,0 +1,54 @@
+# Publish and Conclusion
+
+## Deploy to the Hub
+
+Your app is ready. Push it as a Space:
+
+```bash
+pip install huggingface_hub
+huggingface-cli login
+```
+
+Create the Space and push:
+
+```bash
+huggingface-cli repo create your-model-demo --type space --space_sdk gradio
+git init
+git remote add origin https://huggingface.co/spaces/your-username/your-model-demo
+git add app.py requirements.txt
+git commit -m "Initial demo"
+git push origin main
+```
+
+A minute later it's live at `huggingface.co/spaces/your-username/your-model-demo`.
+
+## Share Your Skills
+
+The skills you wrote (`no-fluff`, your improved `dataset-publisher`) live in your `.claude/skills/`. They're useful to you. They might be useful to someone else.
+
+Unit 3 covers publishing skills properly — to the Hub, to Vercel's skills.sh, as a plugin marketplace. For now, commit them alongside your Space so they're versioned:
+
+```bash
+git add .claude/skills/
+git commit -m "Add project skills"
+git push
+```
+
+Anyone who clones your repo and opens Claude Code gets them.
+
+## What You Learned
+
+| | |
+|---|---|
+| **Install** | Manual (`~/.claude/skills/`), project-local (`.claude/skills/`), or plugin. Manual is simplest. |
+| **Activation** | The `description` is everything. Write triggers, not definitions. |
+| **Debug** | Ask "which skills did you load?" Use `/context`. Rewrite, `/reload-plugins`, retry. |
+| **Iterate** | Write skills mid-session when Claude annoys you. Small and specific beats big and vague. |
+
+## What's Next
+
+**Unit 3** covers sharing skills at scale — publishing to marketplaces, versioning, what makes a skill someone else would actually install.
+
+**Unit 4** is the deep dive: using the `cuda-kernels` skill to build architecture-aware GPU code with Claude.
+
+Your skills directory is going to fill up. That's the point.

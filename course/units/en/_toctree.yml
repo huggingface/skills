@@ -32,7 +32,27 @@
 - title: "2. Using Skills with Coding Agents"
   sections:
   - local: unit2/introduction
-    title: Skills Across Agent Platforms
+    title: Using Skills with Claude Code
+  - local: unit2/skills-in-claude-code
+    title: Skills in Claude Code
+  - local: unit2/hands-on-debugging-activation
+    title: "Hands-on: Did Your Skill Fire?"
+  - local: unit2/inside-the-box
+    title: "Inside the Box: Load, Select, Compose"
+  - local: unit2/the-real-sdk
+    title: The Real SDK
+  - local: unit2/hands-on-build-space
+    title: "Hands-on: Build the Space"
+  - local: unit2/hands-on-iterate
+    title: "Hands-on: Fix It Mid-Session"
+  - local: unit2/skill-creator-install
+    title: "The skill-creator Skill: Install and Tour"
+  - local: unit2/skill-creator-loop
+    title: "The skill-creator Loop"
+  - local: unit2/hands-on-optimize-description
+    title: "Hands-on: Optimize the Description"
+  - local: unit2/publish-and-conclusion
+    title: Publish and Conclusion
 
 - title: "3. Sharing Skills"
   sections:

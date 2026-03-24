@@ -1,0 +1,59 @@
+# Inside the Box
+
+What Claude Code does with your skills folder — stripped to the essentials.
+
+## Three Functions
+
+### 1. Load
+
+Walk `skills/`, find every `SKILL.md`, parse the frontmatter:
+
+```python
+@dataclass
+class Skill:
+    name: str
+    description: str
+    body: str
+```
+
+The `name` and `description` come from YAML frontmatter. The `body` is everything after the second `---`. That's all a skill is at this layer — two strings and a blob of markdown.
+
+### 2. Select
+
+The part that matters. You have N skills. The user asked something. Which ones are relevant?
+
+The simplest approach: show Claude the descriptions and the user's message, ask which match. Haiku is fast and cheap enough to make this a routing call — you don't need the big model for *selection*, only for the actual response.
+
+```python
+def select_skills(user_message: str) -> list[str]:
+    # show descriptions + message to a cheap model
+    # get back a list of names
+    ...
+```
+
+### 3. Compose
+
+Take the selected skills' full bodies, concatenate, use as the system prompt:
+
+```python
+def system_prompt_for(skills, selected_names):
+    chosen = [s for s in skills if s.name in selected_names]
+    return "\n\n---\n\n".join(s.body for s in chosen)
+```
+
+That's it. Load, select, compose. The agent loop is: user message → select → compose system prompt → generate.
+
+## Progressive Disclosure, Revisited
+
+Unit 1 described progressive disclosure conceptually: the agent reads descriptions, loads full content only when relevant.
+
+You just saw it as code. **Select** reads descriptions. **Compose** loads full bodies — but only for the selected ones. A 2000-token skill that wasn't selected costs nothing.
+
+## What Claude Code Does Differently
+
+The real thing is more sophisticated — skill descriptions are always in context so selection is implicit, there's caching, there's conflict resolution when two skills claim the same name. But the shape is the same. Three functions.
+
+> [!NOTE]
+> The starter's `skill_loader.py` implements load and compose. You implement select. That's the TODO.
+
+Next: the starter.

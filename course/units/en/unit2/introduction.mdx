@@ -1,3 +1,36 @@
-# Using Skills with Coding Agents
+# Using Skills with Claude Code
 
-*Coming soon.* This unit will cover how skills work across different agent platforms, with deep dives into Claude Code, Codex, and Gemini CLI integration.
+In Unit 1, you wrote a skill. You installed a few more. You ran them.
+
+This unit is about the part that comes after — actually *living* with skills in your daily work. The difference between "I did a course exercise once" and "I reach for skills when Claude keeps getting something wrong" comes down to a few things Unit 1 didn't have time for:
+
+- Knowing whether your skill actually activated
+- Fixing it when it didn't
+- Writing new ones mid-task, not in advance
+
+You'll do all of that in Claude Code, and you'll ship a Gradio Space at the end.
+
+## What You'll Build
+
+A demo Space for the model you fine-tuned in Unit 1 — built inside Claude Code, styled by a skill, deployed to the Hub.
+
+Along the way you'll debug a skill that *should* activate but doesn't, write a tiny one mid-conversation to fix an annoyance, and see the difference between a skill you wrote and a skill that works.
+
+## Prerequisites
+
+- Completion of Unit 1 (you should have a `dataset-publisher` skill you wrote)
+- Claude Code installed — see the box below if you haven't
+- A Hugging Face account
+
+> [!TIP]
+> **Installing Claude Code:** Follow the [official guide](https://docs.anthropic.com/en/docs/claude-code/getting-started). Install via npm, run `claude` in a project directory, authenticate through console.anthropic.com. Takes about two minutes.
+
+## Unit Overview
+
+1. **Skills in Claude Code** — Where they live. How they load. What a slash command actually is.
+2. **Hands-on: Did Your Skill Fire?** — Drop your Unit 1 skill in. Ask without naming it. Debug.
+3. **Hands-on: Build the Space** — Gradio demo, styled by a brand skill you install.
+4. **Hands-on: Fix It Mid-Session** — Something's off. Write 10 lines. Reload. Continue.
+5. **Publish** — Push to the Hub.
+
+Let's start with the mechanics.

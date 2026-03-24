@@ -1,0 +1,92 @@
+# Hands-on: Did Your Skill Fire?
+
+You built `dataset-publisher` in Unit 1. Let's find out if it works.
+
+## Step 1: Install It
+
+Copy your skill into Claude Code's skills directory:
+
+```bash
+mkdir -p ~/.claude/skills/dataset-publisher
+cp path/to/your/unit1/dataset-publisher/SKILL.md ~/.claude/skills/dataset-publisher/
+```
+
+If you have the helper script and template from Unit 1, copy those too — they go in the same directory.
+
+## Step 2: Ask Without Naming It
+
+Open Claude Code in an empty directory:
+
+```bash
+mkdir ~/skill-test && cd ~/skill-test
+claude
+```
+
+Now ask something your skill *should* handle — but don't say the skill's name:
+
+```
+I want to share about 20 Python coding questions and answers with my team
+in a structured way. What's a good approach?
+```
+
+Watch the response.
+
+## Step 3: Diagnose
+
+Three things can happen.
+
+### It activated
+
+You'll see Claude follow your skill's workflow — initialize repo, define structure, add data, write card. The response references the specific steps you wrote. **This is success.** Your description was clear enough.
+
+### It didn't activate
+
+Generic advice. "You could use a CSV file, or a shared doc, or..." No mention of the Hub, no structured workflow.
+
+The problem is almost always the description. Unit 1 gave you:
+
+```yaml
+description: Create, populate, and publish datasets on the Hugging Face Hub
+```
+
+That's a *definition*, not a *trigger*. It says what the skill does, not when to use it. Claude reads "share Q&A with my team" and doesn't see a match.
+
+Rewrite it to include trigger phrases:
+
+```yaml
+description: Create and publish datasets to the Hugging Face Hub. Use when
+  the user wants to share structured data, publish a dataset, upload examples
+  for training, or create a dataset card. Triggers on "dataset", "publish to
+  Hub", "share training data", "Q&A pairs".
+```
+
+Save the file. In Claude Code, reload:
+
+```
+/reload-plugins
+```
+
+Ask again. Different response.
+
+### You can't tell
+
+Ask directly:
+
+```
+Which skills did you consider or load for that last response?
+```
+
+Claude will tell you. If `dataset-publisher` isn't mentioned, it didn't fire.
+
+You can also run `/context` to see what's loaded in the context window.
+
+## What You Just Learned
+
+The skill you wrote in Unit 1 was *correct* — the format was right, the instructions were good. But it probably didn't activate on a natural question, because the description was written for humans reading a catalog, not for an agent matching intent.
+
+This is the single most common reason skills don't work. And now you know how to fix it.
+
+> [!TIP]
+> **A good description has two parts:** what the skill does (one sentence) and when to use it (trigger phrases, situations, keywords). Unit 1 taught the first part. The second part is what makes it fire.
+
+Next: build something with a skill that's already tuned to activate well.
