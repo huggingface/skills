@@ -74,7 +74,7 @@ field must be resolved before proceeding to Step 2.
 1. **Read `README.md`** (or `README.rst`) — this is the richest source. Look for
    architecture descriptions, benchmark tables, usage examples, paper links,
    dataset references, and download instructions.
-2. **Read `LICENSE`** — map to an SPDX identifier (see metadata reference).
+2. **Read `LICENSE`** — map to an SPDX identifier (see metadata-reference.md).
 3. **Read config files** — `config.json`, `*.yaml`, `hparams.yaml`, etc. for
    architecture, parameter counts, training hyperparameters.
 4. **Check GitHub Releases** — `gh release list` and `gh release view <tag>` to
