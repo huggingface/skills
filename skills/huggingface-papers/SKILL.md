@@ -13,7 +13,7 @@ Hugging Face Paper pages (hf.co/papers) is a platform built on top of arXiv (arx
 
 Whenever someone mentions a HF paper or arXiv abstract/PDF URL in a model card, dataset card or README of a Space repository, the paper will be automatically indexed. Note that not all papers indexed on Hugging Face are also submitted to daily papers. The latter is more a manner of promoting a research paper. Papers can only be submitted to daily papers up until 14 days after their publication date on arXiv.
 
-The Hugging Face team has built an easy-to-use API to interact with paper pages. Content of the papers can be fetched as markdown, or structured metadata can be returned such as author names, linked models/datasets/spaces, linked Github repo and project page.
+The Hugging Face team has built an easy-to-use CLI and API to interact with paper pages. Prefer the `hf papers` CLI commands over raw curl/API calls when possible. Content of the papers can be fetched as markdown, or structured metadata can be returned such as author names, linked models/datasets/spaces, linked Github repo and project page.
 
 ## When to Use
 
@@ -40,23 +40,31 @@ This allows you to provide the paper ID into any of the hub API endpoints mentio
 
 ### Fetch the paper page as markdown
 
-The content of a paper can be fetched as markdown like so:
+Read a paper as markdown using the `hf` CLI:
 
 ```bash
-curl -s "https://huggingface.co/papers/{PAPER_ID}.md"
+hf papers read {PAPER_ID}
 ```
 
-This should return the Hugging Face paper page as markdown. This relies on the HTML version of the paper at https://arxiv.org/html/{PAPER_ID}.
+This returns the Hugging Face paper page as markdown. It relies on the HTML version of the paper at https://arxiv.org/html/{PAPER_ID}.
 
 There are 2 exceptions:
 - Not all arXiv papers have an HTML version. If the HTML version of the paper does not exist, then the content falls back to the HTML of the Hugging Face paper page.
 - If it results in a 404, it means the paper is not yet indexed on hf.co/papers. See [Error handling](#error-handling) for info.
 
-Alternatively, you can request markdown from the normal paper page URL, like so:
+<details>
+<summary>Alternative: curl</summary>
+
+```bash
+curl -s "https://huggingface.co/papers/{PAPER_ID}.md"
+```
+
+Or request markdown from the normal paper page URL:
 
 ```bash
 curl -s -H "Accept: text/markdown" "https://huggingface.co/papers/{PAPER_ID}"
 ```
+</details>
 
 ### Paper Pages API Endpoints
 
@@ -64,11 +72,19 @@ All endpoints use the base URL `https://huggingface.co`.
 
 #### Get structured metadata
 
-Fetch the paper metadata as JSON using the Hugging Face REST API:
+Fetch the paper metadata as JSON using the `hf` CLI:
+
+```bash
+hf papers info {PAPER_ID}
+```
+
+<details>
+<summary>Alternative: curl</summary>
 
 ```bash
 curl -s "https://huggingface.co/api/papers/{PAPER_ID}"
 ```
+</details>
 
 This returns structured metadata that can include:
 
@@ -121,7 +137,22 @@ curl "https://huggingface.co/api/settings/papers/claim" \
 
 #### Get daily papers
 
-Fetch the Daily Papers feed:
+List daily papers using the `hf` CLI:
+
+```bash
+hf papers list [--date TEXT --week TEXT --month TEXT --submitter TEXT --sort CHOICE --limit INTEGER --format CHOICE --quiet]
+```
+
+Examples:
+
+```bash
+hf papers list --date 2025-03-20 --limit 10
+hf papers list --week 2025-W12
+hf papers list --submitter akhaliq --sort trending
+```
+
+<details>
+<summary>Alternative: curl</summary>
 
 ```bash
 curl -s -H "Authorization: Bearer $HF_TOKEN" \
@@ -138,6 +169,7 @@ curl -s -H "Authorization: Bearer $HF_TOKEN" \
   - `submitter` (string): filter by submitter
   - `sort` (enum): `publishedAt` or `trending`
 - Response: list of daily papers
+</details>
 
 #### List papers
 
@@ -156,20 +188,34 @@ curl -s -H "Authorization: Bearer $HF_TOKEN" \
 
 #### Search papers
 
-Perform hybrid semantic and full-text search on papers:
+Search papers using the `hf` CLI:
+
+```bash
+hf papers search QUERY [--limit INTEGER --format CHOICE --quiet]
+```
+
+This searches over the paper title, authors, and content.
+
+Example:
+
+```bash
+hf papers search "vision language" --limit 20
+```
+
+<details>
+<summary>Alternative: curl</summary>
 
 ```bash
 curl -s -H "Authorization: Bearer $HF_TOKEN" \
   "https://huggingface.co/api/papers/search?q=vision+language&limit=20"
 ```
 
-This searches over the paper title, authors, and content.
-
 - Endpoint: `GET /api/papers/search`
 - Query parameters:
   - `q` (string): search query, max length 250
   - `limit` (integer): number of results, between 1 and 120
 - Response: matching papers
+</details>
 
 #### Index a paper
 
@@ -233,7 +279,8 @@ If the Hugging Face paper page does not contain enough detail for the user's que
 
 ## Notes
 
+- Prefer `hf papers` CLI commands (read, info, list, search) over raw curl calls — they handle auth and output formatting automatically.
 - No authentication is required for public paper pages.
-- Write endpoints such as claim authorship, index paper, and update paper links require `Authorization: Bearer $HF_TOKEN`.
-- Prefer the `.md` endpoint for reliable machine-readable output.
-- Prefer `/api/papers/{PAPER_ID}` when you need structured JSON fields instead of page markdown.
+- Write endpoints such as claim authorship, index paper, and update paper links require `Authorization: Bearer $HF_TOKEN` and have no CLI equivalent yet.
+- Prefer `hf papers read {PAPER_ID}` for reliable machine-readable markdown output.
+- Prefer `hf papers info {PAPER_ID}` when you need structured JSON fields instead of page markdown.
