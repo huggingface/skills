@@ -48,6 +48,8 @@ single most accurate tag.
 | `depth-estimation` | Monocular depth prediction |
 | `image-feature-extraction` | Image embeddings (DINOv2, AIMv2, ViT) |
 | `zero-shot-image-classification` | CLIP-style zero-shot classification |
+| `keypoint-detection` | Keypoint detection models (e.g. ViTPose) |
+| `image-to-3d` | Image-to-3D models |
 
 ### Vision-Language
 
@@ -66,6 +68,7 @@ single most accurate tag.
 | `image-to-image` | Image transformation (style transfer, super-resolution) |
 | `text-to-video` | Video generation from text |
 | `unconditional-image-generation` | Generate images without conditioning |
+| `text-to-3d` | Text-to-3D models |
 
 ### Audio
 
@@ -82,10 +85,11 @@ single most accurate tag.
 |-----|----------|
 | `any-to-any` | Models handling arbitrary input/output modalities (Gemma-3n, Qwen-Omni, Janus-Pro, MiniCPM-o) |
 
-### Reinforcement Learning
+### Others
 
 | Tag | Use when |
 |-----|----------|
+| `robotics` | Robotics models, vision-language-action (VLA) models |
 | `reinforcement-learning` | RL agents and policies |
 
 ---
