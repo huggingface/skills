@@ -2,7 +2,7 @@
   "name": "huggingface-skills",
   "skills": "skills",
   "mcpServers": ".mcp.json",
-  "description": "Agent Skills for AI/ML tasks including dataset creation, model training, evaluation, and research paper publishing on Hugging Face Hub",
+  "description": "USER LEVEL: You train, evaluate, and publish models and datasets from the editor—no notebooks or SSH sessions required for common Hub operations. PROJECT LEVEL: ML pipelines stay reproducible because dataset configs, training runs, and eval scores are managed through structured skills instead of ad-hoc scripts. End-to-end Hugging Face Hub workflows—datasets, cloud Jobs training, evaluations, Trackio experiments, paper pages, and Gradio demos—via skills and MCP tools. BEST SUITED FOR: • ML teams using Hugging Face for model training and dataset management • Research groups publishing papers and evaluation benchmarks • Projects building Gradio demos or Spaces-backed prototypes",
   "version": "1.0.1",
   "author": {
     "name": "Hugging Face"
