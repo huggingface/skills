@@ -29,7 +29,7 @@ Hugging Face skills are compatible with Claude Code, Codex, Gemini CLI, and Curs
 2. To install a skill, run:  
    
 ```
-/plugin install <skill-name>@huggingface/skills
+/plugin install <skill-name>@huggingface-skills
 ```
 
 For example:  

@@ -28,12 +28,13 @@ Building on the success of the [Agents Course](https://huggingface.co/learn/agen
 - **Hands-on:** Find and install skills from the [Hub](https://huggingface.co/hf-skills)  
 - Sharing Skills 101
 
-### Unit 2: Using Skills with Coding Agents
+### Unit 2: Using Skills with Claude Code
 
-- Overview: skills across agent platforms  
-- **Claude Code:** Installing HF Skills, slash commands, MCP integration  
-- **Hands-on:** Fine-tune an LLM using the `hugging-face-model-trainer` skill ([blog](https://huggingface.co/blog/hf-skills-training))  
-- **Hands-on:** Run SFT → evaluation → GGUF conversion as a single agent workflow
+- Where Claude Code skills live: personal, project, and plugin scopes
+- Debugging activation: why a skill did not fire and how to fix the description
+- Under the hood: a minimal load, select, compose skill router
+- **Hands-on:** Build and refine a Gradio Space with project-local skills
+- **Hands-on:** Publish the finished Space with the `hf` CLI
 
 ### Unit 3: Sharing Skills
 

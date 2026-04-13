@@ -1,3 +1,45 @@
-# Using Skills with Coding Agents
+# Using Skills with Claude Code
 
-*Coming soon.* This unit will cover how skills work across different agent platforms, with deep dives into Claude Code, Codex, and Gemini CLI integration.
+In Unit 1, you learned what a skill is and wrote one from scratch. In this unit, you'll use skills the way they show up in real Claude Code work: debugging why one did not fire, dropping in a better one, writing a tiny fix mid-task, and shipping the final result as a Hugging Face Space.
+
+## Learning Objectives
+
+After completing this unit, you will be able to:
+
+- Explain where Claude Code looks for skills and how automatic activation differs from explicit slash-command use
+- Diagnose why a skill did not activate and rewrite its `description` to match natural user intent
+- Relate Claude Code's skill behavior to a minimal load, select, compose implementation
+- Use project-local skills to shape a Gradio app inside an active Claude Code workflow
+- Use `skill-creator` to tighten a skill description with a lightweight evaluation loop
+- Publish a finished Gradio Space with the current `hf` CLI workflow
+
+## What You'll Build
+
+A demo Space for the model you fine-tuned in Unit 1, built inside Claude Code, styled by a skill, tuned with one tiny mid-session fix, and published to the Hub.
+
+Along the way you'll debug a skill that should activate but does not, inspect a minimal skill selector, and see the difference between a skill that exists and a skill that reliably changes behavior.
+
+## Prerequisites
+
+- Completion of Unit 1
+- Claude Code installed
+- A Hugging Face account
+
+> [!TIP]
+> If you have not installed Claude Code yet, go back to Unit 0 and follow the setup steps there before starting this unit.
+
+## Unit Overview
+
+This unit is structured as follows:
+
+1. **Skills in Claude Code** — Where skills live, how auto-activation works, and when slash commands matter
+2. **Hands-on: Did Your Skill Fire?** — Test your Unit 1 skill against a natural prompt and fix its triggering
+3. **Inside the Box** — Walk through a minimal skill loader and selector you can actually run
+4. **Hands-on: Build the Space** — Turn the starter `app.py` into a branded Gradio demo
+5. **Hands-on: Fix It Mid-Session** — Add one tiny project skill to remove recurring UI fluff
+6. **The `skill-creator` Skill** — Run one description-tuning loop and compare before versus after
+7. **Hands-on: Publish the Space** — Create a Space repo and upload the finished app with `hf`
+8. **Quiz** — Check your understanding of Claude Code skill workflows
+9. **Conclusion** — Recap what changed and what comes next
+
+Let's start with how Claude Code actually sees your skills.

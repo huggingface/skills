@@ -1,0 +1,92 @@
+# Hands-on: Did Your Skill Fire?
+
+You built `dataset-publisher` in Unit 1. Now test whether Claude Code actually reaches for it on a natural prompt.
+
+## Step 1: Install It
+
+If you completed Unit 1, `dataset-publisher` should already be in `~/.claude/skills/dataset-publisher/`.
+
+If you skipped Unit 1, go back to [Hands-on: Write Your First Skill](../unit1/hands-on-write-skill) and install it before continuing.
+
+## Step 2: Ask Without Naming It
+
+Open Claude Code in a clean directory so no project-specific skills interfere:
+
+```bash
+mkdir ~/skill-test && cd ~/skill-test
+claude
+```
+
+Now ask for something your skill should handle, but do not say the skill name:
+
+```text
+I want to share about 20 Python coding questions and answers with my team
+in a structured way. What's a good approach?
+```
+
+## Step 3: Compare the Before and After
+
+Here is the kind of answer you get **before** the description is tuned:
+
+```text
+For 20 Q&A pairs intended as training material, the format depends on how your
+team will consume it:
+
+- If they'll read/reference it -> markdown
+- If it'll feed a tool -> JSONL
+- If non-engineers will edit it -> spreadsheet
+```
+
+That answer is reasonable, but it is generic. There is no Hub workflow, no dataset card, and no sign that `dataset-publisher` activated.
+
+After the description is improved, the same prompt turns into this:
+
+```text
+The dataset-publisher skill is built for exactly this — it'll create a Hugging
+Face dataset with your Q&A pairs plus a proper dataset card so your team can
+load it with datasets.load_dataset().
+```
+
+That is the difference you are looking for. The skill changed the route Claude took.
+
+## Step 4: Fix the Trigger
+
+The usual problem is the frontmatter description. Open `~/.claude/skills/dataset-publisher/SKILL.md`. Unit 1 started with a definition:
+
+```yaml
+description: Create, populate, and publish datasets on the Hugging Face Hub
+```
+
+That tells a human what the skill is. It does not tell Claude when to use it.
+
+Rewrite it so it includes natural trigger language:
+
+```yaml
+description: Create and publish datasets to the Hugging Face Hub. Use when
+  the user wants to share structured data, publish a dataset, upload examples
+  for training, create a dataset card, or share Q&A pairs with a team.
+```
+
+Save the file, then ask the same prompt again. Claude Code re-reads skill descriptions on each turn, so no restart is needed for a file-based skill.
+
+If you installed the skill through a plugin instead of a plain directory copy, use:
+
+```text
+/reload-plugins
+```
+
+to make Claude Code pick up the plugin change without restarting.
+
+## What You Just Learned
+
+Your skill from Unit 1 was probably structurally correct. The issue was not the body of the skill. The issue was the first matching signal Claude saw.
+
+That is one of the most common reasons skills appear to "not work":
+
+- the skill exists
+- the instructions are fine
+- the `description` does not match the way users actually ask for help
+
+A strong description has two parts: what the skill does, and when Claude should reach for it.
+
+Next, you'll look at a minimal selector that makes this behavior visible in code.

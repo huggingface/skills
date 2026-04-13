@@ -1,0 +1,83 @@
+# Quiz: Using Skills with Claude Code
+
+Test your understanding of the ideas and workflows from Unit 2. Passing this quiz is part of the **Claude Code Specialization** track described in Unit 0.
+
+The same questions are stored in `course/quiz/data/unit_2.json`.
+
+## Questions
+
+1. Where should a project-local skill live if you want it versioned with the repository?
+   A. `~/.claude/skills/<name>/SKILL.md`
+   B. `.claude/skills/<name>/SKILL.md`
+   C. `skills/<name>/README.md`
+   D. `.mcp/<name>/SKILL.md`
+
+2. What is the main auto-activation signal Claude uses when deciding whether to load a skill?
+   A. The skill directory name
+   B. The longest heading inside `SKILL.md`
+   C. The `description` field in frontmatter
+   D. The file modification time
+
+3. A skill's body is correct, but it never auto-activates on natural prompts. What is the most likely fix?
+   A. Move it from `.claude/skills/` to `~/.claude/skills/`
+   B. Rewrite the `description` to include the language a user would actually type
+   C. Add more headings to `SKILL.md`
+   D. Convert it to an MCP server
+
+4. Why does an agent read skill descriptions before loading full skill bodies?
+   A. Descriptions are cached and bodies are not
+   B. Selecting on short descriptions is cheap, while injecting full bodies costs context
+   C. Claude Code requires two passes for every skill
+   D. Skill bodies cannot be read at runtime
+
+5. What's the difference between a skill and an MCP server?
+   A. Skills run in the browser; MCP servers run locally
+   B. A skill tells Claude how to use tools it has; an MCP server gives Claude a new tool
+   C. Skills are YAML; MCP servers are JSON
+   D. There is no difference
+
+6. When would you type `/skill-name` instead of relying on auto-activation?
+   A. Auto-activation only works for plugin skills
+   B. When you want that specific skill's workflow now, regardless of prompt wording
+   C. Slash invocation is required the first time you use any skill
+   D. Auto-activation is deprecated
+
+7. In the `agent/` starter from `inside-the-box`, what is `select_skills(...)` responsible for?
+   A. Building the Gradio UI
+   B. Choosing which skill names are relevant to the current user message
+   C. Writing new skill files
+   D. Packaging plugin metadata
+
+8. You're writing a style skill for one specific app. Where should it live?
+   A. In the project's `.claude/skills/` because it belongs to that codebase
+   B. Installed via `/plugin install` from a marketplace
+   C. In `~/.claude/skills/` so every project gets it
+   D. Inside `SKILL.md` in the repo root
+
+9. What is `skill-creator` most useful for?
+   A. Converting MCP servers into skills
+   B. Running a skill authoring loop: scaffolding or refining a skill and testing how it activates
+   C. Publishing Spaces to the Hub
+   D. Translating skills between agent runtimes
+
+10. Why are small project-local skills often better than one giant catch-all skill?
+    A. Claude Code ignores large skills entirely
+    B. Small skills are easier to trigger, debug, and keep behavior-specific
+    C. The Agent Skills specification forbids multi-section skills
+    D. Only project-local skills can contain scripts
+
+<details>
+<summary>Answer key</summary>
+
+1. B
+2. C
+3. B
+4. B
+5. B
+6. B
+7. B
+8. A
+9. B
+10. B
+
+</details>

@@ -37,8 +37,10 @@ Claude Code uses a plugin system for skill management:
 /plugin marketplace add huggingface/skills
 
 # Install a specific skill
-/plugin install hugging-face-model-trainer@huggingface/skills
+/plugin install hugging-face-model-trainer@huggingface-skills
 ```
+
+If Claude Code is already open, run `/reload-plugins` before checking the slash menu.
 
 Once installed, the skill is automatically available. You can verify by asking Claude about it:
 
@@ -86,7 +88,7 @@ Let's use the `hugging-face-evaluation` skill to add evaluation results to a mod
 
 ```bash
 # For Claude Code
-/plugin install hugging-face-evaluation@huggingface/skills
+/plugin install hugging-face-evaluation@huggingface-skills
 
 # Or manually
 cp -r skills/hugging-face-evaluation/ ~/.claude/skills/hugging-face-evaluation/
@@ -134,7 +136,7 @@ Now let's use the `hugging-face-datasets` skill to create and publish a dataset:
 
 ```bash
 # For Claude Code
-/plugin install hugging-face-datasets@huggingface/skills
+/plugin install hugging-face-datasets@huggingface-skills
 
 # Or manually
 cp -r skills/hugging-face-datasets/ ~/.claude/skills/hugging-face-datasets/
@@ -172,7 +174,7 @@ Finally, let's use the `hugging-face-model-trainer` skill for the most complex w
 
 ```bash
 # For Claude Code
-/plugin install hugging-face-model-trainer@huggingface/skills
+/plugin install hugging-face-model-trainer@huggingface-skills
 ```
 
 ### Use the Skill

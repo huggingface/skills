@@ -1,0 +1,98 @@
+# Hands-on: Build the Space
+
+You fine-tuned a model in Unit 1. Time to give it a demo people can actually click on.
+
+## The Setup
+
+Use the starter that ships with this unit:
+
+```bash
+cp -R course/units/en/unit2/starter ~/unit2-starter
+cd ~/unit2-starter
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+mkdir -p .claude/skills
+cp -r skills/hf-brand .claude/skills/
+cp -r skills/brutalist .claude/skills/
+```
+
+> [!NOTE]
+> If you did not complete the Unit 1 fine-tune, that is fine. The starter's `app.py` uses a mock `predict()` function so you can still do the whole exercise.
+
+## What the Brand Skill Does
+
+Open `.claude/skills/hf-brand/SKILL.md`. It encodes a specific look and tone for Gradio apps:
+
+- Primary yellow `#FFD21E`, orange `#FF9D00` hover
+- The 🤗 emoji as the brand mark
+- Source Sans Pro font, soft rounded corners
+- Warm, welcoming copy — "Try it out!" not "ENTER TEXT"
+- A ready-to-use Gradio theme block
+
+It is a brand guideline in skill form.
+
+## Build It
+
+Open Claude Code in `~/unit2-starter`:
+
+```bash
+claude
+```
+
+Ask:
+
+```text
+Turn `app.py` into a Space-ready Gradio demo for the sentiment classifier.
+Keep the mock `predict()` function. Add three example inputs and a polished
+layout, but do not change the underlying prediction logic yet.
+```
+
+You never said "use the hf-brand skill." Claude should infer that from the request.
+
+## What You'll See
+
+With the skill loaded, the app Claude builds looks like this:
+
+![HF-branded demo](./assets/hfbrand.png)
+
+🤗 in the title. Yellow button with dark text. Soft rounded cards. Copy like *"Paste any review and see what the model thinks."*
+
+<details>
+<summary>What it looks like without the skill</summary>
+
+Same prompt, same model, no brand skill:
+
+![Baseline demo](./assets/baseline.png)
+
+It works, but it has no strong point of view. That is the value of a well-targeted skill: the code path stays the same while the design and copy get steered in a consistent direction.
+
+</details>
+
+## Run It
+
+```bash
+python app.py
+```
+
+Open `http://localhost:7860`. Click around.
+
+## Try a Different Aesthetic
+
+The starter also includes `skills/brutalist/`, and you already copied it into `.claude/skills/`. Now ask Claude to use it explicitly:
+
+```text
+Restyle `app.py` using the `brutalist` skill specifically. Keep the same
+functionality and examples, but switch the UI and copy to a stark monochrome
+style.
+```
+
+Same app, different personality:
+
+![Brutalist demo](./assets/brutalist.png)
+
+`SENTIMENT CLASSIFIER` in heavy black caps. `PASTE A REVIEW. RECEIVE A VERDICT.` Zero rounded corners.
+
+Same scaffold. Different skill. Different outcome.
+
+Next: what to do when it's almost right.

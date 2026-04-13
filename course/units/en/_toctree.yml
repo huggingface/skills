@@ -29,10 +29,28 @@
   - local: unit1/conclusion
     title: Conclusion
 
-- title: "2. Using Skills with Coding Agents"
+- title: "2. Using Skills with Claude Code"
   sections:
   - local: unit2/introduction
-    title: Skills Across Agent Platforms
+    title: Using Skills with Claude Code
+  - local: unit2/skills-in-claude-code
+    title: Skills in Claude Code
+  - local: unit2/hands-on-debugging-activation
+    title: "Hands-on: Did Your Skill Fire?"
+  - local: unit2/inside-the-box
+    title: "Inside the Box: Load, Select, Compose"
+  - local: unit2/hands-on-build-space
+    title: "Hands-on: Build the Space"
+  - local: unit2/hands-on-iterate
+    title: "Hands-on: Fix It Mid-Session"
+  - local: unit2/skill-creator
+    title: "The skill-creator Skill"
+  - local: unit2/hands-on-publish-space
+    title: "Hands-on: Publish the Space"
+  - local: unit2/quiz
+    title: Quiz
+  - local: unit2/conclusion
+    title: Conclusion
 
 - title: "3. Sharing Skills"
   sections:

@@ -1,0 +1,92 @@
+# The `skill-creator` Skill
+
+You already fixed `dataset-publisher` once by hand. `skill-creator` turns that one-off edit into a repeatable loop: generate eval prompts, test the trigger language, and keep the better description.
+
+## Install It
+
+Install it from the Anthropic skills marketplace:
+
+```bash
+/plugin marketplace add anthropics/skills
+/plugin install example-skills@anthropic-agent-skills
+/reload-plugins
+```
+
+When prompted for a scope, choose **Personal**. Then run:
+
+```text
+/skills
+```
+
+You should see `skill-creator` in the list.
+
+> [!NOTE]
+> `example-skills` installs a bundle, not just `skill-creator`. You will see the other example skills in the slash menu too.
+
+## What It Gives You
+
+`skill-creator` is not just one markdown file. It is a small toolkit:
+
+```text
+skill-creator/
+├── SKILL.md
+├── scripts/
+├── eval-viewer/
+├── agents/
+└── references/
+```
+
+That is progressive disclosure again:
+
+- `SKILL.md` defines the workflow Claude follows
+- `scripts/` runs repeatable evaluation and packaging steps
+- `eval-viewer/` turns results into something you can review quickly
+- `agents/` and `references/` hold supporting material Claude only needs at specific moments
+
+## Run One Description-Tuning Loop
+
+Open Claude Code in the same workspace where you tested `dataset-publisher`, then say:
+
+```text
+Use skill-creator to evaluate the current description for `dataset-publisher`.
+Generate trigger and near-miss prompts, run one optimization loop, and show me
+the baseline description, the proposed rewrite, and which one you would keep.
+```
+
+Start from the description you already edited on the previous page. For this course, stop after one loop. You are not trying to squeeze out the last two percent. You are trying to see the workflow once, cleanly.
+
+## What to Look For
+
+The useful output is not the tool running in the background. It is the comparison between your current description and the candidate rewrite.
+
+Baseline:
+
+```yaml
+description: Create and publish datasets to the Hugging Face Hub. Use when
+  the user wants to share structured data, publish a dataset, upload examples
+  for training, create a dataset card, or share Q&A pairs with a team.
+```
+
+One possible refinement after a single eval pass:
+
+```yaml
+description: Create and publish datasets to the Hugging Face Hub. Use when
+  the user wants to share structured examples, Q&A pairs, or other training
+  data with teammates; upload a dataset to the Hub; or write or update a
+  dataset card.
+```
+
+That change is smaller than the manual fix on the previous page. Good. `skill-creator` is not magic; it is a way to pressure-test whether your trigger language is too narrow, too broad, or missing obvious near-misses.
+
+## Why This Matters
+
+`skill-creator` is most useful when a skill already works once it is loaded, but does not trigger often enough, or when you want a reusable authoring loop for a new skill later. In this unit, you are using it on the activation problem you just debugged so the tooling stays attached to the main story.
+
+By this point in the unit, you have seen all three layers:
+
+1. Write a skill
+2. Notice it does not activate reliably
+3. Fix the trigger language by hand
+4. Tighten that trigger language with a lightweight evaluation loop
+
+Now finish the app and publish it.

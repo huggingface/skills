@@ -1,0 +1,47 @@
+# Hands-on: Publish the Space
+
+You have the app. Now publish it with the current `hf` CLI flow.
+
+## Step 1: Log In
+
+From your starter workspace:
+
+```bash
+cd ~/unit2-starter
+hf auth login
+hf auth whoami
+```
+
+Use the username from `hf auth whoami` in the next commands.
+
+## Step 2: Create the Space Repo
+
+```bash
+hf repos create your-username/unit2-demo --repo-type space --space-sdk gradio
+```
+
+If you rerun the command later, add `--exist-ok`.
+
+## Step 3: Upload the Files
+
+Keep `app.py` and `requirements.txt` at the repo root, then upload the workspace:
+
+```bash
+hf upload your-username/unit2-demo . . --repo-type space \
+  --exclude "/.venv/**" \
+  --exclude "/__pycache__/**"
+```
+
+If you want collaborators to keep the same Claude behavior you used during the exercise, leave `.claude/skills/` in the project before you upload. If you only care about the live demo, you can remove it first.
+
+## Step 4: Check the Result
+
+Open your Space on the Hub and make sure:
+
+- the app launches without missing dependencies
+- the examples work
+- the copy matches the version you intended to keep
+
+If something is off, edit locally and rerun `hf upload`.
+
+That is the whole publish loop: create the repo once, then sync updates as you iterate.

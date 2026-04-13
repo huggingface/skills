@@ -1,0 +1,89 @@
+# Skills in Claude Code
+
+Unit 1 showed you how to install a skill. This section is about what Claude Code does with it after that.
+
+Keep the [Claude Code skills reference](https://code.claude.com/docs/en/skills) nearby if you want the full, current frontmatter reference while you work through this unit.
+
+## Where Skills Live
+
+Claude Code can discover the same skill at a few different scopes.
+
+### Personal
+
+```bash
+mkdir -p ~/.claude/skills/my-skill
+# put SKILL.md in this directory
+```
+
+Use this when you want the skill in every project you open.
+
+### Project-local
+
+```bash
+mkdir -p .claude/skills/my-skill
+```
+
+Use this when the skill belongs to one repository or one team workflow. These files can live in Git alongside the code they shape.
+
+### Plugin
+
+```bash
+/plugin marketplace add huggingface/skills
+/plugin install gradio@huggingface-skills
+/reload-plugins
+```
+
+Use this when someone else maintains the skill and ships it through a marketplace. When Claude Code asks for a scope, pick **Personal** here: `gradio` is useful across projects. The style skills later in this unit live in the project's `.claude/skills/` because they only make sense for this one app.
+
+## Slash Commands vs Auto-Activation
+
+Skills can enter the conversation in two ways:
+
+- **Automatic:** Claude matches your request to the skill description and loads it
+- **Explicit:** You choose a skill from the `/` menu or type its slash command and force that workflow into the turn
+
+Automatic activation is what you want for background knowledge and recurring patterns. Explicit invocation is the fallback when you want a specific workflow right now or when multiple skills could plausibly apply.
+
+## How Activation Works
+
+For automatic activation, the most important line in a skill is the `description` field in its frontmatter. Claude uses that text to decide whether a skill is relevant enough to load.
+
+That makes the difference between these two versions meaningful:
+
+```yaml
+# Won't activate — too vague
+description: A helper for datasets
+
+# Better — says when to use it
+description: Create and publish datasets to the HF Hub. Use when the user mentions
+  publishing a dataset, uploading training data, sharing structured Q&A pairs,
+  or writing a dataset card.
+```
+
+The description is not the only frontmatter field Claude understands, but it is the main auto-activation signal. Other fields can narrow or change behavior:
+
+- `disable-model-invocation: true` stops automatic activation and keeps the skill manual-only
+- `user-invocable: false` hides it from the slash-command menu
+- `paths:` limits activation to matching files or folders
+
+See the [Claude Code skills reference](https://code.claude.com/docs/en/skills) for the full set of frontmatter fields.
+
+That means a good description should do two jobs at once:
+
+1. Say what the skill does
+2. Say when to use it in the language a user would actually type
+
+## Checking What Is Available
+
+Two commands are useful here:
+
+- `/skills` shows the skills Claude Code can currently see
+- `/reload-plugins` applies plugin installs, enables, or disables without restarting Claude Code
+
+For file-based personal and project skills, save the file and continue. Claude Code re-reads those skills on the next turn. If you want a clean debugging baseline, start a new session in an empty directory.
+
+## Skills vs MCP
+
+Skills are instructions; MCP servers provide tools. A skill tells Claude how to use capabilities it already has. An MCP server gives Claude something new to use, like a Slack client, a database connection, or a browser. The `gradio` skill in this repo needs no MCP server because Claude already knows how to edit Python files. A "post my model card to Slack" workflow would need both: the skill for the steps, and a Slack MCP server for the actual API access.
+
+Now let's use your Unit 1 skill and see if it actually works.

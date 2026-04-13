@@ -1,0 +1,101 @@
+# Inside the Box
+
+Claude Code does more than this, but the shape is simpler than it looks. The starter bundled with this unit includes a minimal skill-aware agent so you can see the core loop directly.
+
+## The Starter
+
+Copy the unit starter to a clean workspace, then open the `agent/` subdirectory:
+
+```bash
+cp -R course/units/en/unit2/starter ~/unit2-starter
+cd ~/unit2-starter/agent
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+The `agent/` directory contains:
+
+```text
+agent/
+├── app.py                     # Gradio chat app with a select_skills() TODO
+├── skill_loader.py            # parse, load, and compose helpers
+├── solution_select_skills.py  # one working selection implementation
+└── skills/
+    ├── hf-brand/SKILL.md
+    └── domain-qwen/SKILL.md
+```
+
+It is not a production framework. It is a teaching tool.
+
+## 1. Load
+
+Walk `skills/`, find every `SKILL.md`, and parse the frontmatter:
+
+```python
+@dataclass
+class Skill:
+    name: str
+    description: str
+    body: str
+    path: Path
+```
+
+In the starter, `skill_loader.py` turns each file into that dataclass. The important part is that the loader keeps the description separate from the body.
+
+## 2. Select
+
+This is the routing step. The starter leaves it as a TODO in `app.py`:
+
+```python
+def select_skills(user_message: str) -> list[str]:
+    """
+    Decide which skills are relevant to this message.
+
+    TODO: implement this.
+    """
+    return []
+```
+
+The simplest implementation is the same one you reasoned about in Unit 1: show a fast model the available skill descriptions, give it the user message, and ask for a JSON list of relevant skill names.
+
+That is exactly what `solution_select_skills.py` does.
+
+## 3. Compose
+
+Once the selector chooses names, the starter builds one system prompt from the chosen skill bodies:
+
+```python
+def system_prompt_for(skills, selected_names):
+    chosen = [s for s in skills if s.name in selected_names]
+    parts = [f"# Skill: {s.name}\n\n{s.body}" for s in chosen]
+    return "\n\n---\n\n".join(parts)
+```
+
+That is the core loop:
+
+1. Load the installed skills
+2. Select the relevant ones
+3. Compose the chosen bodies into the system prompt
+4. Generate the response
+
+## Progressive Disclosure, Revisited
+
+Unit 1 described progressive disclosure conceptually. The starter makes it concrete:
+
+- `descriptions_block(skills)` keeps the lightweight routing view
+- `system_prompt_for(...)` loads full bodies only for the selected skills
+
+A skill that is not selected does not consume prompt space beyond its short description.
+
+## The Same Shape in Claude Code and the SDK
+
+Claude Code and the Claude Agent SDK hide these details for you, but the shape is the same.
+
+- Claude Code discovers skills from personal, project, and plugin locations
+- The SDK can discover project skills from `.claude/skills/` when project settings are enabled
+- In both cases, the practical question is still the same one you just made explicit: which skill descriptions look relevant enough to load?
+
+That is why this detour matters. When a skill does not fire, you are no longer debugging magic. You are debugging a routing step.
+
+If you want to see the starter in action, open `app.py`, implement `select_skills()`, or compare your version against `solution_select_skills.py`.

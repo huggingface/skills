@@ -1,0 +1,79 @@
+# Hands-on: Fix It Mid-Session
+
+The Space is close. But something's off.
+
+## The Annoyance
+
+Look at what Claude generated. Somewhere in there, probably near the bottom, you'll often get something like:
+
+```python
+gr.Markdown(
+    "⚠️ **Note:** This demo uses keyword-based mock inference for "
+    "illustration purposes. In a production system, replace this with "
+    "a real NLP model."
+)
+```
+
+You did not ask for that. Claude is trying to be careful. For a polished demo, it is just noise.
+
+You could say "remove the disclaimer." That fixes it once. Next time Claude edits the file, the disclaimer may come back.
+
+## Write the Skill Right Now
+
+Do not leave the project. In a second terminal, still inside `~/unit2-starter`:
+
+```bash
+mkdir -p .claude/skills/no-fluff
+```
+
+Create `.claude/skills/no-fluff/SKILL.md`:
+
+```markdown
+---
+name: no-fluff
+description: Strip disclaimers and filler from demos. Use when building
+  Gradio apps, demo Spaces, or example code.
+---
+
+# No Fluff
+
+When generating demo code:
+
+- No "⚠️ Note: this is a demo" footers
+- No "In production, you would..." disclaimers
+- No TODO placeholders unless asked
+- Trust the user knows it's a demo
+
+The user is a developer. They understand the difference between a demo
+and production. Let the code speak.
+```
+
+Twelve lines. Thirty seconds.
+
+## Continue in the Same Workflow
+
+Back in the same Claude Code conversation, ask for a rewrite:
+
+```text
+Regenerate `app.py`. Keep the same functionality, but remove the disclaimer
+footer and keep the copy direct.
+```
+
+The disclaimer is gone because you changed the project, not just the prompt. If you want to compare your hand-written version with the reference copy bundled in the starter, open `skills/no-fluff/SKILL.md`.
+
+## What Just Happened
+
+This is how many useful skills are actually written. Not in advance, from a perfect spec. They emerge when the same annoyance shows up often enough that it is worth encoding once.
+
+The pattern is simple:
+
+1. Claude does the slightly wrong thing
+2. You correct it
+3. The correction does not stick
+4. You write a tiny skill
+5. The behavior changes for the whole project
+
+> [!TIP]
+> Skills you write this way tend to be small and specific. That's good. A skill that fixes one thing reliably is more useful than a skill that tries to fix everything and sometimes misfires. You'll accumulate many small ones over time.
+
+Next, use `skill-creator` to make the original `dataset-publisher` trigger more reliably.

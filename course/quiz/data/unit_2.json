@@ -1,0 +1,82 @@
+[
+  {
+    "question": "Where should a project-local skill live if you want it versioned with the repository?",
+    "answer_a": "~/.claude/skills/<name>/SKILL.md",
+    "answer_b": ".claude/skills/<name>/SKILL.md",
+    "answer_c": "skills/<name>/README.md",
+    "answer_d": ".mcp/<name>/SKILL.md",
+    "correct_answer": "B"
+  },
+  {
+    "question": "What is the main auto-activation signal Claude uses when deciding whether to load a skill?",
+    "answer_a": "The skill directory name",
+    "answer_b": "The longest heading inside SKILL.md",
+    "answer_c": "The description field in frontmatter",
+    "answer_d": "The file modification time",
+    "correct_answer": "C"
+  },
+  {
+    "question": "A skill's body is correct, but it never auto-activates on natural prompts. What is the most likely fix?",
+    "answer_a": "Move it from .claude/skills/ to ~/.claude/skills/",
+    "answer_b": "Rewrite the description to include the language a user would actually type",
+    "answer_c": "Add more headings to SKILL.md",
+    "answer_d": "Convert it to an MCP server",
+    "correct_answer": "B"
+  },
+  {
+    "question": "Why does an agent read skill descriptions before loading full skill bodies?",
+    "answer_a": "Descriptions are cached and bodies are not",
+    "answer_b": "Selecting on short descriptions is cheap, while injecting full bodies costs context",
+    "answer_c": "Claude Code requires two passes for every skill",
+    "answer_d": "Skill bodies cannot be read at runtime",
+    "correct_answer": "B"
+  },
+  {
+    "question": "What's the difference between a skill and an MCP server?",
+    "answer_a": "Skills run in the browser; MCP servers run locally",
+    "answer_b": "A skill tells Claude how to use tools it has; an MCP server gives Claude a new tool",
+    "answer_c": "Skills are YAML; MCP servers are JSON",
+    "answer_d": "There is no difference",
+    "correct_answer": "B"
+  },
+  {
+    "question": "When would you type /skill-name instead of relying on auto-activation?",
+    "answer_a": "Auto-activation only works for plugin skills",
+    "answer_b": "When you want that specific skill's workflow now, regardless of prompt wording",
+    "answer_c": "Slash invocation is required the first time you use any skill",
+    "answer_d": "Auto-activation is deprecated",
+    "correct_answer": "B"
+  },
+  {
+    "question": "In the agent/ starter from Inside the Box, what is select_skills(...) responsible for?",
+    "answer_a": "Building the Gradio UI",
+    "answer_b": "Choosing which skill names are relevant to the current user message",
+    "answer_c": "Writing new skill files",
+    "answer_d": "Packaging plugin metadata",
+    "correct_answer": "B"
+  },
+  {
+    "question": "You're writing a style skill for one specific app. Where should it live?",
+    "answer_a": "In the project's .claude/skills/ because it belongs to that codebase",
+    "answer_b": "Installed via /plugin install from a marketplace",
+    "answer_c": "In ~/.claude/skills/ so every project gets it",
+    "answer_d": "Inside SKILL.md in the repo root",
+    "correct_answer": "A"
+  },
+  {
+    "question": "What is skill-creator most useful for?",
+    "answer_a": "Converting MCP servers into skills",
+    "answer_b": "Running a skill authoring loop: scaffolding or refining a skill and testing how it activates",
+    "answer_c": "Publishing Spaces to the Hub",
+    "answer_d": "Translating skills between agent runtimes",
+    "correct_answer": "B"
+  },
+  {
+    "question": "Why are small project-local skills often better than one giant catch-all skill?",
+    "answer_a": "Claude Code ignores large skills entirely",
+    "answer_b": "Small skills are easier to trigger, debug, and keep behavior-specific",
+    "answer_c": "The Agent Skills specification forbids multi-section skills",
+    "answer_d": "Only project-local skills can contain scripts",
+    "correct_answer": "B"
+  }
+]
