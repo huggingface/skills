@@ -54,6 +54,23 @@ This returns a Markdown document with everything needed to call the Space: avail
 - **Open/play the result**: Use `open <file>` (macOS) or `afplay <file>` (audio)
 - File URLs from Gradio look like: `https://<space>.hf.space/gradio_api/file=<path>`
 
+### Step 4: Save results to a Hugging Face bucket
+
+Persist generated artifacts to a Hugging Face bucket so they survive across sessions and are shareable:
+
+```bash
+# Create the bucket once (no-op if it already exists)
+hf buckets create <namespace>/<bucket-name> --exist-ok
+
+# Upload the generated file
+hf buckets cp <local-file> hf://buckets/<namespace>/<bucket-name>/
+```
+
+- Default to a bucket named after the use case (e.g. `<user>/spaces-outputs`) unless the user specifies one
+- Use subpaths to organize by Space or run: `hf://buckets/<user>/spaces-outputs/<space-name>/<timestamp>-<file>`
+- `hf buckets sync ./local-dir hf://buckets/<user>/<bucket>` for batch uploads
+- Print the `hf://` URI back to the user so they can `hf buckets cp` it later
+
 ## Tips
 
 - Read `agents.md` carefully — it often documents exact parameter names, accepted values, and example calls
