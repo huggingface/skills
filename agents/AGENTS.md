@@ -1,3 +1,8 @@
+---
+name: huggingface-skills
+description: Hugging Face skills for AI agents - access models, datasets, spaces, papers, training, and more from the HF ecosystem.
+---
+
 <skills>
 
 You have additional SKILLs documented in directories containing a "SKILL.md" file.
