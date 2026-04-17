@@ -73,6 +73,12 @@
       "source": "./skills/huggingface-vision-trainer",
       "skills": "./",
       "description": "Train and fine-tune object detection models (RTDETRv2, YOLOS, DETR and others) and image classification models (timm and transformers models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3) using Transformers Trainer API on Hugging Face Jobs infrastructure or locally. Includes COCO dataset format support, Albumentations augmentation, mAP/mAR metrics, trackio tracking, hardware selection, and Hub persistence."
+    },
+    {
+      "name": "huggingface-spaces",
+      "source": "./skills/huggingface-spaces",
+      "skills": "./",
+      "description": "Find and call Hugging Face Spaces to generate AI artifacts (images, audio, 3D models, etc). Uses semantic search to discover Spaces, then calls their Gradio APIs."
     }
   ]
 }
