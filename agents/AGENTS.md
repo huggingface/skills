@@ -1,3 +1,8 @@
+---
+name: huggingface-skills
+description: Hugging Face skills for working with the HF ecosystem — models, datasets, spaces, training, evaluation, and more.
+---
+
 <skills>
 
 You have additional SKILLs documented in directories containing a "SKILL.md" file.
