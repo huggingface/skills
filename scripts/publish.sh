@@ -9,6 +9,7 @@ GENERATED_FILES=(
   "README.md"
   ".cursor-plugin/plugin.json"
   ".mcp.json"
+  "opencode.json"
 )
 
 file_sig() {
@@ -23,6 +24,7 @@ file_sig() {
 run_generate() {
   uv run scripts/generate_agents.py
   uv run scripts/generate_cursor_plugin.py
+  uv run scripts/generate_opencode_config.py
 }
 
 run_check() {
@@ -55,6 +57,9 @@ run_check() {
 
   # Extra explicit check for cursor-only artifacts
   uv run scripts/generate_cursor_plugin.py --check
+  
+  # Extra explicit check for opencode artifacts
+  uv run scripts/generate_opencode_config.py --check
 
   echo "All generated artifacts are up to date."
 }
@@ -78,6 +83,7 @@ This script regenerates:
   - README.md (skills table section)
   - .cursor-plugin/plugin.json
   - .mcp.json
+  - opencode.json
 EOF
     ;;
   *)

@@ -80,6 +80,31 @@ For contributors, regenerate manifests with:
 ./scripts/publish.sh
 ```
 
+### OpenCode
+
+This repository includes `opencode.json` for first-class OpenCode integration.
+
+The configuration is auto-generated from the skills/ directory and includes:
+
+- Skill discovery configuration (`skills/` directory, Agent Skills format)
+- All skill entries with names, descriptions, and paths
+- AGENTS context file reference (`agents/AGENTS.md`)
+- MCP server settings aligned with other agent configurations
+
+**For users:**
+
+OpenCode will automatically discover skills from this repository when it's added as a skill source.
+
+**For contributors:**
+
+Regenerate `opencode.json` with:
+
+```bash
+./scripts/publish.sh
+```
+
+The generation script (`scripts/generate_opencode_config.py`) ensures OpenCode configuration stays consistent with Claude, Cursor, and Gemini formats.
+
 ## Skills
 
 This repository contains a few skills to get you started. You can also contribute your own skills to the repository.
