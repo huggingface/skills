@@ -1,3 +1,8 @@
+---
+name: huggingface-skills
+description: Provides access to the Hugging Face Skills.
+---
+
 <skills>
 
 You have additional SKILLs documented in directories containing a "SKILL.md" file.
