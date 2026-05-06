@@ -12,6 +12,7 @@ These skills are:
  - huggingface-local-models -> "skills/huggingface-local-models/SKILL.md"
  - huggingface-paper-publisher -> "skills/huggingface-paper-publisher/SKILL.md"
  - huggingface-papers -> "skills/huggingface-papers/SKILL.md"
+ - huggingface-spaces -> "skills/huggingface-spaces/SKILL.md"
  - huggingface-tool-builder -> "skills/huggingface-tool-builder/SKILL.md"
  - huggingface-trackio -> "skills/huggingface-trackio/SKILL.md"
  - huggingface-vision-trainer -> "skills/huggingface-vision-trainer/SKILL.md"
@@ -30,6 +31,7 @@ huggingface-llm-trainer: `Train or fine-tune language and vision models using TR
 huggingface-local-models: `"Use to select models to run locally with llama.cpp and GGUF on CPU, Mac Metal, CUDA, or ROCm. Covers finding GGUFs, quant selection, running servers, exact GGUF file lookup, conversion, and OpenAI-compatible local serving."`
 huggingface-paper-publisher: `Publish and manage research papers on Hugging Face Hub. Supports creating paper pages, linking papers to models/datasets, claiming authorship, and generating professional markdown-based research articles.`
 huggingface-papers: `Look up and read Hugging Face paper pages in markdown, and use the papers API for structured metadata such as authors, linked models/datasets/spaces, Github repo and project page. Use when the user shares a Hugging Face paper page URL, an arXiv URL or ID, or asks to summarize, explain, or analyze an AI research paper.`
+huggingface-spaces: `Find and call Hugging Face Spaces to generate AI artifacts (images, audio, 3D models, etc). Uses semantic search to discover Spaces, then calls their Gradio APIs.`
 huggingface-tool-builder: `Use this skill when the user wants to build tool/scripts or achieve a task where using data from the Hugging Face API would help. This is especially useful when chaining or combining API calls or the task will be repeated/automated. This Skill creates a reusable script to fetch, enrich or process data.`
 huggingface-trackio: `Track and visualize ML training experiments with Trackio. Use when logging metrics during training (Python API), firing alerts for training diagnostics, or retrieving/analyzing logged metrics (CLI). Supports real-time dashboard visualization, alerts with webhooks, HF Space syncing, and JSON output for automation.`
 huggingface-vision-trainer: `Trains and fine-tunes vision models for object detection (D-FINE, RT-DETR v2, DETR, YOLOS), image classification (timm models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3 — plus any Transformers classifier), and SAM/SAM2 segmentation using Hugging Face Transformers on Hugging Face Jobs cloud GPUs. Covers COCO-format dataset preparation, Albumentations augmentation, mAP/mAR evaluation, accuracy metrics, SAM segmentation with bbox/point prompts, DiceCE loss, hardware selection, cost estimation, Trackio monitoring, and Hub persistence. Use when users mention training object detection, image classification, SAM, SAM2, segmentation, image matting, DETR, D-FINE, RT-DETR, ViT, timm, MobileNet, ResNet, bounding box models, or fine-tuning vision models on Hugging Face Jobs.`
