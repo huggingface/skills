@@ -9,7 +9,7 @@ The Hugging Face Hub CLI tool `hf` is available. IMPORTANT: The `hf` command rep
 
 Use `hf --help` to view available functions. Note that auth commands are now all under `hf auth` e.g. `hf auth whoami`.
 
-Generated with `huggingface_hub v1.14.0`. Run `hf skills add --force` to regenerate.
+Generated with `huggingface_hub v1.15.0`. Run `hf skills add --force` to regenerate.
 
 ## Commands
 
@@ -33,7 +33,7 @@ Generated with `huggingface_hub v1.14.0`. Run `hf skills add --force` to regener
 ### `hf buckets` — Commands to interact with buckets.
 
 - `hf buckets cp SRC` — Copy files to or from buckets. `[--format CHOICE]`
-- `hf buckets create BUCKET_ID` — Create a new bucket. `[--private --exist-ok --format CHOICE]`
+- `hf buckets create BUCKET_ID` — Create a new bucket. `[--private --region CHOICE --exist-ok --format CHOICE]`
 - `hf buckets delete BUCKET_ID` — Delete a bucket. `[--yes --missing-ok --format CHOICE]`
 - `hf buckets info BUCKET_ID` — Get info about a bucket. `[--format CHOICE]`
 - `hf buckets list` — List buckets or files in a bucket. `[--human-readable --tree --recursive --search TEXT --format CHOICE]`
@@ -136,7 +136,7 @@ Generated with `huggingface_hub v1.14.0`. Run `hf skills add --force` to regener
 
 - `hf repos branch create REPO_ID BRANCH` — Create a new branch for a repo on the Hub. `[--revision TEXT --type CHOICE --exist-ok --format CHOICE]`
 - `hf repos branch delete REPO_ID BRANCH` — Delete a branch from a repo on the Hub. `[--type CHOICE --format CHOICE]`
-- `hf repos create REPO_ID` — Create a new repo on the Hub. `[--type CHOICE --space-sdk TEXT --private --public --protected --exist-ok --resource-group-id TEXT --flavor CHOICE --storage CHOICE --sleep-time INTEGER --secrets TEXT --secrets-file TEXT --env TEXT --env-file TEXT --volume TEXT --format CHOICE]`
+- `hf repos create REPO_ID` — Create a new repo on the Hub. `[--type CHOICE --space-sdk TEXT --private --public --protected --exist-ok --resource-group-id TEXT --region CHOICE --flavor CHOICE --storage CHOICE --sleep-time INTEGER --secrets TEXT --secrets-file TEXT --env TEXT --env-file TEXT --volume TEXT --format CHOICE]`
 - `hf repos delete REPO_ID` — Delete a repo from the Hub. This is an irreversible operation. `[--type CHOICE --missing-ok --yes --format CHOICE]`
 - `hf repos delete-files REPO_ID PATTERNS` — Delete files from a repo on the Hub. `[--type CHOICE --revision TEXT --commit-message TEXT --commit-description TEXT --create-pr --format CHOICE]`
 - `hf repos duplicate FROM_ID` — Duplicate a repo on the Hub (model, dataset, or Space). `[--type CHOICE --private --public --protected --exist-ok --flavor CHOICE --storage CHOICE --sleep-time INTEGER --secrets TEXT --secrets-file TEXT --env TEXT --env-file TEXT --volume TEXT --format CHOICE]`
@@ -149,6 +149,7 @@ Generated with `huggingface_hub v1.14.0`. Run `hf skills add --force` to regener
 ### `hf skills` — Manage skills for AI assistants.
 
 - `hf skills add` — Download a Hugging Face skill and install it for an AI assistant. `[--claude --global --dest PATH --force --format CHOICE]`
+- `hf skills list` — List available skills from the Hugging Face marketplace. `[--format CHOICE]`
 - `hf skills preview` — Print the generated `hf-cli` SKILL.md to stdout. `[--format CHOICE]`
 - `hf skills update` — Update installed Hugging Face marketplace skills. `[--claude --global --dest PATH --format CHOICE]`
 
