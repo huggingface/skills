@@ -161,6 +161,11 @@ def stable_id(rel_path: str, ordinal: int, part: int) -> str:
     return NON_ID_RE.sub("-", source).strip("-")
 
 
+def stable_skill_id(skill: str) -> str:
+    source = f"{SOURCE_REPO}-skill-{skill}".lower()
+    return NON_ID_RE.sub("-", source).strip("-")
+
+
 def github_url(rel_path: str) -> str:
     return f"https://github.com/{SOURCE_REPO}/blob/main/{rel_path}"
 
@@ -216,6 +221,29 @@ def build_documents(repo_root: Path) -> list[dict[str, Any]]:
         skill_name = str(meta.get("name") or skill)
         skill_description = str(meta.get("description") or "")
         skill_meta = {k: v for k, v in meta.items() if k not in {"name", "description"}}
+        url = github_url(rel_path)
+        raw_url = raw_github_url(rel_path)
+
+        documents.append(
+            {
+                "id": stable_skill_id(skill),
+                "repo": SOURCE_REPO,
+                "skill": skill,
+                "skill_name": skill_name,
+                "skill_description": skill_description,
+                "skill_meta": skill_meta,
+                "path": rel_path,
+                "url": url,
+                "raw_url": raw_url,
+                "kind": "skill",
+                "title": skill_name,
+                "heading_path": [],
+                "content": skill_description,
+                "text": "\n".join(value for value in [skill_name, skill_description, rel_path] if value),
+                "ordinal": 0,
+                "part": 0,
+            }
+        )
 
         for section in split_sections(body, skill_name):
             for part, content in enumerate(chunk_text(section.content, MAX_CHARS, OVERLAP_CHARS)):
@@ -223,7 +251,7 @@ def build_documents(repo_root: Path) -> list[dict[str, Any]]:
                 heading_text = " > ".join(section.heading_path)
                 text = "\n".join(
                     value
-                    for value in [skill_name, skill_description, rel_path, heading_text, title, content]
+                    for value in [skill_name, rel_path, heading_text, title, content]
                     if value
                 )
                 documents.append(
@@ -235,8 +263,8 @@ def build_documents(repo_root: Path) -> list[dict[str, Any]]:
                         "skill_description": skill_description,
                         "skill_meta": skill_meta,
                         "path": rel_path,
-                        "url": github_url(rel_path),
-                        "raw_url": raw_github_url(rel_path),
+                        "url": url,
+                        "raw_url": raw_url,
                         "kind": "skill_section",
                         "title": title,
                         "heading_path": section.heading_path,
