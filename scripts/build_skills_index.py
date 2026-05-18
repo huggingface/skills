@@ -26,6 +26,23 @@ DEFAULT_INDEX = "hf_skills"
 MARKETPLACE_PATH = ".claude-plugin/marketplace.json"
 MAX_CHARS = 12_000
 OVERLAP_CHARS = 800
+MAX_SUPPORTING_CHARS = 200_000
+SUPPORTING_SUFFIXES = {
+    ".css",
+    ".html",
+    ".js",
+    ".json",
+    ".jsx",
+    ".md",
+    ".py",
+    ".sh",
+    ".toml",
+    ".ts",
+    ".tsx",
+    ".txt",
+    ".yaml",
+    ".yml",
+}
 FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*(?:\n|\Z)", re.DOTALL)
 NON_ID_RE = re.compile(r"[^a-z0-9]+")
 MARKDOWN = MarkdownIt()
@@ -212,68 +229,92 @@ def marketplace_descriptions(marketplace: dict[str, Any]) -> dict[str, str]:
     return descriptions
 
 
-def build_documents(repo_root: Path) -> list[dict[str, Any]]:
+def read_supporting_files(skill_dir: Path, repo_root: Path) -> tuple[list[str], str]:
+    files: list[str] = []
+    chunks: list[str] = []
+    total = 0
+
+    for path in sorted(skill_dir.rglob("*")):
+        if not path.is_file() or path.name == "SKILL.md" or path.suffix.lower() not in SUPPORTING_SUFFIXES:
+            continue
+
+        rel_path = path.relative_to(repo_root).as_posix()
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+
+        remaining = MAX_SUPPORTING_CHARS - total
+        if remaining <= 0:
+            break
+
+        text = text.strip()
+        if not text:
+            continue
+
+        if len(text) > remaining:
+            text = text[:remaining].rstrip()
+
+        files.append(rel_path)
+        chunks.append(f"# {rel_path}\n\n{text}")
+        total += len(text)
+
+    return files, "\n\n".join(chunks)
+
+
+def build_documents(repo_root: Path, marketplace: dict[str, Any], updated_at: str) -> list[dict[str, Any]]:
     documents: list[dict[str, Any]] = []
+    version = marketplace_version(marketplace)
+    descriptions = marketplace_descriptions(marketplace)
+
     for skill_md in sorted((repo_root / "skills").glob("*/SKILL.md")):
         meta, body = load_skill(skill_md)
         rel_path = skill_md.relative_to(repo_root).as_posix()
         skill = skill_md.parent.name
         skill_name = str(meta.get("name") or skill)
         skill_description = str(meta.get("description") or "")
+        marketplace_description = descriptions.get(skill, skill_description)
         skill_meta = {k: v for k, v in meta.items() if k not in {"name", "description"}}
         url = github_url(rel_path)
         raw_url = raw_github_url(rel_path)
+        supporting_files, supporting_content = read_supporting_files(skill_md.parent, repo_root)
 
-        documents.append(
-            {
-                "id": stable_skill_id(skill),
-                "repo": SOURCE_REPO,
-                "skill": skill,
-                "skill_name": skill_name,
-                "skill_description": skill_description,
-                "skill_meta": skill_meta,
-                "path": rel_path,
-                "url": url,
-                "raw_url": raw_url,
-                "kind": "skill",
-                "title": skill_name,
-                "heading_path": [],
-                "content": skill_description,
-                "text": "\n".join(value for value in [skill_name, skill_description, rel_path] if value),
-                "ordinal": 0,
-                "part": 0,
-            }
+        text = "\n".join(
+            value
+            for value in [
+                skill_name,
+                marketplace_description,
+                skill_description,
+                rel_path,
+                body.strip(),
+                supporting_content,
+            ]
+            if value
         )
 
-        for section in split_sections(body, skill_name):
-            for part, content in enumerate(chunk_text(section.content, MAX_CHARS, OVERLAP_CHARS)):
-                title = section.title or skill_name
-                heading_text = " > ".join(section.heading_path)
-                text = "\n".join(
-                    value
-                    for value in [skill_name, rel_path, heading_text, title, content]
-                    if value
-                )
-                documents.append(
-                    {
-                        "id": stable_id(rel_path, section.ordinal, part),
-                        "repo": SOURCE_REPO,
-                        "skill": skill,
-                        "skill_name": skill_name,
-                        "skill_description": skill_description,
-                        "skill_meta": skill_meta,
-                        "path": rel_path,
-                        "url": url,
-                        "raw_url": raw_url,
-                        "kind": "skill_section",
-                        "title": title,
-                        "heading_path": section.heading_path,
-                        "content": content,
-                        "text": text,
-                        "ordinal": section.ordinal,
-                        "part": part,
-                    }
-                )
+        document = {
+            "id": stable_skill_id(skill),
+            "repo": SOURCE_REPO,
+            "skill": skill,
+            "skill_name": skill_name,
+            "skill_description": skill_description,
+            "marketplace_description": marketplace_description,
+            "skill_meta": skill_meta,
+            "path": rel_path,
+            "url": url,
+            "raw_url": raw_url,
+            "kind": "skill",
+            "title": skill_name,
+            "content": body.strip(),
+            "supporting_files": supporting_files,
+            "supporting_content": supporting_content,
+            "text": text,
+            "updated_at": updated_at,
+        }
+        if version:
+            document["version"] = version
+        documents.append(document)
+
     return documents
 
 
@@ -344,7 +385,7 @@ def build_artifacts(repo_root: Path, out_dir: Path, branch: str | None) -> None:
 
     updated_at = git_value(repo_root, "show", "-s", "--format=%cI", "HEAD", default=utc_now())
     marketplace = load_marketplace(repo_root)
-    documents = build_documents(repo_root)
+    documents = build_documents(repo_root, marketplace, updated_at)
     generated_at = utc_now()
 
     write_ndjson(out_dir / "hf-skills.ndjson", documents)
