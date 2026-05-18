@@ -6,6 +6,7 @@ on:
     paths:
       - "skills/**"
       - ".claude-plugin/marketplace.json"
+      - "scripts/build_skills_index.py"
       - ".github/workflows/sync-skills-to-bucket.yml"
 
 concurrency:
@@ -22,9 +23,17 @@ jobs:
       - name: Set up uv
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
 
+      - name: Build skills index artifact
+        run: |
+          uv run scripts/build_skills_index.py \
+            --repo-root . \
+            --out-dir out/skills-index/latest \
+            --branch main
+
       - name: Sync skills to bucket
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           uvx hf buckets sync ./skills hf://buckets/huggingface/skills/skills --delete
           uvx hf buckets cp ./.claude-plugin/marketplace.json hf://buckets/huggingface/skills/marketplace.json
+          uvx hf buckets sync ./out/skills-index/latest hf://buckets/huggingface/skills/index/latest --delete
