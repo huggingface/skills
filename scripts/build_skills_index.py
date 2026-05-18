@@ -305,15 +305,53 @@ def build_documents(repo_root: Path, marketplace: dict[str, Any], updated_at: st
             "raw_url": raw_url,
             "kind": "skill",
             "title": skill_name,
+            "heading_path": [],
             "content": body.strip(),
             "supporting_files": supporting_files,
             "supporting_content": supporting_content,
             "text": text,
+            "ordinal": 0,
+            "part": 0,
             "updated_at": updated_at,
         }
         if version:
             document["version"] = version
         documents.append(document)
+
+        for section in split_sections(body, skill_name):
+            for part, content in enumerate(chunk_text(section.content, MAX_CHARS, OVERLAP_CHARS)):
+                title = section.title or skill_name
+                heading_text = " > ".join(section.heading_path)
+                section_text = "\n".join(
+                    value
+                    for value in [skill_name, rel_path, heading_text, title, content]
+                    if value
+                )
+                section_document = {
+                    "id": stable_id(rel_path, section.ordinal, part),
+                    "repo": SOURCE_REPO,
+                    "skill": skill,
+                    "skill_name": skill_name,
+                    "skill_description": skill_description,
+                    "marketplace_description": marketplace_description,
+                    "skill_meta": skill_meta,
+                    "path": rel_path,
+                    "url": url,
+                    "raw_url": raw_url,
+                    "kind": "skill_section",
+                    "title": title,
+                    "heading_path": section.heading_path,
+                    "content": content,
+                    "supporting_files": [],
+                    "supporting_content": "",
+                    "text": section_text,
+                    "ordinal": section.ordinal,
+                    "part": part,
+                    "updated_at": updated_at,
+                }
+                if version:
+                    section_document["version"] = version
+                documents.append(section_document)
 
     return documents
 
