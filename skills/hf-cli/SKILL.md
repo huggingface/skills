@@ -9,7 +9,7 @@ The Hugging Face Hub CLI tool `hf` is available. IMPORTANT: The `hf` command rep
 
 Use `hf --help` to view available functions. Note that auth commands are now all under `hf auth` e.g. `hf auth whoami`.
 
-Generated with `huggingface_hub v1.15.0`. Run `hf skills add --force` to regenerate.
+Generated with `huggingface_hub v1.16.0`. Run `hf skills add --force` to regenerate.
 
 ## Commands
 
