@@ -1,0 +1,236 @@
+name: Publish skill to ClawHub
+
+on:
+  workflow_dispatch:
+    inputs:
+      skill_id:
+        description: Skill id to regenerate from the Hugging Face CLI.
+        required: true
+        type: string
+        default: hf-cli
+      owner:
+        description: ClawHub owner to publish under.
+        required: true
+        type: string
+        default: huggingface
+      slug:
+        description: ClawHub slug. Defaults to the skill id when empty.
+        required: false
+        type: string
+        default: ""
+      display_name:
+        description: ClawHub display name. Defaults to "Hugging Face CLI" for hf-cli and the skill id otherwise.
+        required: false
+        type: string
+        default: ""
+      version:
+        description: Version override. Defaults to the generated skill version when empty.
+        required: false
+        type: string
+        default: ""
+      tags:
+        description: Tags to apply to the published version.
+        required: false
+        type: string
+        default: latest
+      changelog:
+        description: Changelog override. Defaults to a generated sync message when empty.
+        required: false
+        type: string
+        default: ""
+      clawscan_note:
+        description: ClawScan note. Uses the hf-cli default note when empty for hf-cli.
+        required: false
+        type: string
+        default: ""
+  workflow_call:
+    inputs:
+      skill_id:
+        description: Skill id to regenerate from the Hugging Face CLI.
+        required: true
+        type: string
+      owner:
+        description: ClawHub owner to publish under.
+        required: false
+        type: string
+        default: huggingface
+      slug:
+        description: ClawHub slug. Defaults to the skill id when empty.
+        required: false
+        type: string
+        default: ""
+      display_name:
+        description: ClawHub display name. Defaults to "Hugging Face CLI" for hf-cli and the skill id otherwise.
+        required: false
+        type: string
+        default: ""
+      version:
+        description: Version override. Defaults to the generated skill version when empty.
+        required: false
+        type: string
+        default: ""
+      tags:
+        description: Tags to apply to the published version.
+        required: false
+        type: string
+        default: latest
+      changelog:
+        description: Changelog override. Defaults to a generated sync message when empty.
+        required: false
+        type: string
+        default: ""
+      clawscan_note:
+        description: ClawScan note. Uses the hf-cli default note when empty for hf-cli.
+        required: false
+        type: string
+        default: ""
+    secrets:
+      CLAWHUB_TOKEN:
+        required: true
+
+concurrency:
+  group: publish-clawhub-${{ inputs.owner }}-${{ inputs.skill_id }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install Hugging Face CLI
+        run: curl -LsSf https://hf.co/cli/install.sh | bash -s
+
+      - name: Resolve publish inputs
+        id: publish-inputs
+        env:
+          INPUT_SKILL_ID: ${{ inputs.skill_id }}
+          INPUT_SLUG: ${{ inputs.slug }}
+          INPUT_DISPLAY_NAME: ${{ inputs.display_name }}
+        run: |
+          set -euo pipefail
+          slug="$INPUT_SLUG"
+          if [[ -z "$slug" ]]; then
+            slug="$INPUT_SKILL_ID"
+          fi
+
+          display_name="$INPUT_DISPLAY_NAME"
+          if [[ -z "$display_name" ]]; then
+            if [[ "$INPUT_SKILL_ID" == "hf-cli" ]]; then
+              display_name="Hugging Face CLI"
+            else
+              display_name="$INPUT_SKILL_ID"
+            fi
+          fi
+
+          echo "skill_id=$INPUT_SKILL_ID" >> "$GITHUB_OUTPUT"
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+          echo "display_name=$display_name" >> "$GITHUB_OUTPUT"
+
+      - name: Regenerate skill
+        env:
+          SKILL_ID: ${{ steps.publish-inputs.outputs.skill_id }}
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          hf skills add "$SKILL_ID" --dest skills --force
+          rm -f "skills/$SKILL_ID/.hf-skill-manifest.json"
+
+      - name: Resolve skill version
+        id: version
+        env:
+          SKILL_ID: ${{ steps.publish-inputs.outputs.skill_id }}
+          VERSION_OVERRIDE: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          if [[ -n "$VERSION_OVERRIDE" ]]; then
+            echo "version=$VERSION_OVERRIDE" >> "$GITHUB_OUTPUT"
+            echo "Using overridden $SKILL_ID skill version: $VERSION_OVERRIDE"
+            exit 0
+          fi
+
+          version="$(python3 - <<'PY'
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+
+          skill_id = os.environ["SKILL_ID"]
+          hf_version = subprocess.check_output(["hf", "--version"], text=True).strip().splitlines()[-1].strip()
+          if hf_version:
+              print(hf_version)
+          else:
+              text = (Path("skills") / skill_id / "SKILL.md").read_text(encoding="utf-8")
+              match = re.search(r"Generated with `huggingface_hub v([^`]+)`", text)
+              if match:
+                  print(match.group(1).strip())
+          PY
+          )"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Resolved $SKILL_ID skill version: $version"
+
+      - name: Install ClawHub CLI
+        run: npm install -g clawhub@0.17.0
+
+      - name: Log in to ClawHub
+        env:
+          CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${CLAWHUB_TOKEN:-}" ]]; then
+            echo "::error::CLAWHUB_TOKEN secret is required until ClawHub skill publishing supports trusted OIDC."
+            exit 1
+          fi
+          clawhub login --token "$CLAWHUB_TOKEN" --no-browser
+          clawhub whoami
+
+      - name: Publish skill
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          OWNER: ${{ inputs.owner }}
+          SKILL_ID: ${{ steps.publish-inputs.outputs.skill_id }}
+          SLUG: ${{ steps.publish-inputs.outputs.slug }}
+          DISPLAY_NAME: ${{ steps.publish-inputs.outputs.display_name }}
+          TAGS: ${{ inputs.tags }}
+          CHANGELOG: ${{ inputs.changelog }}
+          CLAWSCAN_NOTE: ${{ inputs.clawscan_note }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$CHANGELOG" ]]; then
+            CHANGELOG="Sync $SKILL_ID skill from Hugging Face CLI $VERSION"
+          fi
+
+          if [[ -z "$CLAWSCAN_NOTE" && "$SKILL_ID" == "hf-cli" ]]; then
+            CLAWSCAN_NOTE="This skill documents the official Hugging Face Hub CLI command surface. Network access is expected only when users run hf commands against Hugging Face services."
+          fi
+
+          if clawhub inspect "$SLUG" --version "$VERSION" --json >"/tmp/$SLUG-existing.json" 2>/dev/null; then
+            echo "$SLUG@$VERSION already exists on ClawHub; skipping publish."
+            exit 0
+          fi
+
+          publish_args=(
+            "skills/$SKILL_ID"
+            --owner "$OWNER"
+            --slug "$SLUG"
+            --name "$DISPLAY_NAME"
+            --version "$VERSION"
+            --changelog "$CHANGELOG"
+            --tags "$TAGS"
+          )
+
+          if [[ -n "$CLAWSCAN_NOTE" ]]; then
+            publish_args+=(--clawscan-note "$CLAWSCAN_NOTE")
+          fi
+
+          clawhub skill publish "${publish_args[@]}"
