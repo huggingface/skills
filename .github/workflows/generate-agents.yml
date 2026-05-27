@@ -34,7 +34,9 @@ jobs:
         run: ./scripts/publish.sh --check
 
       - name: Ensure version bumped for published content changes
-        run: uv run scripts/plugin_versions.py check-bump "${{ github.event.pull_request.base.sha }}"
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: uv run scripts/plugin_versions.py check-bump "$BASE_SHA"
 
       - name: Ensure skills index artifact builds
         run: |
