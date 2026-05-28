@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Agent Skills for AI/ML tasks including dataset creation, model training, evaluation, and research paper publishing on Hugging Face Hub",
-    "version": "1.0.4"
+    "version": "1.0.5"
   },
   "plugins": [
     {
@@ -49,6 +49,12 @@
       "source": "./skills/hf-cli",
       "skills": "./",
       "description": "Execute Hugging Face Hub operations using the hf CLI. Download models/datasets, upload files, manage repos, and run cloud compute jobs."
+    },
+    {
+      "name": "huggingface-spaces",
+      "source": "./skills/huggingface-spaces",
+      "skills": "./",
+      "description": "Build, deploy, and maintain applications on Hugging Face Spaces — Gradio / Docker / Static SDKs, ZeroGPU and dedicated hardware, model loading, debugging, buckets, inference providers, community grants. Use whenever the user asks to create or host an app on Hugging Face, port code onto ZeroGPU, fix a Space that won't build or run, or otherwise work with `hf spaces …`, `@spaces.GPU`, Space README frontmatter, or the `spaces` Python package."
     },
     {
       "name": "huggingface-trackio",
