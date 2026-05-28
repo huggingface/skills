@@ -9,7 +9,7 @@ The Hugging Face Hub CLI tool `hf` is available. IMPORTANT: The `hf` command rep
 
 Use `hf --help` to view available functions. Note that auth commands are now all under `hf auth` e.g. `hf auth whoami`.
 
-Generated with `huggingface_hub v1.16.4`. Run `hf skills add --force` to regenerate.
+Generated with `huggingface_hub v1.17.0`. Run `hf skills add --force` to regenerate.
 
 ## Commands
 
@@ -106,12 +106,14 @@ Generated with `huggingface_hub v1.16.4`. Run `hf skills add --force` to regener
 - `hf jobs cancel JOB_ID` — Cancel a Job `[--namespace TEXT --format CHOICE]`
 - `hf jobs hardware` — List available hardware options for Jobs `[--format CHOICE]`
 - `hf jobs inspect JOB_IDS` — Display detailed information on one or more Jobs `[--namespace TEXT --format CHOICE]`
+- `hf jobs labels JOB_ID` — Update labels on a Job. Replaces all existing labels. `[--label TEXT --clear --namespace TEXT --format CHOICE]`
 - `hf jobs logs JOB_ID` — Fetch the logs of a Job. `[--follow --tail INTEGER --namespace TEXT --format CHOICE]`
-- `hf jobs ps` — List Jobs. `[--all --namespace TEXT --filter TEXT --format TEXT --quiet]`
+- `hf jobs ps` — List Jobs. `[--all --namespace TEXT --filter TEXT --format CHOICE]`
 - `hf jobs run IMAGE COMMAND` — Run a Job. `[--env TEXT --secrets TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --flavor CHOICE --timeout TEXT --detach --namespace TEXT]`
 - `hf jobs scheduled delete SCHEDULED_JOB_ID` — Delete a scheduled Job. `[--namespace TEXT --format CHOICE]`
 - `hf jobs scheduled inspect SCHEDULED_JOB_IDS` — Display detailed information on one or more scheduled Jobs `[--namespace TEXT --format CHOICE]`
-- `hf jobs scheduled ps` — List scheduled Jobs `[--all --namespace TEXT --filter TEXT --format TEXT --quiet]`
+- `hf jobs scheduled labels SCHEDULED_JOB_ID` — Update labels on a scheduled Job. Replaces all existing labels. `[--label TEXT --clear --namespace TEXT --format CHOICE]`
+- `hf jobs scheduled ps` — List scheduled Jobs `[--all --namespace TEXT --filter TEXT --format CHOICE]`
 - `hf jobs scheduled resume SCHEDULED_JOB_ID` — Resume (unpause) a scheduled Job. `[--namespace TEXT --format CHOICE]`
 - `hf jobs scheduled run SCHEDULE IMAGE COMMAND` — Schedule a Job. `[--suspend --concurrency --env TEXT --secrets TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --flavor CHOICE --timeout TEXT --namespace TEXT]`
 - `hf jobs scheduled suspend SCHEDULED_JOB_ID` — Suspend (pause) a scheduled Job. `[--namespace TEXT --format CHOICE]`
@@ -140,6 +142,7 @@ Generated with `huggingface_hub v1.16.4`. Run `hf skills add --force` to regener
 - `hf repos delete REPO_ID` — Delete a repo from the Hub. This is an irreversible operation. `[--type CHOICE --missing-ok --yes --format CHOICE]`
 - `hf repos delete-files REPO_ID PATTERNS` — Delete files from a repo on the Hub. `[--type CHOICE --revision TEXT --commit-message TEXT --commit-description TEXT --create-pr --format CHOICE]`
 - `hf repos duplicate FROM_ID` — Duplicate a repo on the Hub (model, dataset, or Space). `[--type CHOICE --private --public --protected --exist-ok --flavor CHOICE --storage CHOICE --sleep-time INTEGER --secrets TEXT --secrets-file TEXT --env TEXT --env-file TEXT --volume TEXT --format CHOICE]`
+- `hf repos list` — List all repos (models, datasets, spaces, buckets) with storage info. `[--namespace TEXT --type CHOICE --search TEXT --limit INTEGER --format CHOICE]`
 - `hf repos move FROM_ID TO_ID` — Move a repository from a namespace to another namespace. `[--type CHOICE --format CHOICE]`
 - `hf repos settings REPO_ID` — Update the settings of a repository. `[--gated CHOICE --private --public --protected --type CHOICE --format CHOICE]`
 - `hf repos tag create REPO_ID TAG` — Create a tag for a repo. `[--message TEXT --revision TEXT --type CHOICE --format CHOICE]`
@@ -169,6 +172,7 @@ Generated with `huggingface_hub v1.16.4`. Run `hf skills add --force` to regener
 - `hf spaces secrets delete SPACE_ID KEY` — Remove a secret from a Space. `[--yes --format CHOICE]`
 - `hf spaces secrets list SPACE_ID` — List secrets for a Space. Secret values are write-only and not returned. `[--format CHOICE]`
 - `hf spaces settings SPACE_ID` — Update the settings of a Space. `[--sleep-time INTEGER --hardware CHOICE --format CHOICE]`
+- `hf spaces ssh SPACE_ID` — SSH into a Space's Dev Mode container. `[--identity-file PATH --dry-run --auto --format CHOICE]`
 - `hf spaces variables add SPACE_ID` — Add or update environment variables for a Space. `[--env TEXT --env-file TEXT --format CHOICE]`
 - `hf spaces variables delete SPACE_ID KEY` — Remove an environment variable from a Space. `[--yes --format CHOICE]`
 - `hf spaces variables list SPACE_ID` — List environment variables for a Space. `[--format CHOICE]`
@@ -189,7 +193,7 @@ Generated with `huggingface_hub v1.16.4`. Run `hf skills add --force` to regener
 ## Common options
 
 - `--format` — Output format: `--format json` (or `--json`) or `--format table` (default).
-- `-q / --quiet` — Print only IDs (one per line).
+- `-q / --quiet` — Quiet output (one ID per line).
 - `--revision` — Git revision id which can be a branch name, a tag, or a commit hash.
 - `--token` — Use a User Access Token. Prefer setting `HF_TOKEN` env var instead of passing `--token`.
 - `--type` — The type of repository (model, dataset, or space).
