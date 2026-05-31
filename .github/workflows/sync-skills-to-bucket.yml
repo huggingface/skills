@@ -7,6 +7,7 @@ on:
       - "skills/**"
       - ".claude-plugin/marketplace.json"
       - "scripts/build_skills_index.py"
+      - "scripts/build_skill_distribution.py"
       - ".github/workflows/sync-skills-to-bucket.yml"
 
 concurrency:
@@ -30,6 +31,13 @@ jobs:
             --out-dir out/skills-index/latest \
             --branch main
 
+      - name: Build skills distribution artifact
+        run: |
+          uv run scripts/build_skill_distribution.py \
+            --skills-dir skills \
+            --out-dir out/skills-distribution/latest \
+            --uri-prefix skill://
+
       - name: Sync skills to bucket
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -37,3 +45,4 @@ jobs:
           uvx hf buckets sync ./skills hf://buckets/huggingface/skills/skills --delete
           uvx hf buckets cp ./.claude-plugin/marketplace.json hf://buckets/huggingface/skills/marketplace.json
           uvx hf buckets sync ./out/skills-index/latest hf://buckets/huggingface/skills/index/latest --delete
+          uvx hf buckets sync ./out/skills-distribution/latest hf://buckets/huggingface/skills/distribution/latest --delete

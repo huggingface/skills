@@ -1,0 +1,32 @@
+[
+  {
+    "query": "dataset viewer SQL query",
+    "expectedSkill": "huggingface-datasets",
+    "note": "SKILL.md content; Dataset Viewer / SQL workflow"
+  },
+  {
+    "query": "mine hard negatives sentence transformers",
+    "expectedSkill": "train-sentence-transformers",
+    "note": "Supporting script/reference coverage"
+  },
+  {
+    "query": "gguf conversion estimate cost",
+    "expectedSkill": "huggingface-llm-trainer",
+    "note": "Supporting scripts and references for training infrastructure"
+  },
+  {
+    "query": "transformers js cache configuration",
+    "expectedSkill": "transformers-js",
+    "note": "Supporting references coverage"
+  },
+  {
+    "query": "custom gradio html component",
+    "expectedSkill": "huggingface-gradio",
+    "note": "SKILL.md plus examples coverage"
+  },
+  {
+    "query": "publish paper on hugging face",
+    "expectedSkill": "huggingface-paper-publisher",
+    "note": "Skill-level discovery"
+  }
+]
