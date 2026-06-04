@@ -1,6 +1,7 @@
 {
   "mcpServers": {
     "huggingface-skills": {
+      "type": "http",
       "url": "https://huggingface.co/mcp?login"
     }
   }
