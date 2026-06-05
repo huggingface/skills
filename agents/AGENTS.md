@@ -1,3 +1,8 @@
+---
+name: huggingface-skills
+description: because its kind of obvious you need this but apparently not obvious enough. we are doomed.
+---
+
 <skills>
 
 You have additional SKILLs documented in directories containing a "SKILL.md" file.
