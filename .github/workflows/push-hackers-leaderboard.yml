@@ -16,7 +16,11 @@ jobs:
         uses: actions/checkout@v6.0.2
 
       - name: Install huggingface_hub
-        run: curl -LsSf https://hf.co/cli/install.sh | bash
+        run: |
+          curl -LsSf https://hf.co/cli/install.sh -o install.sh
+          echo "Verify the script content and checksum before executing in production"
+          # TODO: Add checksum verification: echo "<expected-sha256> install.sh" | sha256sum -c -
+          bash install.sh
 
       - name: Upload hackers leaderboard to HF Space
         env:
