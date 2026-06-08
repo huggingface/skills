@@ -9,7 +9,7 @@ on:
       - "scripts/plugin_versions.py"
       - "scripts/publish.sh"
       - "skills/**"
-      - "agents/AGENTS.md"
+      - "agentsmd/AGENTS.md"
       - "README.md"
       - ".claude-plugin/marketplace.json"
       - ".claude-plugin/plugin.json"
@@ -23,12 +23,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.1.0
 
       - name: Ensure generated files are up to date
         run: ./scripts/publish.sh --check

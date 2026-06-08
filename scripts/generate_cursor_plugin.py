@@ -135,6 +135,7 @@ def build_mcp_config() -> dict:
     return {
         "mcpServers": {
             server_name: {
+                "type": "http",
                 "url": url,
             }
         }

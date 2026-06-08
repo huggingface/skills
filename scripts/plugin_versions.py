@@ -38,7 +38,7 @@ BUMP_RELEVANT_PATHS = (
 )
 
 GENERATED_PATHS = (
-    "agents/AGENTS.md",
+    "agentsmd/AGENTS.md",
     "README.md",
     ".cursor-plugin/plugin.json",
     ".mcp.json",

@@ -19,7 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_PATH = ROOT / "scripts" / "AGENTS_TEMPLATE.md"
-OUTPUT_PATH = ROOT / "agents" / "AGENTS.md"
+OUTPUT_PATH = ROOT / "agentsmd" / "AGENTS.md"
 MARKETPLACE_PATH = ROOT / ".claude-plugin" / "marketplace.json"
 README_PATH = ROOT / "README.md"
 
