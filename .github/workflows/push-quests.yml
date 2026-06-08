@@ -16,7 +16,11 @@ jobs:
         uses: actions/checkout@v6.0.2
 
       - name: Install huggingface_hub
-        run: curl -LsSf https://hf.co/cli/install.sh | bash
+        run: |
+          curl -LsSf https://hf.co/cli/install.sh -o install.sh
+          sha256sum install.sh
+          echo "WARNING: Manual verification of checksum required before production use"
+          bash install.sh
 
       - name: Upload quests to HF Space
         env:
