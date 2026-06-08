@@ -16,7 +16,10 @@ jobs:
         uses: actions/checkout@v6.0.2
 
       - name: Install huggingface_hub
-        run: curl -LsSf https://hf.co/cli/install.sh | bash
+        run: |
+          curl -LsSf https://hf.co/cli/install.sh -o install.sh
+          echo "b4e4c443bb1321e55c06f5e0f6d5da9282e8bbca303e7fed7e7e85f39d81b8c8  install.sh" | sha256sum -c -
+          bash install.sh
 
       - name: Upload evals leaderboard to HF Space
         env:
