@@ -109,6 +109,7 @@ This repository contains a few skills to get you started. You can also contribut
 | `huggingface-zerogpu` | Coding rules for Gradio Spaces using Hugging Face Spaces ZeroGPU hardware. Covers `@spaces.GPU`, duration and quota tuning, pickle-based process isolation, `gr.State` semantics across the worker boundary, the CUDA availability model, concurrency safety, and CUDA wheel-only build constraints. | [SKILL.md](skills/huggingface-zerogpu/SKILL.md) |
 | `train-sentence-transformers` | Train or fine-tune sentence-transformers models across all three architectures: SentenceTransformer (bi-encoder embeddings), CrossEncoder (rerankers), and SparseEncoder (SPLADE). Covers loss selection, hard-negative mining, evaluators, distillation, LoRA, Matryoshka, and Hugging Face Hub publishing. | [SKILL.md](skills/train-sentence-transformers/SKILL.md) |
 | `transformers-js` | Run state-of-the-art machine learning models directly in JavaScript/TypeScript for NLP, computer vision, audio processing, and multimodal tasks. Works in Node.js and browsers with WebGPU/WASM using Hugging Face models. | [SKILL.md](skills/transformers-js/SKILL.md) |
+| `trl-training` | Train and fine-tune transformer language models using TRL (Transformers Reinforcement Learning). Supports SFT, DPO, GRPO, KTO, RLOO and Reward Model training via CLI commands. | [SKILL.md](skills/trl-training/SKILL.md) |
 <!-- END_SKILLS_TABLE -->
 
 ### Using skills in your coding agent
