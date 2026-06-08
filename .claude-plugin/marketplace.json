@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Agent Skills for AI/ML tasks including dataset creation, model training, evaluation, and research paper publishing on Hugging Face Hub",
-    "version": "1.0.5"
+    "version": "1.0.7"
   },
   "plugins": [
     {
@@ -49,6 +49,12 @@
       "source": "./skills/hf-cli",
       "skills": "./",
       "description": "Execute Hugging Face Hub operations using the hf CLI. Download models/datasets, upload files, manage repos, and run cloud compute jobs."
+    },
+    {
+      "name": "huggingface-spaces",
+      "source": "./skills/huggingface-spaces",
+      "skills": "./",
+      "description": "Build, deploy, and maintain applications on Hugging Face Spaces — Gradio / Docker / Static SDKs, ZeroGPU and dedicated hardware, model loading, debugging, buckets, inference providers, community grants. Use whenever the user asks to create or host an app on Hugging Face, port code onto ZeroGPU, fix a Space that won't build or run, or otherwise work with `hf spaces …`, `@spaces.GPU`, Space README frontmatter, or the `spaces` Python package."
     },
     {
       "name": "huggingface-trackio",
@@ -103,6 +109,12 @@
       "source": "./skills/huggingface-lora-space-builder",
       "skills": "./",
       "description": "Build and publish a Gradio demo on Hugging Face Spaces for a user-provided LoRA. Use when someone asks to create, generate, ship, or publish a Space, demo, Gradio app, or playground for a LoRA — including LoRAs for Qwen-Image, Qwen-Image-Edit, LTX-Video, Wan, FLUX, SDXL, or other diffusion base models. Also triggers when someone describes a LoRA they trained or hosts on the Hub and wants to share it. Covers picking the right base pipeline and `diffusers` inference recipe, designing a UI tailored to the LoRA's task and inputs (Union/multi-task control, edit, video, image, etc.), respecting model-card recommendations (trigger words, steps, guidance, LoRA scale, example inputs), and shipping to ZeroGPU hardware as a private Space by default."
+    },
+    {
+      "name": "trl-training",
+      "source": "./skills/trl-training",
+      "skills": "./",
+      "description": "Train and fine-tune transformer language models using TRL (Transformers Reinforcement Learning). Supports SFT, DPO, GRPO, KTO, RLOO and Reward Model training via CLI commands."
     }
   ]
 }
