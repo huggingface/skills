@@ -9,7 +9,7 @@ on:
       - "scripts/plugin_versions.py"
       - "scripts/publish.sh"
       - "skills/**"
-      - "agents/AGENTS.md"
+      - "agentsmd/AGENTS.md"
       - "README.md"
       - ".claude-plugin/marketplace.json"
       - ".claude-plugin/plugin.json"

@@ -12,7 +12,7 @@ The skills in this repository follow the standardized [Agent Skills](https://age
 In practice, skills are self-contained folders that package instructions, scripts, and resources together for an AI agent to use on a specific use case. Each folder includes a `SKILL.md` file with YAML frontmatter (name and description) followed by the guidance your coding agent follows while the skill is active. 
 
 > [!TIP]
-> If your agent doesn't support skills, you can use [`agents/AGENTS.md`](agents/AGENTS.md) directly as a fallback.
+> If your agent doesn't support skills, you can use [`agentsmd/AGENTS.md`](agentsmd/AGENTS.md) directly as a fallback.
 
 The skills in this repository are also available through:
  - Cursor Marketplace (https://cursor.com/marketplace/huggingface)
@@ -48,7 +48,7 @@ For example:
 
 2. Once a skill is available in one of those locations, Codex will discover it using the Agent Skills standard and load the `SKILL.md` instructions when it decides to use that skill or when you explicitly invoke it.
 
-3. If your Codex setup still relies on `AGENTS.md`, you can use the generated [`agents/AGENTS.md`](agents/AGENTS.md) file in this repo as a fallback bundle of instructions.
+3. If your Codex setup still relies on `AGENTS.md`, you can use the generated [`agentsmd/AGENTS.md`](agentsmd/AGENTS.md) file in this repo as a fallback bundle of instructions.
 
 ### Gemini CLI
 
