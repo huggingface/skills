@@ -3,7 +3,15 @@
 # requires-python = ">=3.10"
 # dependencies = ["pyyaml==6.0.3"]
 # ///
-"""Build static Agent Skills distribution artifacts."""
+"""Build static skills distribution artifacts (SEP-2640 index format).
+
+The distribution lays out, for every skill, the full expanded file tree under
+``<out>/<name>/...`` (so each file is individually addressable as a ``skill://``
+resource and directories can be walked) alongside a ``<out>/<name>.tar.gz`` archive.
+The ``index.json`` follows the Skills Over MCP WG index schema (decisions 2026-06-05 /
+2026-06-09): each entry carries a verbatim ``frontmatter`` object, ``url`` + ``digest``
+of ``SKILL.md``, and a per-skill ``archives`` array.
+"""
 
 from __future__ import annotations
 
@@ -22,18 +30,19 @@ from typing import Any
 
 import yaml
 
-DISCOVERY_SCHEMA = "https://schemas.agentskills.io/discovery/0.2.0/schema.json"
 FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*(?:\n|\Z)", re.DOTALL)
 SKILL_NAME_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$")
 IGNORE_DIRS = {"node_modules"}
 IGNORE_FILES = {".DS_Store"}
 SOURCE_REPO = "huggingface/skills"
+ARCHIVE_MEDIA_TYPE = "application/gzip"
 
 
 @dataclass(frozen=True)
 class Skill:
 	name: str
 	description: str
+	frontmatter: dict[str, Any]
 	dir: Path
 	files: list[Path]
 
@@ -62,7 +71,7 @@ def validate_skill_name(name: str, skill_dir: Path) -> None:
 
 def rel_archive_path(skill_dir: Path, path: Path) -> str:
 	rel = path.relative_to(skill_dir).as_posix()
-	if rel.startswith("/") or rel.split("/") and ".." in rel.split("/"):
+	if rel.startswith("/") or ".." in rel.split("/"):
 		raise ValueError(f"{path}: unsafe archive path {rel!r}")
 	return rel
 
@@ -97,7 +106,15 @@ def load_skills(skills_dir: Path) -> list[Skill]:
 		files = discover_files(skill_md.parent)
 		if skill_md not in files:
 			raise ValueError(f"{skill_md}: SKILL.md was not included in discovered files")
-		skills.append(Skill(name=name, description=description.strip(), dir=skill_md.parent, files=files))
+		skills.append(
+			Skill(
+				name=name,
+				description=description.strip(),
+				frontmatter=meta,
+				dir=skill_md.parent,
+				files=files,
+			)
+		)
 	return skills
 
 
@@ -109,12 +126,15 @@ def sha256_hex(path: Path) -> str:
 	return h.hexdigest()
 
 
-def write_skill_md(skill: Skill, out_dir: Path) -> Path:
-	target_dir = out_dir / skill.name
-	target_dir.mkdir(parents=True, exist_ok=True)
-	target = target_dir / "SKILL.md"
-	shutil.copyfile(skill.dir / "SKILL.md", target)
-	return target
+def write_skill_tree(skill: Skill, out_dir: Path) -> Path:
+	"""Copy the full skill directory tree into the distribution; return SKILL.md path."""
+	target_root = out_dir / skill.name
+	for path in skill.files:
+		rel = rel_archive_path(skill.dir, path)
+		target = target_root / rel
+		target.parent.mkdir(parents=True, exist_ok=True)
+		shutil.copyfile(path, target)
+	return target_root / "SKILL.md"
 
 
 def tar_info(name: str, data: bytes, mode: int) -> tarfile.TarInfo:
@@ -156,48 +176,42 @@ def build_distribution(skills_dir: Path, out_dir: Path, uri_prefix: str) -> None
 	out_dir.mkdir(parents=True)
 
 	skills = load_skills(skills_dir)
-	index_entries: list[dict[str, str]] = []
+	index_entries: list[dict[str, Any]] = []
 	catalog_entries: list[dict[str, Any]] = []
 
 	for skill in skills:
-		artifact_type: str
-		artifact_path: Path
-		artifact_rel: str
-		media_type: str
+		skill_md_path = write_skill_tree(skill, out_dir)
+		archive_path = write_archive(skill, out_dir)
 
-		if len(skill.files) == 1 and skill.files[0].name == "SKILL.md":
-			artifact_type = "skill-md"
-			artifact_path = write_skill_md(skill, out_dir)
-			artifact_rel = f"{skill.name}/SKILL.md"
-			media_type = "text/markdown"
-		else:
-			artifact_type = "archive"
-			artifact_path = write_archive(skill, out_dir)
-			artifact_rel = f"{skill.name}.tar.gz"
-			media_type = "application/gzip"
+		skill_md_url = uri_join(uri_prefix, f"{skill.name}/SKILL.md")
+		skill_md_digest = f"sha256:{sha256_hex(skill_md_path)}"
+		archive_url = uri_join(uri_prefix, f"{skill.name}.tar.gz")
+		archive_digest = f"sha256:{sha256_hex(archive_path)}"
 
-		digest = f"sha256:{sha256_hex(artifact_path)}"
-		url = uri_join(uri_prefix, artifact_rel)
 		index_entries.append(
 			{
-				"name": skill.name,
-				"type": artifact_type,
-				"description": skill.description,
-				"url": url,
-				"digest": digest,
+				"url": skill_md_url,
+				"digest": skill_md_digest,
+				"frontmatter": skill.frontmatter,
+				"archives": [
+					{
+						"url": archive_url,
+						"mimeType": ARCHIVE_MEDIA_TYPE,
+						"digest": archive_digest,
+					}
+				],
 			}
 		)
 		catalog_entries.append(
 			{
 				"identifier": f"urn:huggingface:skill:{skill.name}",
 				"displayName": skill.name,
-				"mediaType": media_type,
-				"url": url,
+				"mediaType": "text/markdown",
+				"url": skill_md_url,
 				"description": skill.description,
 				"tags": ["huggingface", "skill"],
 				"metadata": {
-					"agentSkillsType": artifact_type,
-					"digest": digest,
+					"digest": skill_md_digest,
 					"source": SOURCE_REPO,
 					"path": f"skills/{skill.name}/SKILL.md",
 				},
@@ -205,7 +219,7 @@ def build_distribution(skills_dir: Path, out_dir: Path, uri_prefix: str) -> None
 		)
 
 	generated_at = utc_now()
-	write_json(out_dir / "index.json", {"$schema": DISCOVERY_SCHEMA, "skills": index_entries})
+	write_json(out_dir / "index.json", {"skills": index_entries})
 	write_json(
 		out_dir / "ai-catalog.json",
 		{
@@ -228,7 +242,7 @@ def build_distribution(skills_dir: Path, out_dir: Path, uri_prefix: str) -> None
 			"skill_count": len(skills),
 			"uri_prefix": uri_prefix,
 			"artifacts": {
-				"agent_skills_index": "index.json",
+				"skills_index": "index.json",
 				"ai_catalog": "ai-catalog.json",
 			},
 		},
