@@ -9,7 +9,7 @@ The Hugging Face Hub CLI tool `hf` is available. IMPORTANT: The `hf` command rep
 
 Use `hf --help` to view available functions. Note that auth commands are now all under `hf auth` e.g. `hf auth whoami`.
 
-Generated with `huggingface_hub v1.19.0`. Run `hf skills add --force` to regenerate.
+Generated with `huggingface_hub v1.20.0`. Run `hf skills add --force` to regenerate.
 
 ## Commands
 
@@ -25,7 +25,7 @@ Generated with `huggingface_hub v1.19.0`. Run `hf skills add --force` to regener
 ### `hf auth` — Manage authentication (login, logout, etc.).
 
 - `hf auth list` — List all stored access tokens. `[--format [auto|human|agent|json|quiet]]`
-- `hf auth login` — Login using a token from huggingface.co/settings/tokens. `[--add-to-git-credential --force --format [auto|human|agent|json|quiet]]`
+- `hf auth login` — Login from your browser, or using a token from huggingface.co/settings/tokens. `[--add-to-git-credential --force --format [auto|human|agent|json|quiet]]`
 - `hf auth logout` — Logout from a specific token. `[--token-name TEXT --format [auto|human|agent|json|quiet]]`
 - `hf auth switch` — Switch between access tokens. `[--token-name TEXT --add-to-git-credential --format [auto|human|agent|json|quiet]]`
 - `hf auth token` — Print the current access token to stdout. `[--format [auto|human|agent|json|quiet]]`
@@ -86,7 +86,7 @@ Generated with `huggingface_hub v1.19.0`. Run `hf skills add --force` to regener
 - `hf endpoints catalog deploy --repo TEXT` — Deploy an Inference Endpoint from the Model Catalog. `[--name TEXT --accelerator TEXT --namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf endpoints catalog list` — List available Catalog models. `[--format [auto|human|agent|json|quiet]]`
 - `hf endpoints delete NAME` — Delete an Inference Endpoint permanently. `[--namespace TEXT --yes --format [auto|human|agent|json|quiet]]`
-- `hf endpoints deploy NAME --repo TEXT --framework TEXT --accelerator TEXT --instance-size TEXT --instance-type TEXT --region TEXT --vendor TEXT` — Deploy an Inference Endpoint from a Hub repository. `[--namespace TEXT --task TEXT --min-replica INTEGER --max-replica INTEGER --scale-to-zero-timeout INTEGER --scaling-metric [pendingRequests|hardwareUsage] --scaling-threshold FLOAT --format [auto|human|agent|json|quiet]]`
+- `hf endpoints deploy NAME --repo TEXT --framework TEXT --accelerator TEXT --instance-size TEXT --instance-type TEXT --region TEXT --vendor TEXT` — Deploy an Inference Endpoint from a Hub repository. `[--namespace TEXT --task TEXT --min-replica INTEGER --max-replica INTEGER --scale-to-zero-timeout INTEGER --scaling-metric [pendingRequests|hardwareUsage] --scaling-threshold FLOAT --revision TEXT --custom-image TEXT --health-route TEXT --port INTEGER --container-command TEXT --container-args TEXT --env TEXT --env-file TEXT --secrets TEXT --secrets-file TEXT --type [public|protected|authenticated|private] --format [auto|human|agent|json|quiet]]`
 - `hf endpoints describe NAME` — Get information about an existing endpoint. `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf endpoints list` — Lists all Inference Endpoints for the given namespace. `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf endpoints pause NAME` — Pause an Inference Endpoint. `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
@@ -110,7 +110,7 @@ Generated with `huggingface_hub v1.19.0`. Run `hf skills add --force` to regener
 - `hf jobs labels JOB_ID` — Update labels on a Job. Replaces all existing labels. `[--label TEXT --clear --namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs logs JOB_ID` — Fetch the logs of a Job. `[--follow --tail INTEGER --namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs ps` — List Jobs. `[--all --namespace TEXT --filter TEXT --format [auto|human|agent|json|quiet]]`
-- `hf jobs run IMAGE COMMAND` — Run a Job. `[--env TEXT --secrets TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --timeout TEXT --detach --expose INTEGER --namespace TEXT]`
+- `hf jobs run IMAGE COMMAND` — Run a Job. `[--env TEXT --secrets TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --timeout TEXT --detach --expose INTEGER --ssh --namespace TEXT]`
 - `hf jobs scheduled delete SCHEDULED_JOB_ID` — Delete a scheduled Job. `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs scheduled inspect SCHEDULED_JOB_IDS` — Display detailed information on one or more scheduled Jobs `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs scheduled labels SCHEDULED_JOB_ID` — Update labels on a scheduled Job. Replaces all existing labels. `[--label TEXT --clear --namespace TEXT --format [auto|human|agent|json|quiet]]`
@@ -119,8 +119,10 @@ Generated with `huggingface_hub v1.19.0`. Run `hf skills add --force` to regener
 - `hf jobs scheduled run SCHEDULE IMAGE COMMAND` — Schedule a Job. `[--suspend --concurrency --env TEXT --secrets TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --timeout TEXT --expose INTEGER --namespace TEXT]`
 - `hf jobs scheduled suspend SCHEDULED_JOB_ID` — Suspend (pause) a scheduled Job. `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs scheduled uv run SCHEDULE SCRIPT` — Run a UV script (local file or URL) on HF infrastructure `[--suspend --concurrency --image TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --env TEXT --secrets TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --timeout TEXT --expose INTEGER --namespace TEXT --with TEXT --python TEXT]`
+- `hf jobs ssh JOB_ID` — SSH into a running Job. `[--identity-file PATH --dry-run --namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs stats` — Fetch the resource usage statistics and metrics of Jobs `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
-- `hf jobs uv run SCRIPT` — Run a UV script (local file or URL) on HF infrastructure `[--image TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --env TEXT --secrets TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --timeout TEXT --detach --expose INTEGER --namespace TEXT --with TEXT --python TEXT]`
+- `hf jobs uv run SCRIPT` — Run a UV script (local file or URL) on HF infrastructure `[--image TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --env TEXT --secrets TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --timeout TEXT --detach --expose INTEGER --ssh --namespace TEXT --with TEXT --python TEXT]`
+- `hf jobs wait JOB_IDS` — Wait for one or more Jobs to reach a terminal state. `[--timeout TEXT --namespace TEXT --format [auto|human|agent|json|quiet]]`
 
 ### `hf models` — Interact with models on the Hub.
 
@@ -181,6 +183,7 @@ Generated with `huggingface_hub v1.19.0`. Run `hf skills add --force` to regener
 - `hf spaces volumes delete SPACE_ID` — Remove all volumes from a Space. `[--yes --format [auto|human|agent|json|quiet]]`
 - `hf spaces volumes list SPACE_ID` — List volumes mounted in a Space. `[--format [auto|human|agent|json|quiet]]`
 - `hf spaces volumes set SPACE_ID` — Set (replace) volumes for a Space. `[--volume TEXT --format [auto|human|agent|json|quiet]]`
+- `hf spaces wait SPACE_ID` — Wait for a Space to finish building/starting. `[--timeout TEXT --format [auto|human|agent|json|quiet]]`
 
 ### `hf webhooks` — Manage webhooks on the Hub.
 
