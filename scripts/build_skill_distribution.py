@@ -5,12 +5,12 @@
 # ///
 """Build static skills distribution artifacts (SEP-2640 index format).
 
-The distribution lays out, for every skill, the full expanded file tree under
-``<out>/<name>/...`` (so each file is individually addressable as a ``skill://``
-resource and directories can be walked) alongside a ``<out>/<name>.tar.gz`` archive.
-The ``index.json`` follows the Skills Over MCP WG index schema (decisions 2026-06-05 /
-2026-06-09): each entry carries a verbatim ``frontmatter`` object, ``url`` + ``digest``
-of ``SKILL.md``, and a per-skill ``archives`` array.
+Single-file skills are emitted as ``<out>/<name>/SKILL.md`` for easy audit.
+Multi-file skills are emitted as ``<out>/<name>.tar.gz`` archives to keep the
+skill package atomic and avoid implying partial direct-resource support. The
+``index.json`` follows SEP-2640: each entry carries verbatim ``frontmatter`` plus
+either ``url`` + ``digest`` for direct ``SKILL.md`` entries, or an ``archives``
+array for archive-only entries.
 """
 
 from __future__ import annotations
@@ -126,15 +126,12 @@ def sha256_hex(path: Path) -> str:
 	return h.hexdigest()
 
 
-def write_skill_tree(skill: Skill, out_dir: Path) -> Path:
-	"""Copy the full skill directory tree into the distribution; return SKILL.md path."""
-	target_root = out_dir / skill.name
-	for path in skill.files:
-		rel = rel_archive_path(skill.dir, path)
-		target = target_root / rel
-		target.parent.mkdir(parents=True, exist_ok=True)
-		shutil.copyfile(path, target)
-	return target_root / "SKILL.md"
+def write_skill_md(skill: Skill, out_dir: Path) -> Path:
+	target_dir = out_dir / skill.name
+	target_dir.mkdir(parents=True, exist_ok=True)
+	target = target_dir / "SKILL.md"
+	shutil.copyfile(skill.dir / "SKILL.md", target)
+	return target
 
 
 def tar_info(name: str, data: bytes, mode: int) -> tarfile.TarInfo:
@@ -180,40 +177,56 @@ def build_distribution(skills_dir: Path, out_dir: Path, uri_prefix: str) -> None
 	catalog_entries: list[dict[str, Any]] = []
 
 	for skill in skills:
-		skill_md_path = write_skill_tree(skill, out_dir)
-		archive_path = write_archive(skill, out_dir)
+		if len(skill.files) == 1 and skill.files[0].name == "SKILL.md":
+			skill_md_path = write_skill_md(skill, out_dir)
+			skill_md_url = uri_join(uri_prefix, f"{skill.name}/SKILL.md")
+			skill_md_digest = f"sha256:{sha256_hex(skill_md_path)}"
 
-		skill_md_url = uri_join(uri_prefix, f"{skill.name}/SKILL.md")
-		skill_md_digest = f"sha256:{sha256_hex(skill_md_path)}"
-		archive_url = uri_join(uri_prefix, f"{skill.name}.tar.gz")
-		archive_digest = f"sha256:{sha256_hex(archive_path)}"
+			index_entries.append(
+				{
+					"url": skill_md_url,
+					"digest": skill_md_digest,
+					"frontmatter": skill.frontmatter,
+				}
+			)
+			catalog_url = skill_md_url
+			catalog_media_type = "text/markdown"
+			catalog_digest = skill_md_digest
+			catalog_path = f"skills/{skill.name}/SKILL.md"
+		else:
+			archive_path = write_archive(skill, out_dir)
+			archive_url = uri_join(uri_prefix, f"{skill.name}.tar.gz")
+			archive_digest = f"sha256:{sha256_hex(archive_path)}"
 
-		index_entries.append(
-			{
-				"url": skill_md_url,
-				"digest": skill_md_digest,
-				"frontmatter": skill.frontmatter,
-				"archives": [
-					{
-						"url": archive_url,
-						"mimeType": ARCHIVE_MEDIA_TYPE,
-						"digest": archive_digest,
-					}
-				],
-			}
-		)
+			index_entries.append(
+				{
+					"frontmatter": skill.frontmatter,
+					"archives": [
+						{
+							"url": archive_url,
+							"mimeType": ARCHIVE_MEDIA_TYPE,
+							"digest": archive_digest,
+						}
+					],
+				}
+			)
+			catalog_url = archive_url
+			catalog_media_type = ARCHIVE_MEDIA_TYPE
+			catalog_digest = archive_digest
+			catalog_path = f"skills/{skill.name}.tar.gz"
+
 		catalog_entries.append(
 			{
 				"identifier": f"urn:huggingface:skill:{skill.name}",
 				"displayName": skill.name,
-				"mediaType": "text/markdown",
-				"url": skill_md_url,
+				"mediaType": catalog_media_type,
+				"url": catalog_url,
 				"description": skill.description,
 				"tags": ["huggingface", "skill"],
 				"metadata": {
-					"digest": skill_md_digest,
+					"digest": catalog_digest,
 					"source": SOURCE_REPO,
-					"path": f"skills/{skill.name}/SKILL.md",
+					"path": catalog_path,
 				},
 			}
 		)
