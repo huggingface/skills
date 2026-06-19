@@ -18,8 +18,7 @@ jobs:
       - name: Install huggingface_hub
         run: |
           curl -LsSf https://hf.co/cli/install.sh -o install.sh
-          echo "Verify the script content and checksum before executing in production"
-          # TODO: Add checksum verification: echo "<expected-sha256> install.sh" | sha256sum -c -
+          echo "b4be4c3cf278c5bb66e58e34de84da30f02dc17153f62fa7ba6e7b0c3b3e4e70  install.sh" | sha256sum -c -
           bash install.sh
 
       - name: Upload hackers leaderboard to HF Space
