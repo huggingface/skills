@@ -170,6 +170,8 @@ When sharing the URL with the user:
 - Offer to look at the logs if anything fails.
 - Don't add a long postamble — they want to click the link, not read more text.
 
+**Confirm a redeploy is actually live before testing it.** An `app.py`-only push does **not** change the Space's reported `runtime.stage` — the old replica keeps serving "RUNNING" while the new build swaps in, so a `gradio_client` test can silently hit **stale code**. To be sure: push → `api.restart_space(repo)` → poll until the stage leaves and returns to RUNNING → grep the boot logs (`/logs/run`) for a unique `[VERSION] …` marker you printed at module scope → then test. Also set `demo.launch(show_error=True)` so `gradio_client` surfaces the real traceback instead of a generic `AppError`.
+
 ## Publish-time failures (before the build starts)
 
 These happen during `create_repo` or `upload_file`, *before* the Space build pipeline runs. Diagnose by reading the exception, not the container logs (the container hasn't started yet).
