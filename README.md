@@ -94,6 +94,7 @@ This repository contains a few skills to get you started. You can also contribut
 | Name | Description | Documentation |
 |------|-------------|---------------|
 | `hf-cli` | Execute Hugging Face Hub operations using the hf CLI. Download models/datasets, upload files, manage repos, and run cloud compute jobs. | [SKILL.md](skills/hf-cli/SKILL.md) |
+| `hf-mem` | Estimate memory requirements for Hugging Face Safetensors and GGUF model weights, including optional KV cache estimates for inference planning. | [SKILL.md](skills/hf-mem/SKILL.md) |
 | `huggingface-best` | Find the best AI model for any task by querying Hugging Face leaderboards and benchmarks. Recommends top models based on task type, hardware constraints, and benchmark scores. | [SKILL.md](skills/huggingface-best/SKILL.md) |
 | `huggingface-community-evals` | Add and manage evaluation results in Hugging Face model cards. Supports extracting eval tables from README content, importing scores from Artificial Analysis API, and running custom evaluations with vLLM/lighteval. | [SKILL.md](skills/huggingface-community-evals/SKILL.md) |
 | `huggingface-datasets` | Explore, query, and extract data from any Hugging Face dataset using the Dataset Viewer REST API and npx tooling. Zero Python dependencies — covers split/config discovery, row pagination, text search, filtering, SQL via parquetlens, and dataset upload via CLI. | [SKILL.md](skills/huggingface-datasets/SKILL.md) |

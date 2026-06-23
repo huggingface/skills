@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Agent Skills for AI/ML tasks including dataset creation, model training, evaluation, and research paper publishing on Hugging Face Hub",
-    "version": "1.0.8"
+    "version": "1.0.9"
   },
   "plugins": [
     {
@@ -49,6 +49,12 @@
       "source": "./skills/hf-cli",
       "skills": "./",
       "description": "Execute Hugging Face Hub operations using the hf CLI. Download models/datasets, upload files, manage repos, and run cloud compute jobs."
+    },
+    {
+      "name": "hf-mem",
+      "source": "./skills/hf-mem",
+      "skills": "./",
+      "description": "Estimate memory requirements for Hugging Face Safetensors and GGUF model weights, including optional KV cache estimates for inference planning."
     },
     {
       "name": "huggingface-spaces",
