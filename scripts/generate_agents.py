@@ -5,7 +5,7 @@
 # ///
 """Generate AGENTS.md from AGENTS_TEMPLATE.md and SKILL.md frontmatter.
 
-Also validates that marketplace.json is in sync with discovered skills,
+Also validates that curated marketplace entries point at real skills,
 and updates the skills table in README.md.
 """
 
@@ -21,7 +21,12 @@ ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_PATH = ROOT / "scripts" / "AGENTS_TEMPLATE.md"
 OUTPUT_PATH = ROOT / "agents" / "AGENTS.md"
 MARKETPLACE_PATH = ROOT / ".claude-plugin" / "marketplace.json"
+MARKETPLACE_PATHS = [
+    ROOT / ".claude-plugin" / "marketplace.json",
+    ROOT / ".cursor-plugin" / "marketplace.json",
+]
 README_PATH = ROOT / "README.md"
+REQUIRED_MARKETPLACE_SKILLS = {"hf-cli"}
 
 # Markers for the auto-generated skills table in README
 README_TABLE_START = "<!-- BEGIN_SKILLS_TABLE -->"
@@ -38,12 +43,43 @@ def parse_frontmatter(text: str) -> dict[str, str]:
     if not match:
         return {}
     data: dict[str, str] = {}
-    for line in match.group(1).splitlines():
+    lines = match.group(1).splitlines()
+    index = 0
+    while index < len(lines):
+        line = lines[index]
         if ":" not in line:
+            index += 1
             continue
         key, value = line.split(":", 1)
-        data[key.strip()] = value.strip()
+        key = key.strip()
+        value = value.strip()
+
+        if value in {">", "|"}:
+            folded: list[str] = []
+            index += 1
+            while index < len(lines):
+                continuation = lines[index]
+                if continuation and not continuation.startswith((" ", "\t")):
+                    break
+                folded.append(continuation.strip())
+                index += 1
+            data[key] = " ".join(part for part in folded if part)
+            continue
+
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        data[key] = value
+        index += 1
     return data
+
+
+def concise_description(description: str) -> str:
+    """Return a compact README description from activation-oriented frontmatter."""
+    description = " ".join(description.split())
+    sentence = re.search(r"(?<=[.!?])\s+", description)
+    if sentence:
+        return description[: sentence.start()]
+    return description
 
 
 def collect_skills() -> list[dict[str, str]]:
@@ -84,11 +120,11 @@ def render(template: str, skills: list[dict[str, str]]) -> str:
     return content
 
 
-def load_marketplace() -> dict:
+def load_marketplace(path: Path = MARKETPLACE_PATH) -> dict:
     """Load marketplace.json and return parsed structure."""
-    if not MARKETPLACE_PATH.exists():
-        raise FileNotFoundError(f"marketplace.json not found at {MARKETPLACE_PATH}")
-    return json.loads(MARKETPLACE_PATH.read_text(encoding="utf-8"))
+    if not path.exists():
+        raise FileNotFoundError(f"marketplace.json not found at {path}")
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def generate_readme_table(skills: list[dict[str, str]]) -> str:
@@ -105,7 +141,7 @@ def generate_readme_table(skills: list[dict[str, str]]) -> str:
         source = f"./{skill['path']}"
         plugin = plugins.get(source, {})
         name = plugin.get("name", skill["name"])
-        description = plugin.get("description", skill["description"])
+        description = plugin.get("description") or concise_description(skill["description"])
         doc_link = f"[SKILL.md]({skill['path']}/SKILL.md)"
         lines.append(f"| `{name}` | {description} | {doc_link} |")
 
@@ -151,38 +187,55 @@ def update_readme(skills: list[dict[str, str]]) -> bool:
     return True
 
 
-def validate_marketplace(skills: list[dict[str, str]]) -> list[str]:
+def validate_marketplace(skills: list[dict[str, str]], path: Path) -> list[str]:
     """
-    Validate marketplace.json against discovered skills.
+    Validate curated marketplace entries against discovered skills.
+
+    The marketplace intentionally exposes a small install-time surface. The
+    remaining repo skills are installed through `hf skills add <skill-name>` or
+    consumed through skill-aware clients over CLI/MCP.
     Returns list of error messages (empty = passed).
     """
     errors: list[str] = []
-    marketplace = load_marketplace()
+    marketplace = load_marketplace(path)
     plugins = marketplace.get("plugins", [])
 
     # Build lookups (normalize paths: skill uses "skills/x", marketplace uses "./skills/x")
     skill_by_source = {f"./{s['path']}": s for s in skills}
-    plugin_by_source = {p["source"]: p for p in plugins}
+    plugin_by_source: dict[str, dict] = {}
+    plugin_names: set[str] = set()
 
-    # Check: every skill has a marketplace entry with matching name
-    for skill in skills:
-        expected_source = f"./{skill['path']}"
-        if expected_source not in plugin_by_source:
-            errors.append(
-                f"Skill '{skill['name']}' at '{skill['path']}' is missing from marketplace.json"
-            )
-        elif plugin_by_source[expected_source]["name"] != skill["name"]:
-            errors.append(
-                f"Name mismatch at '{expected_source}': "
-                f"SKILL.md='{skill['name']}', marketplace.json='{plugin_by_source[expected_source]['name']}'"
-            )
-
-    # Check: every marketplace plugin has a corresponding skill
+    # Check: every marketplace plugin has a corresponding skill with matching name.
     for plugin in plugins:
-        if plugin["source"] not in skill_by_source:
+        source = plugin.get("source")
+        name = plugin.get("name")
+
+        if source in plugin_by_source:
+            errors.append(f"{path}: duplicate marketplace source '{source}'")
+        else:
+            plugin_by_source[source] = plugin
+
+        if name in plugin_names:
+            errors.append(f"{path}: duplicate marketplace skill name '{name}'")
+        else:
+            plugin_names.add(name)
+
+        if source not in skill_by_source:
             errors.append(
-                f"Marketplace plugin '{plugin['name']}' at '{plugin['source']}' has no SKILL.md"
+                f"{path}: marketplace plugin '{name}' at '{source}' has no SKILL.md"
             )
+            continue
+
+        skill = skill_by_source[source]
+        if name != skill["name"]:
+            errors.append(
+                f"Name mismatch at '{source}': "
+                f"SKILL.md='{skill['name']}', marketplace.json='{name}'"
+            )
+
+    missing_required = REQUIRED_MARKETPLACE_SKILLS - plugin_names
+    for name in sorted(missing_required):
+        errors.append(f"{path}: required marketplace skill '{name}' is missing")
 
     return errors
 
@@ -195,14 +248,18 @@ def main() -> None:
     OUTPUT_PATH.write_text(output, encoding="utf-8")
     print(f"Wrote {OUTPUT_PATH} with {len(skills)} skills.")
 
-    # Validate marketplace.json
-    errors = validate_marketplace(skills)
+    # Validate marketplace manifests
+    errors = [
+        error
+        for marketplace_path in MARKETPLACE_PATHS
+        for error in validate_marketplace(skills, marketplace_path)
+    ]
     if errors:
-        print("\nMarketplace.json validation errors:", file=sys.stderr)
+        print("\nMarketplace validation errors:", file=sys.stderr)
         for error in errors:
             print(f"  - {error}", file=sys.stderr)
         sys.exit(1)
-    print("Marketplace.json validation passed.")
+    print("Marketplace validation passed.")
 
     # Update README.md skills table
     if update_readme(skills):
