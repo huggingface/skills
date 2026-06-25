@@ -4,12 +4,15 @@ Hugging Face Skills are definitions for AI/ML tasks like dataset creation, model
 
 The skills in this repository follow the standardized [Agent Skills](https://agentskills.io/home) format.
 
+> [!NOTE]
+> **Just want to give your agent access to the Hugging Face Hub?** Start with [`hf-cli`](https://huggingface.co/docs/hub/agents-cli). It's the recommended first Skill to install: it teaches your agent every `hf` command (search models, manage datasets and buckets, launch Spaces, run jobs) and is generated from your locally installed CLI so it stays current.
+
 ## How do Skills work?
 
 In practice, skills are self-contained folders that package instructions, scripts, and resources together for an AI agent to use on a specific use case. Each folder includes a `SKILL.md` file with YAML frontmatter (name and description) followed by the guidance your coding agent follows while the skill is active. 
 
 > [!TIP]
-> If your agent doesn't support skills, you can use [`agents/AGENTS.md`](agents/AGENTS.md) directly as a fallback.
+> If your agent doesn't support skills, you can use [`agentsmd/AGENTS.md`](agentsmd/AGENTS.md) directly as a fallback.
 
 The `hf-cli` skill in this repository is also available through:
  - Cursor Marketplace (https://cursor.com/marketplace/huggingface)
@@ -45,7 +48,7 @@ hf skills add <skill-name>
 
 2. Once a skill is available in one of those locations, Codex will discover it using the Agent Skills standard and load the `SKILL.md` instructions when it decides to use that skill or when you explicitly invoke it.
 
-3. If your Codex setup still relies on `AGENTS.md`, you can use the generated [`agents/AGENTS.md`](agents/AGENTS.md) file in this repo as a fallback bundle of instructions.
+3. If your Codex setup still relies on `AGENTS.md`, you can use the generated [`agentsmd/AGENTS.md`](agentsmd/AGENTS.md) file in this repo as a fallback bundle of instructions.
 
 ### Gemini CLI
 
@@ -91,19 +94,24 @@ This repository contains a few skills to get you started. You can also contribut
 | Name | Description | Documentation |
 |------|-------------|---------------|
 | `hf-cli` | Execute Hugging Face Hub operations using the hf CLI. Install additional Hugging Face skills, discover agent resources, download models/datasets, upload files, manage repos, and run cloud compute jobs. | [SKILL.md](skills/hf-cli/SKILL.md) |
+| `hf-mem` | Hugging Face CLI to estimate the required memory to load Safetensors or GGUF model weights for inference from the Hugging Face Hub | [SKILL.md](skills/hf-mem/SKILL.md) |
 | `huggingface-best` | Use when the user asks about finding the best, top, or recommended model for a task, wants to know what AI model to use, or wants to compare models by benchmark scores. | [SKILL.md](skills/huggingface-best/SKILL.md) |
 | `huggingface-community-evals` | Run evaluations for Hugging Face Hub models using inspect-ai and lighteval on local hardware. | [SKILL.md](skills/huggingface-community-evals/SKILL.md) |
 | `huggingface-datasets` | Use this skill for Hugging Face Dataset Viewer API workflows that fetch subset/split metadata, paginate rows, search text, apply filters, download parquet URLs, and read size or statistics. | [SKILL.md](skills/huggingface-datasets/SKILL.md) |
 | `huggingface-gradio` | Build Gradio web UIs and demos in Python. | [SKILL.md](skills/huggingface-gradio/SKILL.md) |
 | `huggingface-llm-trainer` | Train or fine-tune language and vision models using TRL (Transformer Reinforcement Learning) or Unsloth with Hugging Face Jobs infrastructure. | [SKILL.md](skills/huggingface-llm-trainer/SKILL.md) |
 | `huggingface-local-models` | Use to select models to run locally with llama.cpp and GGUF on CPU, Mac Metal, CUDA, or ROCm. | [SKILL.md](skills/huggingface-local-models/SKILL.md) |
+| `huggingface-lora-space-builder` | Build and publish a Gradio demo on Hugging Face Spaces for a user-provided LoRA. | [SKILL.md](skills/huggingface-lora-space-builder/SKILL.md) |
 | `huggingface-paper-publisher` | Publish and manage research papers on Hugging Face Hub. | [SKILL.md](skills/huggingface-paper-publisher/SKILL.md) |
 | `huggingface-papers` | Look up and read Hugging Face paper pages in markdown, and use the papers API for structured metadata such as authors, linked models/datasets/spaces, Github repo and project page. | [SKILL.md](skills/huggingface-papers/SKILL.md) |
+| `huggingface-spaces` | Build, deploy, and maintain applications on Hugging Face Spaces — Gradio / Docker / Static SDKs, ZeroGPU and dedicated hardware, model loading, debugging, buckets, inference providers, community grants. | [SKILL.md](skills/huggingface-spaces/SKILL.md) |
 | `huggingface-tool-builder` | Use this skill when the user wants to build tool/scripts or achieve a task where using data from the Hugging Face API would help. | [SKILL.md](skills/huggingface-tool-builder/SKILL.md) |
 | `huggingface-trackio` | Track and visualize ML training experiments with Trackio. | [SKILL.md](skills/huggingface-trackio/SKILL.md) |
 | `huggingface-vision-trainer` | Trains and fine-tunes vision models for object detection (D-FINE, RT-DETR v2, DETR, YOLOS), image classification (timm models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3 — plus any Transformers classifier), and SAM/SAM2 segmentation using Hugging Face Transformers on Hugging Face Jobs cloud GPUs. | [SKILL.md](skills/huggingface-vision-trainer/SKILL.md) |
+| `huggingface-zerogpu` | AI demos and GPU compute with Gradio Spaces and Hugging Face Spaces ZeroGPU. | [SKILL.md](skills/huggingface-zerogpu/SKILL.md) |
 | `train-sentence-transformers` | Train or fine-tune sentence-transformers models across `SentenceTransformer` (bi-encoder; dense or static embedding model; for retrieval, similarity, clustering, classification, paraphrase mining, dedup, multimodal), `CrossEncoder` (reranker; pair scoring for two-stage retrieval / pair classification), and `SparseEncoder` (SPLADE, sparse embedding model; for learned-sparse retrieval). | [SKILL.md](skills/train-sentence-transformers/SKILL.md) |
 | `transformers-js` | Use Transformers.js to run state-of-the-art machine learning models directly in JavaScript/TypeScript. | [SKILL.md](skills/transformers-js/SKILL.md) |
+| `trl-training` | Train and fine-tune transformer language models using TRL (Transformers Reinforcement Learning). | [SKILL.md](skills/trl-training/SKILL.md) |
 <!-- END_SKILLS_TABLE -->
 
 ### Using skills in your coding agent

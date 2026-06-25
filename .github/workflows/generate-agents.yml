@@ -6,12 +6,14 @@ on:
       - "scripts/AGENTS_TEMPLATE.md"
       - "scripts/generate_agents.py"
       - "scripts/generate_cursor_plugin.py"
+      - "scripts/plugin_versions.py"
       - "scripts/publish.sh"
-      - "**/SKILL.md"
-      - "agents/AGENTS.md"
+      - "skills/**"
+      - "agentsmd/AGENTS.md"
       - "README.md"
       - ".claude-plugin/marketplace.json"
       - ".claude-plugin/plugin.json"
+      - ".cursor-plugin/marketplace.json"
       - "gemini-extension.json"
       - ".cursor-plugin/plugin.json"
       - ".mcp.json"
@@ -21,10 +23,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.3
+        with:
+          fetch-depth: 0
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v8.2.0
 
       - name: Ensure generated files are up to date
         run: ./scripts/publish.sh --check
+
+      - name: Ensure version bumped for published content changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: uv run scripts/plugin_versions.py check-bump "$BASE_SHA"
+
+      - name: Ensure skills index artifact builds
+        run: |
+          uv run scripts/build_skills_index.py \
+            --repo-root . \
+            --out-dir out/skills-index/latest \
+            --branch main
