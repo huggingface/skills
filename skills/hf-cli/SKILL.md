@@ -9,7 +9,7 @@ The Hugging Face Hub CLI tool `hf` is available. IMPORTANT: The `hf` command rep
 
 Use `hf --help` to view available functions. Note that auth commands are now all under `hf auth` e.g. `hf auth whoami`.
 
-Generated with `huggingface_hub v1.20.0`. Run `hf skills add --force` to regenerate.
+Generated with `huggingface_hub v1.21.0`. Run `hf skills add --force` to regenerate.
 
 ## Commands
 
@@ -108,13 +108,13 @@ Generated with `huggingface_hub v1.20.0`. Run `hf skills add --force` to regener
 - `hf jobs hardware` — List available hardware options for Jobs `[--format [auto|human|agent|json|quiet]]`
 - `hf jobs inspect JOB_IDS` — Display detailed information on one or more Jobs `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs labels JOB_ID` — Update labels on a Job. Replaces all existing labels. `[--label TEXT --clear --namespace TEXT --format [auto|human|agent|json|quiet]]`
+- `hf jobs list` — List Jobs. `[--all --status [COMPLETED|CANCELED|ERROR|DELETED|SCHEDULING|RUNNING] --label TEXT --limit INTEGER --namespace TEXT --filter TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs logs JOB_ID` — Fetch the logs of a Job. `[--follow --tail INTEGER --namespace TEXT --format [auto|human|agent|json|quiet]]`
-- `hf jobs ps` — List Jobs. `[--all --namespace TEXT --filter TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs run IMAGE COMMAND` — Run a Job. `[--env TEXT --secrets TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --timeout TEXT --detach --expose INTEGER --ssh --namespace TEXT]`
 - `hf jobs scheduled delete SCHEDULED_JOB_ID` — Delete a scheduled Job. `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs scheduled inspect SCHEDULED_JOB_IDS` — Display detailed information on one or more scheduled Jobs `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs scheduled labels SCHEDULED_JOB_ID` — Update labels on a scheduled Job. Replaces all existing labels. `[--label TEXT --clear --namespace TEXT --format [auto|human|agent|json|quiet]]`
-- `hf jobs scheduled ps` — List scheduled Jobs `[--all --namespace TEXT --filter TEXT --format [auto|human|agent|json|quiet]]`
+- `hf jobs scheduled list` — List scheduled Jobs `[--all --namespace TEXT --filter TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs scheduled resume SCHEDULED_JOB_ID` — Resume (unpause) a scheduled Job. `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs scheduled run SCHEDULE IMAGE COMMAND` — Schedule a Job. `[--suspend --concurrency --env TEXT --secrets TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --timeout TEXT --expose INTEGER --namespace TEXT]`
 - `hf jobs scheduled suspend SCHEDULED_JOB_ID` — Suspend (pause) a scheduled Job. `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
