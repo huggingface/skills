@@ -93,7 +93,7 @@ This repository contains a few skills to get you started. You can also contribut
 <!-- BEGIN_SKILLS_TABLE -->
 | Name | Description | Documentation |
 |------|-------------|---------------|
-| `hf-cli` | Execute Hugging Face Hub operations using the hf CLI. Install additional Hugging Face skills, discover agent resources, download models/datasets, upload files, manage repos, and run cloud compute jobs. | [SKILL.md](skills/hf-cli/SKILL.md) |
+| `hf-cli` | Hugging Face Hub CLI (`hf`) for downloading, uploading, and managing models, datasets, spaces, buckets, repos, papers, jobs, and more on the Hugging Face Hub. | [SKILL.md](skills/hf-cli/SKILL.md) |
 | `hf-mem` | Hugging Face CLI to estimate the required memory to load Safetensors or GGUF model weights for inference from the Hugging Face Hub | [SKILL.md](skills/hf-mem/SKILL.md) |
 | `huggingface-best` | Use when the user asks about finding the best, top, or recommended model for a task, wants to know what AI model to use, or wants to compare models by benchmark scores. | [SKILL.md](skills/huggingface-best/SKILL.md) |
 | `huggingface-community-evals` | Run evaluations for Hugging Face Hub models using inspect-ai and lighteval on local hardware. | [SKILL.md](skills/huggingface-community-evals/SKILL.md) |
@@ -139,7 +139,7 @@ Your coding agent automatically loads the corresponding `SKILL.md` instructions 
    Guidance + examples + guardrails
    ```
 3. Add or edit supporting scripts, templates, and documents referenced by your instructions.
-4. Do not add the skill to `.claude-plugin/marketplace.json` by default. Client marketplaces are intentionally limited to `hf-cli`; additional skills should be installable with `hf skills add <skill-name>`.
+4. Do not add the skill to `.claude-plugin/marketplace.json` by default. Client marketplaces are intentionally limited to `hf-cli`; the full Hub CLI marketplace is generated at `.claude-plugin/marketplace-internal.json`.
 5. Run:
    ```bash
    ./scripts/publish.sh
@@ -150,6 +150,8 @@ Your coding agent automatically loads the corresponding `SKILL.md` instructions 
 ### Marketplace
 
 The `.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json` files intentionally expose only `hf-cli` for client marketplace installation. This keeps install-time manifests focused on core Hub operations and points users to `hf skills add <skill-name>` for the rest of the repository.
+
+The generated `.claude-plugin/marketplace-internal.json` file contains the full skill list. Publish automation uploads it to the Hub bucket as `marketplace.json` so `hf skills list`, `hf skills add`, and `hf skills update` continue to see every available skill.
 
 Newer skill-aware integrations can also pull capabilities dynamically. Hugging Face's discovery flow lets clients search skills, MCP servers, and Spaces, while Skills-over-MCP work is standardizing how skills are discovered and consumed through MCP resources.
 

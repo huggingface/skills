@@ -3,10 +3,10 @@
 # requires-python = ">=3.10"
 # dependencies = []
 # ///
-"""Generate AGENTS.md from AGENTS_TEMPLATE.md and SKILL.md frontmatter.
+"""Generate AGENTS.md and marketplace metadata from SKILL.md frontmatter.
 
-Also validates that curated marketplace entries point at real skills,
-and updates the skills table in README.md.
+Also validates that client marketplace entries stay curated, validates that
+the internal Hub marketplace contains every skill, and updates README.md.
 """
 
 from __future__ import annotations
@@ -20,11 +20,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_PATH = ROOT / "scripts" / "AGENTS_TEMPLATE.md"
 OUTPUT_PATH = ROOT / "agentsmd" / "AGENTS.md"
-MARKETPLACE_PATH = ROOT / ".claude-plugin" / "marketplace.json"
-MARKETPLACE_PATHS = [
+INTERNAL_MARKETPLACE_PATH = ROOT / ".claude-plugin" / "marketplace-internal.json"
+EXTERNAL_MARKETPLACE_PATHS = [
     ROOT / ".claude-plugin" / "marketplace.json",
     ROOT / ".cursor-plugin" / "marketplace.json",
 ]
+PLUGIN_MANIFEST_PATH = ROOT / ".claude-plugin" / "plugin.json"
 README_PATH = ROOT / "README.md"
 REQUIRED_MARKETPLACE_SKILLS = {"hf-cli"}
 
@@ -120,11 +121,77 @@ def render(template: str, skills: list[dict[str, str]]) -> str:
     return content
 
 
-def load_marketplace(path: Path = MARKETPLACE_PATH) -> dict:
+def load_json(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def render_json(data: dict) -> str:
+    return json.dumps(data, indent=2, ensure_ascii=False) + "\n"
+
+
+def load_marketplace(path: Path = INTERNAL_MARKETPLACE_PATH) -> dict:
     """Load marketplace.json and return parsed structure."""
     if not path.exists():
         raise FileNotFoundError(f"marketplace.json not found at {path}")
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def marketplace_descriptions(path: Path) -> dict[str, str]:
+    data = load_json(path)
+    plugins = data.get("plugins", [])
+    if not isinstance(plugins, list):
+        return {}
+
+    descriptions: dict[str, str] = {}
+    for plugin in plugins:
+        if not isinstance(plugin, dict):
+            continue
+        name = plugin.get("name")
+        description = plugin.get("description")
+        if isinstance(name, str) and isinstance(description, str):
+            descriptions[name] = description
+    return descriptions
+
+
+def build_internal_marketplace(skills: list[dict[str, str]]) -> dict:
+    """Build the full marketplace used by hf skills, MCP, and discovery."""
+    plugin_manifest = load_json(PLUGIN_MANIFEST_PATH)
+    existing_descriptions = marketplace_descriptions(INTERNAL_MARKETPLACE_PATH)
+
+    return {
+        "name": "huggingface-skills",
+        "owner": {
+            "name": "Hugging Face",
+        },
+        "metadata": {
+            "description": (
+                "Full Hugging Face Skills manifest for hf skills, MCP, and discovery. "
+                "Client plugin marketplaces use curated manifests."
+            ),
+            "version": plugin_manifest.get("version", "0.0.0"),
+        },
+        "plugins": [
+            {
+                "name": skill["name"],
+                "source": f"./{skill['path']}",
+                "skills": "./",
+                "description": existing_descriptions.get(
+                    skill["name"],
+                    concise_description(skill["description"]),
+                ),
+            }
+            for skill in skills
+        ],
+    }
+
+
+def write_internal_marketplace(skills: list[dict[str, str]]) -> None:
+    INTERNAL_MARKETPLACE_PATH.write_text(
+        render_json(build_internal_marketplace(skills)),
+        encoding="utf-8",
+    )
 
 
 def generate_readme_table(skills: list[dict[str, str]]) -> str:
@@ -187,13 +254,14 @@ def update_readme(skills: list[dict[str, str]]) -> bool:
     return True
 
 
-def validate_marketplace(skills: list[dict[str, str]], path: Path) -> list[str]:
+def validate_external_marketplace(skills: list[dict[str, str]], path: Path) -> list[str]:
     """
-    Validate curated marketplace entries against discovered skills.
+    Validate client marketplace entries against discovered skills.
 
-    The marketplace intentionally exposes a small install-time surface. The
-    remaining repo skills are installed through `hf skills add <skill-name>` or
-    consumed through skill-aware clients over CLI/MCP.
+    Client marketplace manifests intentionally expose a small install-time
+    surface. The remaining repo skills are installed through
+    `hf skills add <skill-name>` or consumed through skill-aware clients over
+    CLI/MCP.
     Returns list of error messages (empty = passed).
     """
     errors: list[str] = []
@@ -237,6 +305,49 @@ def validate_marketplace(skills: list[dict[str, str]], path: Path) -> list[str]:
     for name in sorted(missing_required):
         errors.append(f"{path}: required marketplace skill '{name}' is missing")
 
+    extra = plugin_names - REQUIRED_MARKETPLACE_SKILLS
+    for name in sorted(extra):
+        errors.append(f"{path}: client marketplace must not expose '{name}'")
+
+    return errors
+
+
+def validate_internal_marketplace(skills: list[dict[str, str]]) -> list[str]:
+    """Validate the internal marketplace includes every discovered skill."""
+    errors: list[str] = []
+    marketplace = load_marketplace(INTERNAL_MARKETPLACE_PATH)
+    plugins = marketplace.get("plugins", [])
+    if not isinstance(plugins, list):
+        return [f"{INTERNAL_MARKETPLACE_PATH}: plugins must be a list"]
+
+    skill_by_source = {f"./{s['path']}": s for s in skills}
+    plugin_by_source: dict[str, dict] = {}
+
+    for plugin in plugins:
+        if not isinstance(plugin, dict):
+            errors.append(f"{INTERNAL_MARKETPLACE_PATH}: plugin entries must be objects")
+            continue
+
+        source = plugin.get("source")
+        name = plugin.get("name")
+        if source in plugin_by_source:
+            errors.append(f"{INTERNAL_MARKETPLACE_PATH}: duplicate source '{source}'")
+        else:
+            plugin_by_source[source] = plugin
+
+        skill = skill_by_source.get(source)
+        if skill is None:
+            errors.append(f"{INTERNAL_MARKETPLACE_PATH}: '{name}' at '{source}' has no SKILL.md")
+        elif name != skill["name"]:
+            errors.append(
+                f"{INTERNAL_MARKETPLACE_PATH}: name mismatch at '{source}': "
+                f"SKILL.md='{skill['name']}', marketplace='{name}'"
+            )
+
+    missing = set(skill_by_source) - set(plugin_by_source)
+    for source in sorted(missing):
+        errors.append(f"{INTERNAL_MARKETPLACE_PATH}: missing skill at '{source}'")
+
     return errors
 
 
@@ -247,13 +358,16 @@ def main() -> None:
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(output, encoding="utf-8")
     print(f"Wrote {OUTPUT_PATH} with {len(skills)} skills.")
+    write_internal_marketplace(skills)
+    print(f"Wrote {INTERNAL_MARKETPLACE_PATH} with {len(skills)} skills.")
 
     # Validate marketplace manifests
     errors = [
         error
-        for marketplace_path in MARKETPLACE_PATHS
-        for error in validate_marketplace(skills, marketplace_path)
+        for marketplace_path in EXTERNAL_MARKETPLACE_PATHS
+        for error in validate_external_marketplace(skills, marketplace_path)
     ]
+    errors.extend(validate_internal_marketplace(skills))
     if errors:
         print("\nMarketplace validation errors:", file=sys.stderr)
         for error in errors:
