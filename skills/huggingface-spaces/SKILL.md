@@ -110,7 +110,7 @@ startup_duration_timeout: 30m   # default; bump to 1h for big LLMs / heavy downl
 ---
 ```
 
-\* Reasons to use an older Gradio: a custom component pins it, or you're adapting an existing demo and don't want to rewrite for 5.x→6.x breaking changes. If you need a 5.x, pick `5.50.0` (latest of the series; still supports custom components).
+\* Default to the current latest stable, and **look up what that is** (`pip index versions gradio`, or the version a freshly-created Space defaults to) — the number above is a placeholder that goes stale, don't reuse it. Only pin older when the latest genuinely doesn't work for this Space: a custom component pins it, or you're adapting an existing demo and don't want to rewrite for 5.x→6.x breaking changes. If you need a 5.x, pick `5.50.0` (latest of the series; still supports custom components).
 
 All frontmatter options: https://huggingface.co/docs/hub/spaces-config-reference
 

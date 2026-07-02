@@ -65,39 +65,55 @@ When PyPI is silent, fall back to the project's README compatibility table (torc
 
 ## Prebuilt CUDA wheels — the Blackwell wheels dataset
 
-For CUDA-extension packages without an upstream wheel matching the ZeroGPU torch / cuda / cxx11-abi cell, use the canonical prebuilt wheels at:
+This is the **first** thing to reach for when a CUDA-extension package has no upstream wheel matching the ZeroGPU torch / CUDA / cxx11-abi cell. Prefer it over any runtime workaround (`pip install git+…` inside `@spaces.GPU`, committed stub packages, `sys.modules` injection, monkey-patch shims), all of which are slower, fragile, and eat `duration` budget. Canonical prebuilt sm_120 wheels:
 
 > https://huggingface.co/datasets/multimodalart/zerogpu-blackwell-wheels
 
-Wheels live at `wheels/<cell>/<package>-<ver>-<tag>.whl`. Current cells:
+Wheels live at `wheels/<cell>/<wheel>`. A **cell** encodes torch × CUDA × Python as `pt<torch>-cu<cuda>-cp<pyver>`. Every cell ships the same seven packages:
 
-- `pt212-cu130-cp310` — built against torch 2.12 / CUDA 13.0 / Python 3.10. **Works on the live ZeroGPU runtime (torch 2.11)** for all packages below.
-- `pt212-cu130-cp312`, `pt212-cu130-cp313` — same matrix at other Python versions.
-- `pt28-cu128-cp310` — older fallback for Spaces stuck on torch 2.8 / CUDA 12.8.
+`flash_attn` (two versions: `2.8.3` and `2.7.4.post1`), `xformers`, `pytorch3d`, `nvdiffrast`, `diff_gaussian_rasterization`, `torchmcubes`.
+
+Current cells (12):
+
+| torch | CUDA | Python cells available |
+|---|---|---|
+| 2.8.0 (`pt28`) | 12.8 | cp310, cp311, cp312 |
+| 2.9.1 (`pt291`) | 12.8 | cp310 |
+| 2.10.0 (`pt210`) | 12.8 / 13.0 | cp310 (cu128), cp312 (cu130) |
+| 2.11.0 (`pt211`) | 13.0 | cp312, cp313 |
+| 2.12.0 (`pt212`) | 13.0 | cp310, cp311, cp312, cp313 |
+
+### Picking a cell
+
+1. **Match `cp<pyver>` to your `python_version:`.** The wheels are cp-ABI-specific — a `cp310` wheel needs Python 3.10, `cp312` needs 3.12, etc. (`flash_attn` now ships cp310 **through** cp313, so this is a free choice, not a forced pin to 3.10 as in older versions of this doc.)
+2. **The wheels are torch-minor-tolerant.** The `flash_attn` / `xformers` filenames encode no torch version, so a `pt212-cu130-cp310` wheel runs fine on the live torch-2.11 cp310 runtime. `flash_attn` ships cp310 through cp313, so the Python choice is free. Pick the highest-torch cell for your Python version unless you've pinned an older torch — then match it (torch 2.8 → a `pt28-cu128-cp3XX` cell).
+3. **Copy the *exact* filename from the cell you pick.** The `xformers` build hash differs across cells (`0.0.34+3da0fc92…` on the cu130 / torch≥2.10 cells, `0.0.34+41531cee…` on the cu128 / torch 2.8–2.9 cells). Don't hardcode one filename across cells — list the cell (`hf download --repo-type dataset multimodalart/zerogpu-blackwell-wheels --include "wheels/<cell>/*"` or the Hub file browser) and copy what's there.
 
 Reference by direct URL in `requirements.txt`:
 
 ```
-https://huggingface.co/datasets/multimodalart/zerogpu-blackwell-wheels/resolve/main/wheels/pt212-cu130-cp310/<wheel>
+https://huggingface.co/datasets/multimodalart/zerogpu-blackwell-wheels/resolve/main/wheels/<cell>/<wheel>
 ```
 
 ### Per-package status
 
-Verified empirically against the live runtime + the real Spaces that previously shipped runtime patches:
+Each package's version is constant across cells; only the `cp`/torch/CUDA tags in the filename change. The "instead of" column is the runtime workaround to avoid — the wheel is the clean path.
 
-| Package | Wheel | Replaces | Caveats |
-|---|---|---|---|
-| `xformers` | `xformers-0.0.34+3da0fc92.d20260528-cp39-abi3-linux_x86_64.whl` | MEA→SDPA monkey-patch shim; Cutlass-force shim | `Requires: torch>=2.10`. Auto-dispatch picks FA2 (`fa2F@2.5.7-pt`) on sm_120. Classic Cutlass / FA3 still reject sm_120 but auto-dispatch never selects them now. |
-| `flash_attn` | `flash_attn-2.8.3-cp310-cp310-linux_x86_64.whl` | Committed `flash_attn/` stub package; `sys.modules["flash_attn"] = ...` injection | **cp310 only** — requires `python_version: "3.10"` in README. Needs `einops` for `flash_attn.layers.rotary`. Real `flash_attn_2_cuda` satisfies xformers' `hasattr(flash_attn.flash_attn_interface, "flash_attn_gpu")` probe. |
-| `pytorch3d` | `pytorch3d-0.7.9-cp310-cp310-linux_x86_64.whl` | Runtime `pip install git+...pytorch3d.git` inside `@spaces.GPU` | Needs `numpy`, `iopath`, `fvcore` listed. No torch pin in metadata; loads cleanly on torch 2.11. |
-| `nvdiffrast` | `nvdiffrast-0.4.0-cp310-cp310-linux_x86_64.whl` | Runtime build with `TORCH_CUDA_ARCH_LIST=12.0` | Needs `numpy`. `RasterizeGLContext` in 0.4.0 is a deprecation alias for `RasterizeCudaContext` — no headless-GL footgun. |
-| `diff_gaussian_rasterization` | `diff_gaussian_rasterization-0.0.0-cp310-cp310-linux_x86_64.whl` | Runtime build from `graphdeco-inria/diff-gaussian-rasterization.git` | **Upstream Inria API only** (returns 2-tuple `(color, radii)`). Does NOT match the ashawkey fork (4-tuple including alpha+depth) used by `ashawkey/LGM`, `dylanebert/LGM-mini`, etc. Forks need their own wheel. |
-| `torchmcubes` | `torchmcubes-0.1.0-cp310-cp310-linux_x86_64.whl` | Runtime `pip install git+...torchmcubes.git` | **sm_120 only** (no fatbin for older archs). Works on ZeroGPU / Blackwell; not portable to a dedicated T4 / L4 / A10G Space. |
+| Package | Instead of | Version + caveats |
+|---|---|---|
+| `flash_attn` | committing a `flash_attn/` stub package; `sys.modules["flash_attn"] = …` injection | **2.8.3** (default) or **2.7.4.post1** (repos that pin `flash-attn<2.8`). Ships **cp310–cp313**. Needs `einops` for `flash_attn.layers.rotary`. Built `FLASH_ATTN_CUDA_ARCHS=120` (sm_120 only). This is FlashAttention-**2** — FA3/FA4 do **not** run on sm_120 (no TMEM); see [`zerogpu.md`](zerogpu.md) → Attention backends. Its real `flash_attn_2_cuda` also satisfies xformers' `flash_attn_gpu` probe. |
+| `xformers` | an MEA→SDPA monkey-patch shim; a Cutlass-force shim | **0.0.34** (`Requires: torch>=2.10`). **Build hash differs per cell** — copy the exact filename. Auto-dispatch picks FA2 (`fa2F`) on sm_120; classic Cutlass / FA3 reject sm_120 but auto-dispatch never selects them. |
+| `pytorch3d` | a runtime `pip install git+…pytorch3d.git` inside `@spaces.GPU` | **0.7.9**. Needs `numpy`, `iopath`, `fvcore` listed. No torch pin in metadata; loads cleanly on torch 2.11. |
+| `nvdiffrast` | a runtime build with `TORCH_CUDA_ARCH_LIST=12.0` | **0.4.0**. Needs `numpy`. `RasterizeGLContext` is a deprecation alias for `RasterizeCudaContext` — no headless-GL footgun. |
+| `diff_gaussian_rasterization` | a runtime build from `graphdeco-inria/diff-gaussian-rasterization.git` | **Upstream Inria API only** (returns 2-tuple `(color, radii)`). Does NOT match the ashawkey fork (4-tuple incl. alpha+depth) used by `ashawkey/LGM`, `dylanebert/LGM-mini`, etc. Forks need their own wheel. |
+| `torchmcubes` | a runtime `pip install git+…torchmcubes.git` | **0.1.0**. **sm_120 only** (no fatbin for older archs). Works on ZeroGPU / Blackwell; not portable to a dedicated T4 / L4 / A10G Space. |
 
 ### Pattern
 
+Resolve the exact filenames from your chosen cell, then:
+
 ```
-# requirements.txt
+# requirements.txt  (cell = pt212-cu130-cp310 → needs python_version "3.10")
 numpy
 einops
 https://huggingface.co/datasets/multimodalart/zerogpu-blackwell-wheels/resolve/main/wheels/pt212-cu130-cp310/flash_attn-2.8.3-cp310-cp310-linux_x86_64.whl
@@ -105,11 +121,11 @@ https://huggingface.co/datasets/multimodalart/zerogpu-blackwell-wheels/resolve/m
 ```
 
 ```yaml
-# README frontmatter — pin Python to match wheel cell
+# README frontmatter — pin Python to match the wheel cell's cp tag
 python_version: "3.10"
 ```
 
-**Do not** install these from `@spaces.GPU` startup. The previous "subprocess.check_call pip install at first GPU acquire" pattern is now strictly worse than the wheel URL — slower cold start, eats `duration` budget, breaks reproducibility, and the build sometimes exceeds the `@spaces.GPU(duration=1500)` cap.
+**Do not** install these from `@spaces.GPU` startup. A `subprocess.check_call` pip-install at first GPU acquire is strictly worse than the wheel URL — slower cold start, eats `duration` budget, breaks reproducibility, and the build sometimes exceeds the `@spaces.GPU(duration=1500)` cap.
 
 ### When you need a wheel that's not in the dataset
 

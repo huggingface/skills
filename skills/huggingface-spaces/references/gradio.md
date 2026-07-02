@@ -8,16 +8,16 @@ For ZeroGPU-specific decorator + worker semantics, see [`zerogpu.md`](zerogpu.md
 
 ## Themes and layout
 
-- Default theme preference: `gr.themes.Soft()`. Alternatives: no theme, or `gr.themes.Citrus()`. Pick once and don't over-style.
+- Default theme preference: `gr.themes.Citrus()`. Alternatives: `gr.themes.Soft()` or no theme. Pick once and don't over-style.
 - For apps that don't need full-width, constrain with CSS so they're readable on 4K displays:
   ```python
   CSS = """
   #col-container { max-width: 1100px; margin: 0 auto; }
   .dark .gradio-container { color: var(--body-text-color); }
   """
-  with gr.Blocks(theme=gr.themes.Soft(), css=CSS) as demo: ...
+  with gr.Blocks(theme=gr.themes.Citrus(), css=CSS) as demo: ...
   ```
-  The dark-mode override fixes a recurring Gradio bug where dark text inherits unset colors.
+  Always include the `.dark .gradio-container` override with `gr.themes.Citrus()` — without it Citrus's dark mode renders dark text on a dark background (text inherits unset colors). The same fix is harmless (and worth keeping) under other themes.
 - Width-cap with `!important` if Gradio 6's own breakpoints fight you — target `main`, `.gradio-container`, and the inner fillable wrapper, otherwise the width caps but goes flush-left.
 
 ## Minimal layout most demos converge to
