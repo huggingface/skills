@@ -125,10 +125,11 @@ from diffusers import DiffusionPipeline
 pipe = DiffusionPipeline.from_pretrained("<repo>", torch_dtype=torch.bfloat16).to("cuda")
 
 @spaces.GPU(duration=60)
-def generate(prompt):
+def generate(prompt: str):
+    """Generate an image from a text prompt."""   # docstring → API / MCP tool description
     return pipe(prompt).images[0]
 
-gr.Interface(fn=generate, inputs=gr.Text(), outputs=gr.Image()).launch()
+gr.Interface(fn=generate, inputs=gr.Text(), outputs=gr.Image()).launch(mcp_server=True)
 ```
 
 Three rules — full treatment in [`references/zerogpu.md`](references/zerogpu.md):
@@ -136,6 +137,12 @@ Three rules — full treatment in [`references/zerogpu.md`](references/zerogpu.m
 1. **`import spaces` before torch / any CUDA-touching import.** It monkey-patches `torch.cuda.*`; once CUDA is initialized in the main process, it's too late.
 2. **Load the model at module scope, `.to("cuda")` eagerly.** ZeroGPU intercepts the call, packs weights to disk, and streams them into VRAM on the first `@spaces.GPU` entry. Lazy loading inside the decorator costs every user.
 3. **Decorate the function Gradio binds.** Estimate `duration` to the realistic worst case (smaller = higher queue priority and tighter quota check). For input-dependent runtime, pass a callable.
+
+### Examples, docstrings, and MCP
+
+- **Add `gr.Examples` whenever it makes sense** (the app takes input and representative inputs exist) — prefer the model/repo's own official examples. Keep example rows to the few inputs a user actually varies (prompt, image) and give the handler defaults for the rest (steps, seed, guidance) so a row is `["a prompt"]`, not a wall of knobs. Use `cache_examples=True, cache_mode="lazy"`. See [`references/gradio.md`](references/gradio.md).
+- **Give every API-triggered function a docstring and type hints.** Each Gradio event handler is exposed over the API; the docstring + signature are what a caller — and the MCP tool schema — sees.
+- **Launch with `demo.launch(mcp_server=True)`** (Gradio 5+) so the Space doubles as an MCP server: each API function becomes an MCP tool described by its docstring and hints.
 
 ### requirements.txt
 
@@ -226,7 +233,7 @@ If you solve an error that wasn't in the known-errors list, suggest the user PR 
 | **Iterate + debug**: logs, rung ladder, smoke testing (and dev mode + SSH as a last resort) | [`references/debugging.md`](references/debugging.md) |
 | **Error-string lookup** — the single place for all error symptoms (Spaces, ZeroGPU, Gradio, deps) | [`references/known-errors.md`](references/known-errors.md) |
 | Pinning deps, picking wheels, torch-family alignment | [`references/requirements.md`](references/requirements.md) |
-| `gr.Examples` caching, themes, custom HTML components, `gr.Server` | [`references/gradio.md`](references/gradio.md) |
+| `gr.Examples` (add when it makes sense), themes, custom HTML components, `gr.Server`, MCP server (`mcp_server=True`) | [`references/gradio.md`](references/gradio.md) |
 | Persistent storage, public bucket URLs | [`references/buckets.md`](references/buckets.md) |
 | Community grant requests (non-PRO needing ZeroGPU) | [`references/grants.md`](references/grants.md) |
 | Provider proxy (zero-VRAM big LLM via Cerebras / Fireworks / Together / etc.) | [`references/inference-providers.md`](references/inference-providers.md) |
