@@ -158,6 +158,8 @@ Short version:
 
 Try to build a release candidate from the user quest locally and push it — then use the live URL as your test loop. The Space environment is the only one that matters; do not try to test locally. `python3 -m py_compile app.py` is the maximum local check worth doing before pushing.
 
+Push files with `hf upload <namespace>/<name> . --repo-type space`. **`--repo-type space` is required** — `hf upload` defaults to a *model* repo and will otherwise upload to (and silently create) a model repo of the same name. Add `--exclude "**/__pycache__/**"` so local bytecode caches aren't committed into the Space.
+
 Once pushed, pick the cheapest update mechanism for each change — hot-reload for pure Python edits, `hf upload` for code-only files hot-reload can't touch, full rebuild only when `requirements.txt` / `Dockerfile` / README frontmatter actually changed. Full ladder + footguns (hot-reload poisoning factory reboot, runtime.sha lag, etc.) in [`references/debugging.md`](references/debugging.md).
 
 ## 7. Verify

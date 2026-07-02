@@ -9,8 +9,10 @@ Pick the cheapest update mechanism that fits the change. Going one rung too high
 | Rung | When | Command | Cost |
 |---|---|---|---|
 | 1. Hot-reload | Pure Python edit on a Gradio Space (SDK 6.1+), **no new deps** | `hf spaces hot-reload <id> -f app.py` | seconds, no rebuild |
-| 2. `hf upload` | Code-only change hot-reload can't handle (`gr.Server`, Streamlit, Docker entrypoint, non-Python file) | `hf upload <id> . --include '<file>'` | 30–90 s app restart |
-| 3. Full rebuild | `requirements.txt`, `Dockerfile`, README frontmatter, or hardware change | `hf upload <id> . && hf spaces logs <id> --build --follow` | 1–15 min |
+| 2. `hf upload` | Code-only change hot-reload can't handle (`gr.Server`, Streamlit, Docker entrypoint, non-Python file) | `hf upload <id> . --repo-type space --include '<file>'` | 30–90 s app restart |
+| 3. Full rebuild | `requirements.txt`, `Dockerfile`, README frontmatter, or hardware change | `hf upload <id> . --repo-type space --exclude "**/__pycache__/**" && hf spaces logs <id> --build --follow` | 1–15 min |
+
+`hf upload` defaults to a **model** repo — always pass `--repo-type space`, or it uploads to (and silently creates) a model repo of the same name. Also `--exclude "**/__pycache__/**"` so local bytecode caches don't get committed into the Space.
 | 4. Factory reboot | Container in inconsistent state (broken pip env, etc.) | `hf spaces restart <id> --factory-reboot` | full rebuild + cold start |
 
 ### How hot-reload works
