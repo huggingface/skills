@@ -7,6 +7,7 @@ cd "$ROOT_DIR"
 GENERATED_FILES=(
   "agentsmd/AGENTS.md"
   "README.md"
+  ".claude-plugin/marketplace-internal.json"
   ".cursor-plugin/plugin.json"
   ".mcp.json"
 )
@@ -96,6 +97,7 @@ Set PUBLISH_BASE_REF to override the base used for automatic version bumps.
 This script regenerates:
   - agentsmd/AGENTS.md
   - README.md (skills table section)
+  - .claude-plugin/marketplace-internal.json
   - .cursor-plugin/plugin.json
   - .mcp.json
 
