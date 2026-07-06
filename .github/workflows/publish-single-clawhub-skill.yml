@@ -118,9 +118,22 @@ jobs:
           INPUT_DISPLAY_NAME: ${{ inputs.display_name }}
         run: |
           set -euo pipefail
+          
+          # Validate skill_id contains only safe characters
+          if [[ ! "$INPUT_SKILL_ID" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+            echo "::error::skill_id contains invalid characters. Only alphanumeric, dots, hyphens, and underscores allowed."
+            exit 1
+          fi
+          
           slug="$INPUT_SLUG"
           if [[ -z "$slug" ]]; then
             slug="$INPUT_SKILL_ID"
+          fi
+          
+          # Validate slug contains only safe characters
+          if [[ ! "$slug" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+            echo "::error::slug contains invalid characters. Only alphanumeric, dots, hyphens, and underscores allowed."
+            exit 1
           fi
 
           display_name="$INPUT_DISPLAY_NAME"
@@ -218,6 +231,15 @@ jobs:
           CLAWSCAN_NOTE: ${{ inputs.clawscan_note }}
         run: |
           set -euo pipefail
+          
+          # Validate inputs do not start with dashes to prevent argument injection
+          for var in "$OWNER" "$SLUG" "$DISPLAY_NAME" "$VERSION" "$TAGS" "$CHANGELOG" "$CLAWSCAN_NOTE"; do
+            if [[ "$var" =~ ^- ]]; then
+              echo "::error::Input value cannot start with a dash character"
+              exit 1
+            fi
+          done
+          
           if [[ -z "$CHANGELOG" ]]; then
             if [[ "$SKILL_ID" == "hf-cli" ]]; then
               CHANGELOG="Sync $SKILL_ID skill from Hugging Face CLI $VERSION"
