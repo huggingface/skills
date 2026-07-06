@@ -6,6 +6,7 @@ on:
     paths:
       - "skills/**"
       - ".claude-plugin/marketplace.json"
+      - ".claude-plugin/marketplace-internal.json"
       - "scripts/build_skills_index.py"
       - "scripts/build_skill_distribution.py"
       - ".github/workflows/sync-skills-to-bucket.yml"
@@ -43,6 +44,6 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           uvx hf buckets sync ./skills hf://buckets/huggingface/skills/skills --delete
-          uvx hf buckets cp ./.claude-plugin/marketplace.json hf://buckets/huggingface/skills/marketplace.json
+          uvx hf buckets cp ./.claude-plugin/marketplace-internal.json hf://buckets/huggingface/skills/marketplace.json
           uvx hf buckets sync ./out/skills-index/latest hf://buckets/huggingface/skills/index/latest --delete
           uvx hf buckets sync ./out/skills-distribution/latest hf://buckets/huggingface/skills/distribution/latest --delete

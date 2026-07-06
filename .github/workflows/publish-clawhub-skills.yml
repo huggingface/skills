@@ -1,0 +1,62 @@
+name: Publish ClawHub skills
+
+on:
+  workflow_dispatch:
+    inputs:
+      owner:
+        description: ClawHub owner to publish under.
+        required: true
+        type: string
+        default: huggingface
+      tags:
+        description: Tags to apply to each published version.
+        required: false
+        type: string
+        default: latest
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - skill_id: hf-mem
+            display_name: Hugging Face Memory Estimator
+            clawscan_note: Estimates Hugging Face model memory from Hub metadata and HTTP range requests. Network access is expected for Hugging Face Hub metadata and model file headers; gated or private models may require HF_TOKEN.
+          - skill_id: huggingface-local-models
+            display_name: Hugging Face Local Models
+            clawscan_note: Helps select and run local Hugging Face models with llama.cpp, GGUF, and OpenAI-compatible local servers. It may suggest downloading models and installing local inference runtimes.
+          - skill_id: huggingface-spaces
+            display_name: Hugging Face Spaces
+            clawscan_note: Helps create, deploy, and debug Hugging Face Spaces. It may edit app files, run local checks, and use authenticated Hugging Face CLI or API calls to manage Spaces.
+          - skill_id: huggingface-zerogpu
+            display_name: Hugging Face ZeroGPU
+            clawscan_note: Provides guidance for Gradio Spaces on ZeroGPU hardware. It may edit Space app code and configuration related to @spaces.GPU, dependencies, and runtime constraints.
+          - skill_id: huggingface-gradio
+            display_name: Hugging Face Gradio
+            clawscan_note: Helps build and modify Gradio applications. It may install Python dependencies, run local demo servers, and interact with Hugging Face services when requested.
+          - skill_id: huggingface-datasets
+            display_name: Hugging Face Datasets
+            clawscan_note: Uses Hugging Face Dataset Viewer and Hub APIs for dataset discovery, row access, filtering, parquet inspection, and related dataset workflows. Most operations are read-only unless upload commands are requested.
+          - skill_id: huggingface-papers
+            display_name: Hugging Face Papers
+            clawscan_note: Reads Hugging Face paper pages and paper API metadata. Network access is expected for Hugging Face paper, model, dataset, and Space metadata.
+          - skill_id: transformers-js
+            display_name: Transformers.js
+            clawscan_note: Helps build JavaScript and TypeScript applications with Transformers.js. It may download model assets from the Hugging Face Hub and install Node.js dependencies when requested.
+          - skill_id: huggingface-lora-space-builder
+            display_name: Hugging Face LoRA Space Builder
+            clawscan_note: Builds and publishes Gradio Spaces for LoRA models. It may create or update Space repositories, edit app files, install Python dependencies, and use authenticated Hugging Face CLI or API calls.
+    uses: ./.github/workflows/publish-single-clawhub-skill.yml
+    with:
+      skill_id: ${{ matrix.skill_id }}
+      owner: ${{ inputs.owner }}
+      slug: ${{ matrix.skill_id }}
+      display_name: ${{ matrix.display_name }}
+      tags: ${{ inputs.tags }}
+      clawscan_note: ${{ matrix.clawscan_note }}
+    secrets:
+      CLAWHUB_TOKEN: ${{ secrets.CLAWHUB_TOKEN }}

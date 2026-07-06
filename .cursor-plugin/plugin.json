@@ -2,8 +2,8 @@
   "name": "huggingface-skills",
   "skills": "skills",
   "mcpServers": ".mcp.json",
-  "description": "Agent Skills for AI/ML tasks including dataset creation, model training, evaluation, and research paper publishing on Hugging Face Hub",
-  "version": "1.0.11",
+  "description": "Core Hugging Face Hub operations through the hf CLI, including skill installation, repo management, jobs, datasets, models, Spaces, and discovery.",
+  "version": "1.0.12",
   "author": {
     "name": "Hugging Face"
   },
@@ -13,11 +13,10 @@
   "keywords": [
     "huggingface",
     "machine-learning",
-    "datasets",
-    "training",
-    "evaluation",
-    "papers",
-    "fine-tuning",
+    "hub",
+    "cli",
+    "skills",
+    "jobs",
     "llm"
   ]
 }
