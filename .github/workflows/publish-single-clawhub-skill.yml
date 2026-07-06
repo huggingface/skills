@@ -1,10 +1,10 @@
-name: Publish skill to ClawHub
+name: Publish single ClawHub skill
 
 on:
   workflow_dispatch:
     inputs:
       skill_id:
-        description: Skill id to regenerate from the Hugging Face CLI.
+        description: Skill id to install from the Hugging Face skills marketplace.
         required: true
         type: string
         default: hf-cli
@@ -24,7 +24,7 @@ on:
         type: string
         default: ""
       version:
-        description: Version override. Defaults to the generated skill version when empty.
+        description: Version override. Defaults to the hf-cli version for hf-cli and the repo skill bundle version for other skills.
         required: false
         type: string
         default: ""
@@ -46,7 +46,7 @@ on:
   workflow_call:
     inputs:
       skill_id:
-        description: Skill id to regenerate from the Hugging Face CLI.
+        description: Skill id to install from the Hugging Face skills marketplace.
         required: true
         type: string
       owner:
@@ -65,7 +65,7 @@ on:
         type: string
         default: ""
       version:
-        description: Version override. Defaults to the generated skill version when empty.
+        description: Version override. Defaults to the hf-cli version for hf-cli and the repo skill bundle version for other skills.
         required: false
         type: string
         default: ""
@@ -136,7 +136,7 @@ jobs:
           echo "slug=$slug" >> "$GITHUB_OUTPUT"
           echo "display_name=$display_name" >> "$GITHUB_OUTPUT"
 
-      - name: Regenerate skill
+      - name: Install skill contents
         env:
           SKILL_ID: ${{ steps.publish-inputs.outputs.skill_id }}
         run: |
@@ -161,19 +161,31 @@ jobs:
 
           version="$(python3 - <<'PY'
           import os
+          import json
           import re
           import subprocess
           from pathlib import Path
 
           skill_id = os.environ["SKILL_ID"]
-          hf_version = subprocess.check_output(["hf", "--version"], text=True).strip().splitlines()[-1].strip()
-          if hf_version:
-              print(hf_version)
-          else:
+          if skill_id == "hf-cli":
+              hf_version = subprocess.check_output(["hf", "--version"], text=True).strip().splitlines()[-1].strip()
+              if hf_version:
+                  print(hf_version)
+                  raise SystemExit
+
               text = (Path("skills") / skill_id / "SKILL.md").read_text(encoding="utf-8")
               match = re.search(r"Generated with `huggingface_hub v([^`]+)`", text)
               if match:
                   print(match.group(1).strip())
+                  raise SystemExit
+
+              raise RuntimeError("Could not resolve hf-cli version from `hf --version` or generated SKILL.md.")
+
+          marketplace = json.loads(Path(".claude-plugin/marketplace.json").read_text(encoding="utf-8"))
+          version = marketplace.get("metadata", {}).get("version")
+          if not version:
+              raise RuntimeError("Could not resolve skill bundle version from .claude-plugin/marketplace.json.")
+          print(version)
           PY
           )"
           echo "version=$version" >> "$GITHUB_OUTPUT"
@@ -207,7 +219,11 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "$CHANGELOG" ]]; then
-            CHANGELOG="Sync $SKILL_ID skill from Hugging Face CLI $VERSION"
+            if [[ "$SKILL_ID" == "hf-cli" ]]; then
+              CHANGELOG="Sync $SKILL_ID skill from Hugging Face CLI $VERSION"
+            else
+              CHANGELOG="Publish $SKILL_ID skill from Hugging Face Skills $VERSION"
+            fi
           fi
 
           if [[ -z "$CLAWSCAN_NOTE" && "$SKILL_ID" == "hf-cli" ]]; then

@@ -12,6 +12,7 @@ on:
       - "agentsmd/AGENTS.md"
       - "README.md"
       - ".claude-plugin/marketplace.json"
+      - ".claude-plugin/marketplace-internal.json"
       - ".claude-plugin/plugin.json"
       - ".cursor-plugin/marketplace.json"
       - "gemini-extension.json"

@@ -1,0 +1,126 @@
+{
+  "name": "huggingface-skills",
+  "owner": {
+    "name": "Hugging Face"
+  },
+  "metadata": {
+    "description": "Full Hugging Face Skills manifest for hf skills, MCP, and discovery. Client plugin marketplaces use curated manifests.",
+    "version": "1.0.11"
+  },
+  "plugins": [
+    {
+      "name": "hf-cli",
+      "source": "./skills/hf-cli",
+      "skills": "./",
+      "description": "Hugging Face Hub CLI (`hf`) for downloading, uploading, and managing models, datasets, spaces, buckets, repos, papers, jobs, and more on the Hugging Face Hub."
+    },
+    {
+      "name": "hf-mem",
+      "source": "./skills/hf-mem",
+      "skills": "./",
+      "description": "Hugging Face CLI to estimate the required memory to load Safetensors or GGUF model weights for inference from the Hugging Face Hub"
+    },
+    {
+      "name": "huggingface-best",
+      "source": "./skills/huggingface-best",
+      "skills": "./",
+      "description": "Use when the user asks about finding the best, top, or recommended model for a task, wants to know what AI model to use, or wants to compare models by benchmark scores."
+    },
+    {
+      "name": "huggingface-community-evals",
+      "source": "./skills/huggingface-community-evals",
+      "skills": "./",
+      "description": "Run evaluations for Hugging Face Hub models using inspect-ai and lighteval on local hardware."
+    },
+    {
+      "name": "huggingface-datasets",
+      "source": "./skills/huggingface-datasets",
+      "skills": "./",
+      "description": "Use this skill for Hugging Face Dataset Viewer API workflows that fetch subset/split metadata, paginate rows, search text, apply filters, download parquet URLs, and read size or statistics."
+    },
+    {
+      "name": "huggingface-gradio",
+      "source": "./skills/huggingface-gradio",
+      "skills": "./",
+      "description": "Build Gradio web UIs and demos in Python."
+    },
+    {
+      "name": "huggingface-llm-trainer",
+      "source": "./skills/huggingface-llm-trainer",
+      "skills": "./",
+      "description": "Train or fine-tune language and vision models using TRL (Transformer Reinforcement Learning) or Unsloth with Hugging Face Jobs infrastructure."
+    },
+    {
+      "name": "huggingface-local-models",
+      "source": "./skills/huggingface-local-models",
+      "skills": "./",
+      "description": "Use to select models to run locally with llama.cpp and GGUF on CPU, Mac Metal, CUDA, or ROCm."
+    },
+    {
+      "name": "huggingface-lora-space-builder",
+      "source": "./skills/huggingface-lora-space-builder",
+      "skills": "./",
+      "description": "Build and publish a Gradio demo on Hugging Face Spaces for a user-provided LoRA."
+    },
+    {
+      "name": "huggingface-paper-publisher",
+      "source": "./skills/huggingface-paper-publisher",
+      "skills": "./",
+      "description": "Publish and manage research papers on Hugging Face Hub."
+    },
+    {
+      "name": "huggingface-papers",
+      "source": "./skills/huggingface-papers",
+      "skills": "./",
+      "description": "Look up and read Hugging Face paper pages in markdown, and use the papers API for structured metadata such as authors, linked models/datasets/spaces, Github repo and project page."
+    },
+    {
+      "name": "huggingface-spaces",
+      "source": "./skills/huggingface-spaces",
+      "skills": "./",
+      "description": "Build, deploy, and maintain applications on Hugging Face Spaces — Gradio / Docker / Static SDKs, ZeroGPU and dedicated hardware, model loading, debugging, buckets, inference providers, community grants."
+    },
+    {
+      "name": "huggingface-tool-builder",
+      "source": "./skills/huggingface-tool-builder",
+      "skills": "./",
+      "description": "Use this skill when the user wants to build tool/scripts or achieve a task where using data from the Hugging Face API would help."
+    },
+    {
+      "name": "huggingface-trackio",
+      "source": "./skills/huggingface-trackio",
+      "skills": "./",
+      "description": "Track and visualize ML training experiments with Trackio."
+    },
+    {
+      "name": "huggingface-vision-trainer",
+      "source": "./skills/huggingface-vision-trainer",
+      "skills": "./",
+      "description": "Trains and fine-tunes vision models for object detection (D-FINE, RT-DETR v2, DETR, YOLOS), image classification (timm models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3 — plus any Transformers classifier), and SAM/SAM2 segmentation using Hugging Face Transformers on Hugging Face Jobs cloud GPUs."
+    },
+    {
+      "name": "huggingface-zerogpu",
+      "source": "./skills/huggingface-zerogpu",
+      "skills": "./",
+      "description": "AI demos and GPU compute with Gradio Spaces and Hugging Face Spaces ZeroGPU."
+    },
+    {
+      "name": "train-sentence-transformers",
+      "source": "./skills/train-sentence-transformers",
+      "skills": "./",
+      "description": "Train or fine-tune sentence-transformers models across `SentenceTransformer` (bi-encoder; dense or static embedding model; for retrieval, similarity, clustering, classification, paraphrase mining, dedup, multimodal), `CrossEncoder` (reranker; pair scoring for two-stage retrieval / pair classification), and `SparseEncoder` (SPLADE, sparse embedding model; for learned-sparse retrieval)."
+    },
+    {
+      "name": "transformers-js",
+      "source": "./skills/transformers-js",
+      "skills": "./",
+      "description": "Use Transformers.js to run state-of-the-art machine learning models directly in JavaScript/TypeScript."
+    },
+    {
+      "name": "trl-training",
+      "source": "./skills/trl-training",
+      "skills": "./",
+      "description": "Train and fine-tune transformer language models using TRL (Transformers Reinforcement Learning)."
+    }
+  ]
+}
