@@ -1,0 +1,17 @@
+# Core AWS dependencies for SageMaker deployment.
+#
+# No version pins. We want the latest of each — if scripts break against the
+# latest, fix the script, not the version. Newer boto3/awscli have current
+# API surfaces and security fixes.
+#
+# We do NOT depend on the SageMaker Python SDK (sagemaker / sagemaker-core /
+# sagemaker-serve). The deployment scripts call boto3 directly, and image URIs
+# are read from AWS's published catalog page rather than resolved via the SDK.
+# See hf-cloud-python-env-setup SKILL.md ("Why no SageMaker SDK").
+#
+# Add per-deployment extras (huggingface_hub for model inspection, transformers
+# for tokenizer validation) to a deployment-specific requirements file alongside
+# this one. Do not pin versions here unless you have a documented reason.
+
+boto3
+awscli
