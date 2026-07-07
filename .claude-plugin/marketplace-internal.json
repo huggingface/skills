@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Full Hugging Face Skills manifest for hf skills, MCP, and discovery. Client plugin marketplaces use curated manifests.",
-    "version": "1.0.13"
+    "version": "1.0.14"
   },
   "plugins": [
     {
@@ -13,6 +13,42 @@
       "source": "./skills/hf-cli",
       "skills": "./",
       "description": "Hugging Face Hub CLI (`hf`) for downloading, uploading, and managing models, datasets, spaces, buckets, repos, papers, jobs, and more on the Hugging Face Hub."
+    },
+    {
+      "name": "hf-cloud-aws-context-discovery",
+      "source": "./skills/hf-cloud-aws-context-discovery",
+      "skills": "./",
+      "description": "Discover the user''s local AWS context (active profile, region, account ID, caller identity) at the start of any AWS task."
+    },
+    {
+      "name": "hf-cloud-python-env-setup",
+      "source": "./skills/hf-cloud-python-env-setup",
+      "skills": "./",
+      "description": "Set up an isolated Python environment for SageMaker / AWS work, with the right Python version and current boto3."
+    },
+    {
+      "name": "hf-cloud-sagemaker-deployment-planner",
+      "source": "./skills/hf-cloud-sagemaker-deployment-planner",
+      "skills": "./",
+      "description": "Plan and coordinate the deployment of a model to Amazon SageMaker AI."
+    },
+    {
+      "name": "hf-cloud-sagemaker-iam-preflight",
+      "source": "./skills/hf-cloud-sagemaker-iam-preflight",
+      "skills": "./",
+      "description": "Ensure a usable SageMaker execution role exists before deploying or training."
+    },
+    {
+      "name": "hf-cloud-sagemaker-production-defaults",
+      "source": "./skills/hf-cloud-sagemaker-production-defaults",
+      "skills": "./",
+      "description": "Create a SageMaker endpoint (real-time or async) with autoscaling, CloudWatch alarms, and tagging enabled by default."
+    },
+    {
+      "name": "hf-cloud-serving-image-selection",
+      "source": "./skills/hf-cloud-serving-image-selection",
+      "skills": "./",
+      "description": "Pick the right serving container for a SageMaker model deployment and find its current image URI."
     },
     {
       "name": "hf-mem",

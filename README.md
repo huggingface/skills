@@ -94,6 +94,12 @@ This repository contains a few skills to get you started. You can also contribut
 | Name | Description | Documentation |
 |------|-------------|---------------|
 | `hf-cli` | Hugging Face Hub CLI (`hf`) for downloading, uploading, and managing models, datasets, spaces, buckets, repos, papers, jobs, and more on the Hugging Face Hub. | [SKILL.md](skills/hf-cli/SKILL.md) |
+| `hf-cloud-aws-context-discovery` | Discover the user''s local AWS context (active profile, region, account ID, caller identity) at the start of any AWS task. | [SKILL.md](skills/hf-cloud-aws-context-discovery/SKILL.md) |
+| `hf-cloud-python-env-setup` | Set up an isolated Python environment for SageMaker / AWS work, with the right Python version and current boto3. | [SKILL.md](skills/hf-cloud-python-env-setup/SKILL.md) |
+| `hf-cloud-sagemaker-deployment-planner` | Plan and coordinate the deployment of a model to Amazon SageMaker AI. | [SKILL.md](skills/hf-cloud-sagemaker-deployment-planner/SKILL.md) |
+| `hf-cloud-sagemaker-iam-preflight` | Ensure a usable SageMaker execution role exists before deploying or training. | [SKILL.md](skills/hf-cloud-sagemaker-iam-preflight/SKILL.md) |
+| `hf-cloud-sagemaker-production-defaults` | Create a SageMaker endpoint (real-time or async) with autoscaling, CloudWatch alarms, and tagging enabled by default. | [SKILL.md](skills/hf-cloud-sagemaker-production-defaults/SKILL.md) |
+| `hf-cloud-serving-image-selection` | Pick the right serving container for a SageMaker model deployment and find its current image URI. | [SKILL.md](skills/hf-cloud-serving-image-selection/SKILL.md) |
 | `hf-mem` | Hugging Face CLI to estimate the required memory to load Safetensors or GGUF model weights for inference from the Hugging Face Hub | [SKILL.md](skills/hf-mem/SKILL.md) |
 | `huggingface-best` | Use when the user asks about finding the best, top, or recommended model for a task, wants to know what AI model to use, or wants to compare models by benchmark scores. | [SKILL.md](skills/huggingface-best/SKILL.md) |
 | `huggingface-community-evals` | Run evaluations for Hugging Face Hub models using inspect-ai and lighteval on local hardware. | [SKILL.md](skills/huggingface-community-evals/SKILL.md) |
