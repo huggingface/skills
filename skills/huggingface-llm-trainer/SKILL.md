@@ -330,13 +330,16 @@ hf jobs cancel <job-id>           # Cancel a job
 The `trl-jobs` package provides optimized defaults and one-liner training.
 
 ```bash
-uvx trl-jobs sft \
+HF_TOKEN=hf_xxx uvx trl-jobs sft \
   --model_name Qwen/Qwen2.5-0.5B \
-  --dataset_name trl-lib/Capybara
-
+  --dataset_name trl-lib/Capybara \
+  --push_to_hub true \
+  --hub_model_id username/qwen-capybara-sft
 ```
 
-**Benefits:** Pre-configured settings, automatic Trackio integration, automatic Hub push, one-line commands
+`trl-jobs` forwards extra arguments to `trl sft`, so keep `push_to_hub` and `hub_model_id` explicit unless you have verified a bundled `trl-jobs` config already sets them. It also forwards the current token to the remote Job as `HF_TOKEN`; provide a write token with `HF_TOKEN`, `huggingface-cli login`, or `--token` so the model can be pushed before the Jobs filesystem is cleaned up.
+
+**Benefits:** Pre-configured settings, automatic Trackio integration, automatic Hub push when authenticated, one-line commands
 **When to use:** User working in terminal directly (not Claude Code context), quick local experimentation
 **Repository:** https://github.com/huggingface/trl-jobs
 
