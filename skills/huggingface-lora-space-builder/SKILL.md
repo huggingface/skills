@@ -182,6 +182,7 @@ Common things to get right:
 - `gr.Progress(track_tqdm=True)` on the inference function surfaces diffusers' internal progress bar.
 - Validate inputs — raise `gr.Error("Please upload an image first.")` when a required input is missing, rather than letting the pipeline fail with a cryptic error.
 - On `gr.Examples`, use `cache_examples=True, cache_mode="lazy"` — plain `cache_examples=True` runs examples at build time and fails on ZeroGPU; lazy mode defers caching to the first user click.
+- When `gr.Examples` has `fn=`, clicking a row calls `fn` with **only** the `inputs=` values, positionally — so every `fn` parameter not in `inputs` needs a default, or the click raises `TypeError: missing N required positional arguments`. The run event wires all components, so this passes manual and smoke tests and only breaks on the example click. Fix: default the extra params (keep `inputs=[prompt]`), or list every input with full example rows, or drop `fn`/`outputs` so a click just fills the fields.
 
 ### `requirements.txt`
 
@@ -385,6 +386,7 @@ The smoke-test exists to convert these from "user discovers it and reports back"
 - Lazy-loading the model inside the GPU function. Slow on ZeroGPU, and hides startup errors until first request.
 - `torch.compile`. Not supported on ZeroGPU.
 - `cache_examples=True` without `cache_mode="lazy"` on ZeroGPU.
+- `gr.Examples(fn=…)` whose `inputs` don't cover the inference function's required args — builds green, then crashes on the first example click with a missing-positional-argument error.
 - Uploading the LoRA weights into the Space repo. Pull from the LoRA's own Hub repo at runtime.
 - Asking for the HF token only at the end, then discovering the LoRA was private all along and you couldn't read the model card.
 - Exposing every diffusers knob. Pick the 1–3 controls that matter for this LoRA.

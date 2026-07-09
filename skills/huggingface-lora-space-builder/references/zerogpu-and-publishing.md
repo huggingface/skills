@@ -42,6 +42,8 @@ Typical durations:
 
 **Use `cache_examples=True` with `cache_mode="lazy"` on `gr.Examples`.** Plain `cache_examples=True` runs the function at build time, before a GPU is allocated, and will fail. `cache_mode="lazy"` defers caching to the first time a user clicks each example — the GPU is available, and subsequent clicks return the cached result instantly.
 
+**Match `gr.Examples(fn=…)` to the function signature.** A click calls `fn` with only the `inputs=` components, positionally; extra parameters without defaults raise `TypeError: missing N required positional arguments`. The run event wires every component, so this only breaks on the example click — not manual or smoke tests. Fix: default the extra params, or pass the full `inputs=` list with full example rows.
+
 **Don't initialize CUDA from outside the controlled paths.** `pipe.to("cuda")` is fine (CUDA emulation handles it). Calling `torch.cuda.something()` directly at module level can break the process model — when in doubt, do it inside the GPU function or skip it.
 
 **ZeroGPU requires PRO/Team/Enterprise.** A free-tier user can create a Space with `hardware: zero-a10g` in the README, but it'll fall back to CPU. If the user isn't on a supporting plan, mention this and point them at two paths: upgrade to PRO (unlocks ZeroGPU directly), or apply for a [community GPU grant](https://huggingface.co/docs/hub/spaces-gpus#community-gpu-grants) (request free paid GPU hardware via the Space's hardware settings, subject to approval).
