@@ -9,7 +9,7 @@ The Hugging Face Hub CLI tool `hf` is available. IMPORTANT: The `hf` command rep
 
 Use `hf --help` to view available functions. Note that auth commands are now all under `hf auth` e.g. `hf auth whoami`.
 
-Generated with `huggingface_hub v1.22.0`. Run `hf skills add --force` to regenerate.
+Generated with `huggingface_hub v1.23.0`. Run `hf skills add --force` to regenerate.
 
 ## Commands
 
@@ -102,6 +102,7 @@ Generated with `huggingface_hub v1.22.0`. Run `hf skills add --force` to regener
 - `hf extensions list` — List installed extension commands. `[--format [auto|human|agent|json|quiet]]`
 - `hf extensions remove NAME` — Remove an installed extension. `[--format [auto|human|agent|json|quiet]]`
 - `hf extensions search` — Search extensions available on GitHub (tagged with 'hf-extension' topic). `[--format [auto|human|agent|json|quiet]]`
+- `hf extensions update` — Update installed extension(s) to their latest version. `[--format [auto|human|agent|json|quiet]]`
 
 ### `hf jobs` — Run and manage Jobs on the Hub.
 
@@ -130,7 +131,7 @@ Generated with `huggingface_hub v1.22.0`. Run `hf skills add --force` to regener
 
 - `hf models card MODEL_ID` — Get the model card (README) for a model on the Hub. `[--metadata --text --format [auto|human|agent|json|quiet]]`
 - `hf models info MODEL_ID` — Get info about a model on the Hub. `[--revision TEXT --expand TEXT --format [auto|human|agent|json|quiet]]`
-- `hf models list` — List models on the Hub, or files in a model repo. `[--search TEXT --author TEXT --filter TEXT --num-parameters TEXT --sort [created_at|downloads|last_modified|likes|trending_score] --limit INTEGER --expand TEXT --human-readable --tree --recursive --revision TEXT --format [auto|human|agent|json|quiet]]`
+- `hf models list` — List models on the Hub, or files in a model repo. `[--search TEXT --author TEXT --filter TEXT --pipeline-tag TEXT --gated --apps TEXT --num-parameters TEXT --inference-provider [cerebras|cohere|deepinfra|fal-ai|featherless-ai|fireworks-ai|groq|hf-inference|novita|nscale|openai|ovhcloud|publicai|replicate|scaleway|together|wavespeed|zai-org] --warm --sort [created_at|downloads|last_modified|likes|trending_score] --limit INTEGER --expand TEXT --human-readable --tree --recursive --revision TEXT --format [auto|human|agent|json|quiet]]`
 
 ### `hf papers` — Interact with papers on the Hub.
 
@@ -144,7 +145,7 @@ Generated with `huggingface_hub v1.22.0`. Run `hf skills add --force` to regener
 - `hf repos branch create REPO_ID BRANCH` — Create a new branch for a repo on the Hub. `[--revision TEXT --type [model|dataset|space] --exist-ok --format [auto|human|agent|json|quiet]]`
 - `hf repos branch delete REPO_ID BRANCH` — Delete a branch from a repo on the Hub. `[--type [model|dataset|space] --format [auto|human|agent|json|quiet]]`
 - `hf repos cp SRC` — Copy files between local paths, repositories, and buckets. `[--format [auto|human|agent|json|quiet]]`
-- `hf repos create REPO_ID` — Create a new repo on the Hub. `[--type [model|dataset|space] --space-sdk TEXT --private --public --protected --exist-ok --resource-group-id TEXT --region [us|eu] --flavor [cpu-basic|cpu-upgrade|zero-a10g|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8] --storage [small|medium|large] --sleep-time INTEGER --secrets TEXT --secrets-file TEXT --env TEXT --env-file TEXT --volume TEXT --format [auto|human|agent|json|quiet]]`
+- `hf repos create REPO_ID` — Create a new repo on the Hub. `[--type [model|dataset|space] --sdk TEXT --template TEXT --private --public --protected --exist-ok --resource-group-id TEXT --region [us|eu] --flavor [cpu-basic|cpu-upgrade|zero-a10g|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8] --storage [small|medium|large] --sleep-time INTEGER --secrets TEXT --secrets-file TEXT --env TEXT --env-file TEXT --volume TEXT --format [auto|human|agent|json|quiet]]`
 - `hf repos delete REPO_ID` — Delete a repo from the Hub. This is an irreversible operation. `[--type [model|dataset|space] --missing-ok --yes --format [auto|human|agent|json|quiet]]`
 - `hf repos delete-files REPO_ID PATTERNS` — Delete files from a repo on the Hub. `[--type [model|dataset|space] --revision TEXT --commit-message TEXT --commit-description TEXT --create-pr --format [auto|human|agent|json|quiet]]`
 - `hf repos duplicate FROM_ID` — Duplicate a repo on the Hub (model, dataset, or Space). `[--type [model|dataset|space] --private --public --protected --exist-ok --flavor [cpu-basic|cpu-upgrade|zero-a10g|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8] --storage [small|medium|large] --sleep-time INTEGER --secrets TEXT --secrets-file TEXT --env TEXT --env-file TEXT --volume TEXT --format [auto|human|agent|json|quiet]]`
@@ -170,7 +171,7 @@ Generated with `huggingface_hub v1.22.0`. Run `hf skills add --force` to regener
 
 ### `hf skills` — Manage skills for AI assistants.
 
-- `hf skills add` — Download a Hugging Face skill and install it for an AI assistant. `[--claude --global --dest PATH --force --format [auto|human|agent|json|quiet]]`
+- `hf skills add` — Install a Hugging Face skill for an AI assistant. `[--claude --global --dest PATH --force --format [auto|human|agent|json|quiet]]`
 - `hf skills list` — List available skills from the Hugging Face marketplace. `[--format [auto|human|agent|json|quiet]]`
 - `hf skills preview` — Print the generated `hf-cli` SKILL.md to stdout. `[--format [auto|human|agent|json|quiet]]`
 - `hf skills update` — Update installed Hugging Face marketplace skills. `[--claude --global --dest PATH --format [auto|human|agent|json|quiet]]`
@@ -192,6 +193,7 @@ Generated with `huggingface_hub v1.22.0`. Run `hf skills add --force` to regener
 - `hf spaces secrets list SPACE_ID` — List secrets for a Space. Secret values are write-only and not returned. `[--format [auto|human|agent|json|quiet]]`
 - `hf spaces settings SPACE_ID` — Update the settings of a Space. `[--sleep-time INTEGER --hardware [cpu-basic|cpu-upgrade|zero-a10g|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8] --format [auto|human|agent|json|quiet]]`
 - `hf spaces ssh SPACE_ID` — SSH into a Space's Dev Mode container. `[--identity-file PATH --dry-run --auto --format [auto|human|agent|json|quiet]]`
+- `hf spaces templates` — List the available Space templates. `[--format [auto|human|agent|json|quiet]]`
 - `hf spaces variables add SPACE_ID` — Add or update environment variables for a Space. `[--env TEXT --env-file TEXT --format [auto|human|agent|json|quiet]]`
 - `hf spaces variables delete SPACE_ID KEY` — Remove an environment variable from a Space. `[--yes --format [auto|human|agent|json|quiet]]`
 - `hf spaces variables list SPACE_ID` — List environment variables for a Space. `[--format [auto|human|agent|json|quiet]]`
