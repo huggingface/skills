@@ -3,7 +3,7 @@
   "skills": "skills",
   "mcpServers": ".mcp.json",
   "description": "Core Hugging Face Hub operations through the hf CLI, including skill installation, repo management, jobs, datasets, models, Spaces, and discovery.",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "author": {
     "name": "Hugging Face"
   },

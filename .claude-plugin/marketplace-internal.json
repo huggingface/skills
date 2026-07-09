@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Full Hugging Face Skills manifest for hf skills, MCP, and discovery. Client plugin marketplaces use curated manifests.",
-    "version": "1.0.14"
+    "version": "1.0.15"
   },
   "plugins": [
     {
