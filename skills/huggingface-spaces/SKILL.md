@@ -12,7 +12,7 @@ Hugging Face Spaces host machine-learning applications. There are 1M+ today; eac
 Before anything else:
 
 1. Check the `hf` CLI is installed: `which hf`. If not, `pip install -U huggingface_hub`.
-2. Check the user is logged in: `hf auth whoami`. If not, ask them to run `! hf auth login` in this session — they'll need a write-scoped token from https://huggingface.co/settings/tokens.
+2. Check the user is logged in: `hf auth whoami`. If not, run `hf auth login` — it prints a URL and a one-time code; ask the user to open the URL and enter the code, then login completes automatically (OAuth, no token needed). Alternatively, pass a write-scoped token from https://huggingface.co/settings/tokens with `--token`.
 3. Note `whoami`'s `canPay` and `isPro` flags — they gate hardware choices below.
 
 The `hf-cli` skill teaches an agent every `hf` command and is the recommended companion to this one. Install it with `hf skills add hf-cli` (add `--claude --global` to install for Claude Code as well, user-level).
