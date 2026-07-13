@@ -1,7 +1,7 @@
 {
   "name": "huggingface-skills",
   "description": "Provides access to the Hugging Face Skills.",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "contextFileName": "agentsmd/AGENTS.md",
   "mcpServers": {
     "huggingface-skills": {

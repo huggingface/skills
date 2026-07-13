@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Core Hugging Face Hub operations through the hf CLI, including skill installation, repo management, jobs, datasets, models, Spaces, and discovery.",
-    "version": "1.0.16"
+    "version": "1.0.17"
   },
   "plugins": [
     {
