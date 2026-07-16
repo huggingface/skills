@@ -8,16 +8,16 @@ For ZeroGPU-specific decorator + worker semantics, see [`zerogpu.md`](zerogpu.md
 
 ## Themes and layout
 
-- Default theme preference: `gr.themes.Soft()`. Alternatives: no theme, or `gr.themes.Citrus()`. Pick once and don't over-style.
+- Default theme preference: `gr.themes.Citrus()`. Alternatives: `gr.themes.Soft()` or no theme. Pick once and don't over-style.
 - For apps that don't need full-width, constrain with CSS so they're readable on 4K displays:
   ```python
   CSS = """
   #col-container { max-width: 1100px; margin: 0 auto; }
   .dark .gradio-container { color: var(--body-text-color); }
   """
-  with gr.Blocks(theme=gr.themes.Soft(), css=CSS) as demo: ...
+  with gr.Blocks(theme=gr.themes.Citrus(), css=CSS) as demo: ...
   ```
-  The dark-mode override fixes a recurring Gradio bug where dark text inherits unset colors.
+  Always include the `.dark .gradio-container` override with `gr.themes.Citrus()` — without it Citrus's dark mode renders dark text on a dark background (text inherits unset colors). The same fix is harmless (and worth keeping) under other themes.
 - Width-cap with `!important` if Gradio 6's own breakpoints fight you — target `main`, `.gradio-container`, and the inner fillable wrapper, otherwise the width caps but goes flush-left.
 
 ## Minimal layout most demos converge to
@@ -39,15 +39,21 @@ Be succinct. Title, one-line description, a links section. Don't over-explain ho
 
 ## `gr.Examples`
 
-The pattern that doesn't trip people up:
+**Add `gr.Examples` whenever it makes sense** (the app takes user input and representative inputs exist). It's the first thing a visitor clicks and it doubles as an instant smoke test. Prefer examples that mirror the **official examples from the original repo / model card** — the prompts, images, and settings the authors showcase — over inventing your own.
+
+Keep each example row to the **few variables a user actually changes** (the prompt, the input image). Give the handler **default values for everything else** (steps, guidance, seed, …) so an example row is `["a cat on a windowsill"]`, not a wall of knobs. Design the signature so the interesting inputs come first and the rest default:
 
 ```python
+@spaces.GPU(duration=60)
+def generate(prompt, seed=42, steps=28, guidance=5.0):   # only `prompt` varies in examples
+    ...
+
 gr.Examples(
     examples=[
-        ["a cat sitting on a windowsill", 42],
-        ["mountains at sunset, photorealistic", 7],
+        ["a cat sitting on a windowsill"],
+        ["mountains at sunset, photorealistic"],
     ],
-    inputs=[prompt, seed],
+    inputs=[prompt],          # just the varied inputs; the rest use the handler defaults
     outputs=output,
     fn=generate,
     cache_examples=True,
@@ -160,6 +166,29 @@ For Spaces that take 10–20 min to load weights:
 
 - Set `startup_duration_timeout: 1h` in README frontmatter (default 30 min).
 - Disable SSR: `hf spaces variables add <id> --env GRADIO_SSR_MODE=false`. Otherwise the SSR health check times out before the app finishes loading.
+
+## Expose the Space as an MCP server
+
+Launch with `demo.launch(mcp_server=True)` (Gradio 5+) so every API endpoint is also exposed as an MCP tool — free, and makes the Space usable by agents. For it to be useful:
+
+- **Every API-triggered function needs a docstring and type hints.** Each Gradio event handler is auto-exposed over the API; Gradio turns the signature into the MCP tool's input schema and the docstring into its description. A function without them still works but surfaces as an opaque, unusable tool.
+- Give the important endpoints stable names (`api_name="generate"` on the `.click(...)`, or `@app.api(name=...)`), so tool names don't churn.
+- MCP mode can pull in extra deps (`gradio[mcp]`); if `launch` complains, see the pin note in [`known-errors.md`](known-errors.md).
+
+```python
+@spaces.GPU(duration=60)
+def generate(prompt: str, seed: int = 42) -> str:
+    """Generate an image from a text prompt.
+
+    Args:
+        prompt: what to generate.
+        seed: RNG seed for reproducibility.
+    """
+    ...
+
+btn.click(generate, inputs=[prompt, seed], outputs=out, api_name="generate")
+demo.launch(mcp_server=True)
+```
 
 ## Don't
 

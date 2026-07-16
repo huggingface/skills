@@ -12,7 +12,7 @@ Hugging Face Spaces host machine-learning applications. There are 1M+ today; eac
 Before anything else:
 
 1. Check the `hf` CLI is installed: `which hf`. If not, `pip install -U huggingface_hub`.
-2. Check the user is logged in: `hf auth whoami`. If not, ask them to run `! hf auth login` in this session — they'll need a write-scoped token from https://huggingface.co/settings/tokens.
+2. Check the user is logged in: `hf auth whoami`. If not, run `hf auth login` — it prints a URL and a one-time code; ask the user to open the URL and enter the code, then login completes automatically (OAuth, no token needed). Alternatively, pass a write-scoped token from https://huggingface.co/settings/tokens with `--token`.
 3. Note `whoami`'s `canPay` and `isPro` flags — they gate hardware choices below.
 
 The `hf-cli` skill teaches an agent every `hf` command and is the recommended companion to this one. Install it with `hf skills add hf-cli` (add `--claude --global` to install for Claude Code as well, user-level).
@@ -110,7 +110,7 @@ startup_duration_timeout: 30m   # default; bump to 1h for big LLMs / heavy downl
 ---
 ```
 
-\* Reasons to use an older Gradio: a custom component pins it, or you're adapting an existing demo and don't want to rewrite for 5.x→6.x breaking changes. If you need a 5.x, pick `5.50.0` (latest of the series; still supports custom components).
+\* Default to the current latest stable, and **look up what that is** (`pip index versions gradio`, or the version a freshly-created Space defaults to) — the number above is a placeholder that goes stale, don't reuse it. Only pin older when the latest genuinely doesn't work for this Space: a custom component pins it, or you're adapting an existing demo and don't want to rewrite for 5.x→6.x breaking changes. If you need a 5.x, pick `5.50.0` (latest of the series; still supports custom components).
 
 All frontmatter options: https://huggingface.co/docs/hub/spaces-config-reference
 
@@ -125,10 +125,11 @@ from diffusers import DiffusionPipeline
 pipe = DiffusionPipeline.from_pretrained("<repo>", torch_dtype=torch.bfloat16).to("cuda")
 
 @spaces.GPU(duration=60)
-def generate(prompt):
+def generate(prompt: str):
+    """Generate an image from a text prompt."""   # docstring → API / MCP tool description
     return pipe(prompt).images[0]
 
-gr.Interface(fn=generate, inputs=gr.Text(), outputs=gr.Image()).launch()
+gr.Interface(fn=generate, inputs=gr.Text(), outputs=gr.Image()).launch(mcp_server=True)
 ```
 
 Three rules — full treatment in [`references/zerogpu.md`](references/zerogpu.md):
@@ -136,6 +137,12 @@ Three rules — full treatment in [`references/zerogpu.md`](references/zerogpu.m
 1. **`import spaces` before torch / any CUDA-touching import.** It monkey-patches `torch.cuda.*`; once CUDA is initialized in the main process, it's too late.
 2. **Load the model at module scope, `.to("cuda")` eagerly.** ZeroGPU intercepts the call, packs weights to disk, and streams them into VRAM on the first `@spaces.GPU` entry. Lazy loading inside the decorator costs every user.
 3. **Decorate the function Gradio binds.** Estimate `duration` to the realistic worst case (smaller = higher queue priority and tighter quota check). For input-dependent runtime, pass a callable.
+
+### Examples, docstrings, and MCP
+
+- **Add `gr.Examples` whenever it makes sense** (the app takes input and representative inputs exist) — prefer the model/repo's own official examples. Keep example rows to the few inputs a user actually varies (prompt, image) and give the handler defaults for the rest (steps, seed, guidance) so a row is `["a prompt"]`, not a wall of knobs. Use `cache_examples=True, cache_mode="lazy"`. See [`references/gradio.md`](references/gradio.md).
+- **Give every API-triggered function a docstring and type hints.** Each Gradio event handler is exposed over the API; the docstring + signature are what a caller — and the MCP tool schema — sees.
+- **Launch with `demo.launch(mcp_server=True)`** (Gradio 5+) so the Space doubles as an MCP server: each API function becomes an MCP tool described by its docstring and hints.
 
 ### requirements.txt
 
@@ -157,6 +164,8 @@ Short version:
 ## 6. Iterate on the Space, not locally
 
 Try to build a release candidate from the user quest locally and push it — then use the live URL as your test loop. The Space environment is the only one that matters; do not try to test locally. `python3 -m py_compile app.py` is the maximum local check worth doing before pushing.
+
+Push files with `hf upload <namespace>/<name> . --repo-type space`. **`--repo-type space` is required** — `hf upload` defaults to a *model* repo and will otherwise upload to (and silently create) a model repo of the same name. Add `--exclude "**/__pycache__/**"` so local bytecode caches aren't committed into the Space.
 
 Once pushed, pick the cheapest update mechanism for each change — hot-reload for pure Python edits, `hf upload` for code-only files hot-reload can't touch, full rebuild only when `requirements.txt` / `Dockerfile` / README frontmatter actually changed. Full ladder + footguns (hot-reload poisoning factory reboot, runtime.sha lag, etc.) in [`references/debugging.md`](references/debugging.md).
 
@@ -224,7 +233,7 @@ If you solve an error that wasn't in the known-errors list, suggest the user PR 
 | **Iterate + debug**: logs, rung ladder, smoke testing (and dev mode + SSH as a last resort) | [`references/debugging.md`](references/debugging.md) |
 | **Error-string lookup** — the single place for all error symptoms (Spaces, ZeroGPU, Gradio, deps) | [`references/known-errors.md`](references/known-errors.md) |
 | Pinning deps, picking wheels, torch-family alignment | [`references/requirements.md`](references/requirements.md) |
-| `gr.Examples` caching, themes, custom HTML components, `gr.Server` | [`references/gradio.md`](references/gradio.md) |
+| `gr.Examples` (add when it makes sense), themes, custom HTML components, `gr.Server`, MCP server (`mcp_server=True`) | [`references/gradio.md`](references/gradio.md) |
 | Persistent storage, public bucket URLs | [`references/buckets.md`](references/buckets.md) |
 | Community grant requests (non-PRO needing ZeroGPU) | [`references/grants.md`](references/grants.md) |
 | Provider proxy (zero-VRAM big LLM via Cerebras / Fireworks / Together / etc.) | [`references/inference-providers.md`](references/inference-providers.md) |

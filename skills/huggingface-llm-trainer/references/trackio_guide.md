@@ -7,6 +7,7 @@
 - Trackio syncs metrics to a Hugging Face Space for real-time monitoring
 - Without a Space, metrics are lost when the job completes
 - The Space dashboard persists your training metrics permanently
+- Auto-created Spaces are **public by default** — pass `private=True` to `trackio.init()` if the metrics should not be public
 
 ## Setting Up Trackio for Jobs
 
@@ -37,6 +38,7 @@ import trackio
 trackio.init(
     project="my-training",
     space_id="username/trackio",  # CRITICAL for Jobs! Replace 'username' with your HF username
+    private=True,                 # Spaces are PUBLIC by default; omit for a shareable dashboard
     config={
         "model": "Qwen/Qwen2.5-0.5B",
         "dataset": "trl-lib/Capybara",
@@ -64,17 +66,16 @@ trackio.finish()  # Ensures final metrics are synced
 Trackio automatically logs:
 - ✅ Training loss
 - ✅ Learning rate
-- ✅ GPU utilization
-- ✅ Memory usage
+- ✅ GPU utilization and memory (when an NVIDIA GPU is detected and `nvidia-ml-py` is installed — true for standard Jobs GPU flavors)
 - ✅ Training throughput
 - ✅ Custom metrics
 
 ## How It Works with Jobs
 
-1. **Training runs** → Metrics logged to local SQLite DB
-2. **Every 5 minutes** → Trackio syncs DB to HF Dataset (Parquet)
-3. **Space dashboard** → Reads from Dataset, displays metrics in real-time
-4. **Job completes** → Final sync ensures all metrics persisted
+1. **Training runs** → Metrics stream to the running Space in small batches (sub-second)
+2. **Space unreachable or still building** → Metrics spill to an HF Bucket (auto-derived from `space_id`, or pinned with `bucket_id=`) every ~30 seconds
+3. **Space dashboard** → Stores its SQLite DB in the Bucket and ingests spilled metrics every ~15 seconds
+4. **Job completes** → `trackio.finish()` drains any pending metrics so everything is persisted
 
 ## Default Configuration Pattern
 
@@ -89,6 +90,7 @@ trackio.init(
     project="qwen-capybara-sft",
     name="baseline-run",             # Descriptive name user will recognize
     space_id="username/trackio",     # Default space: {username}/trackio
+    private=True,                    # Spaces are PUBLIC by default; omit for a shareable dashboard
     config={
         # Keep config minimal - hyperparameters and model/dataset info only
         "model": "Qwen/Qwen2.5-0.5B",
@@ -131,7 +133,7 @@ You can configure trackio using environment variables instead of passing paramet
 
 
 **`HF_TOKEN`**
-Required for creating Spaces and writing to datasets (passed via `secrets`):
+Required for creating Spaces and writing metrics to the HF Bucket (passed via `secrets`):
 ```python
 hf_jobs("uv", {
     "script": "...",

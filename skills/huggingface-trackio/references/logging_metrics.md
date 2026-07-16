@@ -53,6 +53,10 @@ trackio.init(
     name="run-name",                # Optional: name for this specific run
     config={...},                   # Hyperparameters and config to log
     space_id="username/trackio",    # Optional: sync to HF Space for remote dashboard
+    private=True,                   # Optional: make an auto-created Space private.
+                                    #   Default: PUBLIC (unless your org defaults to private)
+    bucket_id="username/my-bucket", # Optional: pin the HF Bucket used for metric storage.
+                                    #   Default: auto-derived from space_id
     group="experiment-group",       # Optional: group related runs
 )
 ```
@@ -84,11 +88,12 @@ Pass `space_id` to sync metrics to a Hugging Face Space for persistent, shareabl
 ```python
 trackio.init(
     project="my-project",
-    space_id="username/trackio"  # Auto-creates Space if it doesn't exist
+    space_id="username/trackio",  # Auto-creates Space if it doesn't exist
+    private=True,                 # Spaces are PUBLIC by default; omit for a shareable dashboard
 )
 ```
 
-⚠️ **For remote training** (cloud GPUs, HF Jobs, etc.): Always use `space_id` since local storage is lost when the instance terminates.
+⚠️ **For remote training** (cloud GPUs, HF Jobs, etc.): Always use `space_id` since local storage is lost when the instance terminates. If the metrics should not be public, also pass `private=True` — an auto-created Space is public by default (unless your org's default is private); the flag is ignored if the Space already exists.
 
 ### Sync Local to Remote
 
@@ -121,6 +126,7 @@ import trackio
 trackio.init(
     project="sft-training",
     space_id="username/trackio",
+    private=True,  # Spaces are public by default; omit for a shareable dashboard
     config={"model": "Qwen/Qwen2.5-0.5B", "dataset": "trl-lib/Capybara"}
 )
 

@@ -9,7 +9,7 @@ The Hugging Face Hub CLI tool `hf` is available. IMPORTANT: The `hf` command rep
 
 Use `hf --help` to view available functions. Note that auth commands are now all under `hf auth` e.g. `hf auth whoami`.
 
-Generated with `huggingface_hub v1.20.0`. Run `hf skills add --force` to regenerate.
+Generated with `huggingface_hub v1.23.0`. Run `hf skills add --force` to regenerate.
 
 ## Commands
 
@@ -19,7 +19,7 @@ Generated with `huggingface_hub v1.20.0`. Run `hf skills add --force` to regener
 - `hf sync` — Sync files between local directory and a bucket. `[--delete --ignore-times --ignore-sizes --plan TEXT --apply TEXT --dry-run --include TEXT --exclude TEXT --filter-from TEXT --existing --ignore-existing --verbose --format [auto|human|agent|json|quiet]]`
 - `hf update` — Update the `hf` CLI to the latest version. `[--format [auto|human|agent|json|quiet]]`
 - `hf upload REPO_ID` — Upload a file or a folder to the Hub. Recommended for single-commit uploads. `[--type [model|dataset|space] --revision TEXT --private --include TEXT --exclude TEXT --delete TEXT --commit-message TEXT --commit-description TEXT --create-pr --every FLOAT --format [auto|human|agent|json|quiet]]`
-- `hf upload-large-folder REPO_ID LOCAL_PATH` — Upload a large folder to the Hub. Recommended for resumable uploads. `[--type [model|dataset|space] --revision TEXT --private --include TEXT --exclude TEXT --num-workers INTEGER --no-report --no-bars --format [auto|human|agent|json|quiet]]`
+- `hf upload-large-folder REPO_ID LOCAL_PATH` — [Deprecated] Upload a large folder to the Hub. Use `hf upload` instead. `[--type [model|dataset|space] --revision TEXT --private --include TEXT --exclude TEXT --num-workers INTEGER --no-report --no-bars --format [auto|human|agent|json|quiet]]`
 - `hf version` — Print information about the hf version. `[--format [auto|human|agent|json|quiet]]`
 
 ### `hf auth` — Manage authentication (login, logout, etc.).
@@ -45,7 +45,7 @@ Generated with `huggingface_hub v1.20.0`. Run `hf skills add --force` to regener
 ### `hf cache` — Manage local cache directory.
 
 - `hf cache list` — List cached repositories or revisions. `[--cache-dir TEXT --revisions --filter TEXT --sort [accessed|accessed:asc|accessed:desc|modified|modified:asc|modified:desc|name|name:asc|name:desc|size|size:asc|size:desc] --limit INTEGER --format [auto|human|agent|json|quiet]]`
-- `hf cache prune` — Remove detached revisions from the cache. `[--cache-dir TEXT --yes --dry-run --format [auto|human|agent|json|quiet]]`
+- `hf cache prune` — Remove detached revisions and incomplete downloads from the cache. `[--cache-dir TEXT --yes --dry-run --format [auto|human|agent|json|quiet]]`
 - `hf cache rm TARGETS` — Remove cached repositories or revisions. `[--cache-dir TEXT --yes --dry-run --format [auto|human|agent|json|quiet]]`
 - `hf cache verify REPO_ID` — Verify checksums for a single repo revision from cache or a local directory. `[--type [model|dataset|space] --revision TEXT --cache-dir TEXT --local-dir TEXT --fail-on-missing-files --fail-on-extra-files --format [auto|human|agent|json|quiet]]`
 
@@ -75,6 +75,7 @@ Generated with `huggingface_hub v1.20.0`. Run `hf skills add --force` to regener
 - `hf discussions comment REPO_ID NUM` — Comment on a discussion or pull request. `[--body TEXT --body-file PATH --type [model|dataset|space] --format [auto|human|agent|json|quiet]]`
 - `hf discussions create REPO_ID --title TEXT` — Create a new discussion or pull request on a repo. `[--body TEXT --body-file PATH --pull-request --type [model|dataset|space] --format [auto|human|agent|json|quiet]]`
 - `hf discussions diff REPO_ID NUM` — Show the diff of a pull request. `[--type [model|dataset|space] --format [auto|human|agent|json|quiet]]`
+- `hf discussions edit REPO_ID NUM COMMENT_ID` — Edit an existing comment on a discussion or pull request. `[--body TEXT --body-file PATH --type [model|dataset|space] --format [auto|human|agent|json|quiet]]`
 - `hf discussions info REPO_ID NUM` — Get info about a discussion or pull request. `[--type [model|dataset|space] --format [auto|human|agent|json|quiet]]`
 - `hf discussions list REPO_ID` — List discussions and pull requests on a repo. `[--status [open|closed|merged|draft|all] --kind [all|discussion|pull_request] --author TEXT --limit INTEGER --type [model|dataset|space] --format [auto|human|agent|json|quiet]]`
 - `hf discussions merge REPO_ID NUM` — Merge a pull request. `[--comment TEXT --yes --type [model|dataset|space] --format [auto|human|agent|json|quiet]]`
@@ -101,6 +102,7 @@ Generated with `huggingface_hub v1.20.0`. Run `hf skills add --force` to regener
 - `hf extensions list` — List installed extension commands. `[--format [auto|human|agent|json|quiet]]`
 - `hf extensions remove NAME` — Remove an installed extension. `[--format [auto|human|agent|json|quiet]]`
 - `hf extensions search` — Search extensions available on GitHub (tagged with 'hf-extension' topic). `[--format [auto|human|agent|json|quiet]]`
+- `hf extensions update` — Update installed extension(s) to their latest version. `[--format [auto|human|agent|json|quiet]]`
 
 ### `hf jobs` — Run and manage Jobs on the Hub.
 
@@ -108,16 +110,17 @@ Generated with `huggingface_hub v1.20.0`. Run `hf skills add --force` to regener
 - `hf jobs hardware` — List available hardware options for Jobs `[--format [auto|human|agent|json|quiet]]`
 - `hf jobs inspect JOB_IDS` — Display detailed information on one or more Jobs `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs labels JOB_ID` — Update labels on a Job. Replaces all existing labels. `[--label TEXT --clear --namespace TEXT --format [auto|human|agent|json|quiet]]`
+- `hf jobs list` — List Jobs. `[--all --status [COMPLETED|CANCELED|ERROR|DELETED|SCHEDULING|RUNNING] --label TEXT --limit INTEGER --namespace TEXT --filter TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs logs JOB_ID` — Fetch the logs of a Job. `[--follow --tail INTEGER --namespace TEXT --format [auto|human|agent|json|quiet]]`
-- `hf jobs ps` — List Jobs. `[--all --namespace TEXT --filter TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs run IMAGE COMMAND` — Run a Job. `[--env TEXT --secrets TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --timeout TEXT --detach --expose INTEGER --ssh --namespace TEXT]`
 - `hf jobs scheduled delete SCHEDULED_JOB_ID` — Delete a scheduled Job. `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs scheduled inspect SCHEDULED_JOB_IDS` — Display detailed information on one or more scheduled Jobs `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs scheduled labels SCHEDULED_JOB_ID` — Update labels on a scheduled Job. Replaces all existing labels. `[--label TEXT --clear --namespace TEXT --format [auto|human|agent|json|quiet]]`
-- `hf jobs scheduled ps` — List scheduled Jobs `[--all --namespace TEXT --filter TEXT --format [auto|human|agent|json|quiet]]`
+- `hf jobs scheduled list` — List scheduled Jobs `[--all --namespace TEXT --filter TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs scheduled resume SCHEDULED_JOB_ID` — Resume (unpause) a scheduled Job. `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs scheduled run SCHEDULE IMAGE COMMAND` — Schedule a Job. `[--suspend --concurrency --env TEXT --secrets TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --timeout TEXT --expose INTEGER --namespace TEXT]`
 - `hf jobs scheduled suspend SCHEDULED_JOB_ID` — Suspend (pause) a scheduled Job. `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
+- `hf jobs scheduled trigger SCHEDULED_JOB_ID` — Trigger a scheduled Job to run immediately (does not change the schedule). `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs scheduled uv run SCHEDULE SCRIPT` — Run a UV script (local file or URL) on HF infrastructure `[--suspend --concurrency --image TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --env TEXT --secrets TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --timeout TEXT --expose INTEGER --namespace TEXT --with TEXT --python TEXT]`
 - `hf jobs ssh JOB_ID` — SSH into a running Job. `[--identity-file PATH --dry-run --namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs stats` — Fetch the resource usage statistics and metrics of Jobs `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
@@ -128,7 +131,7 @@ Generated with `huggingface_hub v1.20.0`. Run `hf skills add --force` to regener
 
 - `hf models card MODEL_ID` — Get the model card (README) for a model on the Hub. `[--metadata --text --format [auto|human|agent|json|quiet]]`
 - `hf models info MODEL_ID` — Get info about a model on the Hub. `[--revision TEXT --expand TEXT --format [auto|human|agent|json|quiet]]`
-- `hf models list` — List models on the Hub, or files in a model repo. `[--search TEXT --author TEXT --filter TEXT --num-parameters TEXT --sort [created_at|downloads|last_modified|likes|trending_score] --limit INTEGER --expand TEXT --human-readable --tree --recursive --revision TEXT --format [auto|human|agent|json|quiet]]`
+- `hf models list` — List models on the Hub, or files in a model repo. `[--search TEXT --author TEXT --filter TEXT --pipeline-tag TEXT --gated --apps TEXT --num-parameters TEXT --inference-provider [cerebras|cohere|deepinfra|fal-ai|featherless-ai|fireworks-ai|groq|hf-inference|novita|nscale|openai|ovhcloud|publicai|replicate|scaleway|together|wavespeed|zai-org] --warm --sort [created_at|downloads|last_modified|likes|trending_score] --limit INTEGER --expand TEXT --human-readable --tree --recursive --revision TEXT --format [auto|human|agent|json|quiet]]`
 
 ### `hf papers` — Interact with papers on the Hub.
 
@@ -142,7 +145,7 @@ Generated with `huggingface_hub v1.20.0`. Run `hf skills add --force` to regener
 - `hf repos branch create REPO_ID BRANCH` — Create a new branch for a repo on the Hub. `[--revision TEXT --type [model|dataset|space] --exist-ok --format [auto|human|agent|json|quiet]]`
 - `hf repos branch delete REPO_ID BRANCH` — Delete a branch from a repo on the Hub. `[--type [model|dataset|space] --format [auto|human|agent|json|quiet]]`
 - `hf repos cp SRC` — Copy files between local paths, repositories, and buckets. `[--format [auto|human|agent|json|quiet]]`
-- `hf repos create REPO_ID` — Create a new repo on the Hub. `[--type [model|dataset|space] --space-sdk TEXT --private --public --protected --exist-ok --resource-group-id TEXT --region [us|eu] --flavor [cpu-basic|cpu-upgrade|zero-a10g|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8] --storage [small|medium|large] --sleep-time INTEGER --secrets TEXT --secrets-file TEXT --env TEXT --env-file TEXT --volume TEXT --format [auto|human|agent|json|quiet]]`
+- `hf repos create REPO_ID` — Create a new repo on the Hub. `[--type [model|dataset|space] --sdk TEXT --template TEXT --private --public --protected --exist-ok --resource-group-id TEXT --region [us|eu] --flavor [cpu-basic|cpu-upgrade|zero-a10g|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8] --storage [small|medium|large] --sleep-time INTEGER --secrets TEXT --secrets-file TEXT --env TEXT --env-file TEXT --volume TEXT --format [auto|human|agent|json|quiet]]`
 - `hf repos delete REPO_ID` — Delete a repo from the Hub. This is an irreversible operation. `[--type [model|dataset|space] --missing-ok --yes --format [auto|human|agent|json|quiet]]`
 - `hf repos delete-files REPO_ID PATTERNS` — Delete files from a repo on the Hub. `[--type [model|dataset|space] --revision TEXT --commit-message TEXT --commit-description TEXT --create-pr --format [auto|human|agent|json|quiet]]`
 - `hf repos duplicate FROM_ID` — Duplicate a repo on the Hub (model, dataset, or Space). `[--type [model|dataset|space] --private --public --protected --exist-ok --flavor [cpu-basic|cpu-upgrade|zero-a10g|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8] --storage [small|medium|large] --sleep-time INTEGER --secrets TEXT --secrets-file TEXT --env TEXT --env-file TEXT --volume TEXT --format [auto|human|agent|json|quiet]]`
@@ -153,9 +156,22 @@ Generated with `huggingface_hub v1.20.0`. Run `hf skills add --force` to regener
 - `hf repos tag delete REPO_ID TAG` — Delete a tag for a repo. `[--yes --type [model|dataset|space] --format [auto|human|agent|json|quiet]]`
 - `hf repos tag list REPO_ID` — List tags for a repo. `[--type [model|dataset|space] --format [auto|human|agent|json|quiet]]`
 
+### `hf sandbox` — Run and manage sandboxes on Hugging Face Jobs.
+
+- `hf sandbox cp SRC DST` — Copy a file between the local machine and a sandbox (docker-style). `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
+- `hf sandbox create` — Create a sandbox: a dedicated VM by default, or a cheap shared one with `--pool`. `[--pool TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --idle-timeout TEXT --env TEXT --secrets TEXT --env-file TEXT --secrets-file TEXT --volume TEXT --namespace TEXT --forward-hf-token --format [auto|human|agent|json|quiet]]`
+- `hf sandbox exec SANDBOX_ID COMMAND` — Run a command in a sandbox, streaming output. Exits with the command's exit code. `[--workdir TEXT --env TEXT --env-file TEXT --timeout FLOAT --namespace TEXT]`
+- `hf sandbox kill` — Terminate a sandbox, a whole shared host, or everything (--all). `[--all --yes --namespace TEXT --format [auto|human|agent|json|quiet]]`
+- `hf sandbox pool create` — Warm a pool: boot one host VM now, tagged so it can be found later by its pool id. `[--flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --per-host INTEGER RANGE --max-hosts INTEGER RANGE --idle-timeout TEXT --namespace TEXT --format [auto|human|agent|json|quiet]]`
+- `hf sandbox pool delete POOL_ID` — Terminate every host VM of a pool (and therefore all its sandboxes). `[--yes --namespace TEXT --format [auto|human|agent|json|quiet]]`
+- `hf sandbox pool ls` — List running sandbox pools (grouped from their host VMs). `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
+- `hf sandbox process kill SANDBOX_ID PID` — Stop a background process running in a sandbox. `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
+- `hf sandbox process ls SANDBOX_ID` — List the background processes running in a sandbox (started with `hf sandbox spawn`). `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
+- `hf sandbox spawn SANDBOX_ID COMMAND` — Start a long-running command in the background and return its pid (don't wait). `[--workdir TEXT --env TEXT --env-file TEXT --namespace TEXT]`
+
 ### `hf skills` — Manage skills for AI assistants.
 
-- `hf skills add` — Download a Hugging Face skill and install it for an AI assistant. `[--claude --global --dest PATH --force --format [auto|human|agent|json|quiet]]`
+- `hf skills add` — Install a Hugging Face skill for an AI assistant. `[--claude --global --dest PATH --force --format [auto|human|agent|json|quiet]]`
 - `hf skills list` — List available skills from the Hugging Face marketplace. `[--format [auto|human|agent|json|quiet]]`
 - `hf skills preview` — Print the generated `hf-cli` SKILL.md to stdout. `[--format [auto|human|agent|json|quiet]]`
 - `hf skills update` — Update installed Hugging Face marketplace skills. `[--claude --global --dest PATH --format [auto|human|agent|json|quiet]]`
@@ -177,6 +193,7 @@ Generated with `huggingface_hub v1.20.0`. Run `hf skills add --force` to regener
 - `hf spaces secrets list SPACE_ID` — List secrets for a Space. Secret values are write-only and not returned. `[--format [auto|human|agent|json|quiet]]`
 - `hf spaces settings SPACE_ID` — Update the settings of a Space. `[--sleep-time INTEGER --hardware [cpu-basic|cpu-upgrade|zero-a10g|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8] --format [auto|human|agent|json|quiet]]`
 - `hf spaces ssh SPACE_ID` — SSH into a Space's Dev Mode container. `[--identity-file PATH --dry-run --auto --format [auto|human|agent|json|quiet]]`
+- `hf spaces templates` — List the available Space templates. `[--format [auto|human|agent|json|quiet]]`
 - `hf spaces variables add SPACE_ID` — Add or update environment variables for a Space. `[--env TEXT --env-file TEXT --format [auto|human|agent|json|quiet]]`
 - `hf spaces variables delete SPACE_ID KEY` — Remove an environment variable from a Space. `[--yes --format [auto|human|agent|json|quiet]]`
 - `hf spaces variables list SPACE_ID` — List environment variables for a Space. `[--format [auto|human|agent|json|quiet]]`

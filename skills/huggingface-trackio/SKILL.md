@@ -25,7 +25,7 @@ Use `import trackio` in your training scripts to log metrics:
 - Log metrics with `trackio.log()` or use TRL's `report_to="trackio"`
 - Finalize with `trackio.finish()`
 
-**Key concept**: For remote/cloud training, pass `space_id` — metrics sync to a Space dashboard so they persist after the instance terminates.
+**Key concept**: For remote/cloud training, pass `space_id` — metrics sync to a Space dashboard so they persist after the instance terminates. Auto-created Spaces are **public by default** — pass `private=True` if the metrics should not be public.
 
 → See [references/logging_metrics.md](references/logging_metrics.md) for setup, TRL integration, and configuration options.
 
@@ -60,7 +60,9 @@ Use the `trackio` command to query logged metrics and alerts:
 ```python
 import trackio
 
-trackio.init(project="my-project", space_id="username/trackio")
+# Spaces are PUBLIC by default (good for shareable dashboards);
+# pass private=True if the metrics should not be public
+trackio.init(project="my-project", space_id="username/trackio", private=True)
 trackio.log({"loss": 0.1, "accuracy": 0.9})
 trackio.log({"loss": 0.09, "accuracy": 0.91})
 trackio.finish()

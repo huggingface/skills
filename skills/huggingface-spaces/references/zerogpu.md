@@ -150,13 +150,18 @@ quantize_(pipe.transformer, Int8WeightOnlyConfig())   # mutates in place
 
 ### Attention backends
 
-Default to `attn_implementation="sdpa"` — torch-native, works everywhere. Reach for an FA backend only when the upstream repo uses it by default or strongly recommends it. If it breaks on Blackwell, fall back to SDPA.
+**Default to `attn_implementation="sdpa"`** — torch-native, works everywhere on sm_120, and is the right choice for the overwhelming majority of Spaces. Reach for a Flash-Attention backend only when the **upstream repo already references FA** (its config/model code defaults to or recommends `flash_attn`) — match what it expects rather than forcing SDPA. If FA then breaks on Blackwell, fall back to SDPA.
 
-**Flash Attention 2** works via the prebuilt wheel at `multimodalart/zerogpu-blackwell-wheels` ([`requirements.md`](requirements.md)). The wheel's real `flash_attn_2_cuda` also satisfies xformers' import-time probes.
+**Flash Attention 2** — when you do need it, use the prebuilt wheel at `multimodalart/zerogpu-blackwell-wheels` ([`requirements.md`](requirements.md)), cp310–cp313. Drop the wheel URL in `requirements.txt`; no monkey-patch, no runtime build. The wheel's real `flash_attn_2_cuda` also satisfies xformers' import-time probes.
 
-**Flash Attention 3** is not currently usable on Blackwell sm_120. `kernels-community/flash-attn3`, `vllm-flash-attn3`, and `sgl-flash-attn3` all fail with `no kernel image is available` or `NotImplementedError`. Use SDPA or FA2 instead.
+**xformers** — same wheels dataset; auto-dispatch picks FA2 on sm_120 with no monkey-patch.
 
-**xformers** is available via the prebuilt wheel — auto-dispatch picks FA2 on sm_120 with no monkey-patch.
+**FA2 is the ceiling on ZeroGPU Blackwell — FA3 and FA4 cannot run on sm_120.** The RTX PRO 6000 (sm_120) lacks the TMEM / `tcgen05` tensor-memory subsystem the FA3/FA4 kernels are built on; those kernels only exist for Hopper (sm_90a) and datacenter Blackwell (sm_100a). This is a **hardware** limit, not a packaging gap — no wheel or branch fixes it:
+
+- `kernels-community/flash-attn3` (any revision, including `fake-ops-return-probs`), `vllm-flash-attn3`, `sgl-flash-attn3` all either fail to load (no matching build) or hard-fault at call time with `CUDA error: no kernel image is available for execution on the device` — which **kills the ZeroGPU worker** (surfaces as `GPU task aborted`); it does not fall back.
+- Verified empirically on the live runtime (`NVIDIA RTX PRO 6000 Blackwell … sm_120`, torch 2.11 / cu130) and confirmed upstream — every framework (vLLM, SGLang) falls back to FA2 on sm_120.
+
+So on ZeroGPU the ladder is **SDPA (default) → FA2 (only if the repo uses FA)**. Don't wire in FA3/FA4 — a stray `config.json` `kernels` entry loading `flash-attn3` will abort the worker on first GPU call.
 
 ## Concurrency
 
@@ -224,9 +229,77 @@ def generate(prompt, num_steps):
 
 **Do not** use `ProcessPoolExecutor` / `multiprocessing.Pool` inside `@spaces.GPU` — the daemonic fork can't spawn children (`AssertionError: daemonic processes are not allowed to have children`). Threads only.
 
-## Compilation
+## Compilation (AoTI)
 
-`torch.compile` is **not supported** on ZeroGPU. Use PyTorch ahead-of-time inductor (AoTI), supported from torch 2.8+. Full guide: https://huggingface.co/blog/zerogpu-aoti. The `spaces` package exposes `aoti_capture`, `aoti_compile`, `aoti_apply`, `aoti_blocks_load` for the workflow.
+`torch.compile` (JIT) is **not supported** on ZeroGPU — the forked GPU worker can't host the compile daemon. The supported path is PyTorch **ahead-of-time inductor (AoTI)**, wrapped by the `spaces` package (torch 2.8+, `spaces` ≥ 0.50). Its real value: compile a graph **once, offline**, publish it to the Hub, and have the serving Space load it — so serving cold starts pay no compile cost.
+
+### The `spaces` AoTI API
+
+- `spaces.aoti_capture(module)` — context manager. Run one real forward pass inside it; it patches `module.forward` to record that call's `args`/`kwargs` and abort the run. Gives you real example inputs for export.
+- `spaces.aoti_compile(exported, inductor_configs=None)` → an in-memory `ZeroGPUCompiledModel`.
+- `spaces.aoti_compile_and_save(package_dir, exported, inductor_configs=None)` — compile and write `{package_dir}/root/package.pt2`.
+- `spaces.aoti_apply(compiled, module)` — swap `module.forward` for an in-memory compiled model, same process.
+- `spaces.aoti_blocks_load(module, repo_id, variant=None)` — the high-level loader. For a module exposing `_repeated_blocks` (most diffusers transformers), it downloads `{BlockClass}[.{variant}]/package.pt2` from `repo_id` and patches every matching block. Weights stay **runtime inputs**, so one compiled block-graph serves any checkpoint with the same block architecture (e.g. a base and its distilled/turbo variant share one graph).
+
+### Recommended workflow: precompile the repeated block, load at runtime
+
+Split into a **compile Space** (run by hand, occasionally) and the **serving Space**, connected by a Hub **model** repo (`aoti_blocks_load` downloads with the default `repo_type="model"`).
+
+**Compile Space** — capture one repeated block's inputs, export, compile, save, upload:
+
+```python
+import os, spaces, torch, tempfile, shutil
+from pathlib import Path
+from huggingface_hub import HfApi
+
+pipe = DiffusionPipeline.from_pretrained(MODEL_ID, torch_dtype=torch.bfloat16).to("cuda")
+block = pipe.transformer.transformer_blocks[0]      # one representative repeated block
+BLOCK = type(block).__name__
+
+@spaces.GPU(duration=1500)
+def compile_and_upload():
+    with spaces.aoti_capture(block) as call:        # capture the block's real inputs…
+        pipe("a prompt", num_inference_steps=1)     # …from the first block call of a 1-step run
+    exported = torch.export.export(
+        block, call.args, call.kwargs,
+        dynamic_shapes=None,                        # start static; see note below
+        strict=False,
+    )
+    tmp = Path(tempfile.mkdtemp())
+    spaces.aoti_compile_and_save(tmp, exported)     # -> tmp/root/package.pt2
+    out = Path(tempfile.mkdtemp()); (out / BLOCK).mkdir()
+    shutil.copy(tmp / "root" / "package.pt2", out / BLOCK / "package.pt2")
+    HfApi(token=os.environ["HF_TOKEN"]).upload_folder(
+        folder_path=str(out), repo_id=REPO, repo_type="model")
+```
+
+The repo ends up as `{BlockClass}[.{variant}]/package.pt2`, optionally with a `config[.variant].json` listing custom `kernels` to fetch at load.
+
+**Serving Space** — one line at module scope, with an eager fallback:
+
+```python
+pipe = DiffusionPipeline.from_pretrained(MODEL_ID, torch_dtype=torch.bfloat16).to("cuda")
+try:
+    spaces.aoti_blocks_load(pipe.transformer, REPO)     # variant="fp8da" if you saved a variant
+except Exception as e:
+    print(f"AoTI load failed ({e!r}); running eager")
+```
+
+Only the repeated block is compiled, so the artifact is small and the same graph patches all N layers; compilation (minutes) happens offline, never on a serving cold start.
+
+### Footguns
+
+- **Construct the block identically in both Spaces.** The compiled graph's constant FQNs must line up with the serving module. If the block chooses kernels/norms via env var or import probe (e.g. a triton fused RMSNorm vs the pure-torch path), pin the *same* choice in compile and serving.
+- **Dynamic shapes.** `dynamic_shapes=None` bakes in the one resolution you captured. To serve variable sequence length / image size, pass `torch.export.Dim(...)` for those axes (e.g. `{"hidden_states": {1: torch.export.Dim("seq")}}`) — this is per-model tuning.
+- **Data-dependent inputs don't export.** A block taking per-sample python int lists (some double-stream blocks) can make `torch.export` refuse to make them dynamic — those stay eager. Single-stream blocks taking only packed tensors export cleanly.
+- **Custom kernels.** Ship a `config[.variant].json` with a `kernels` list (`repo_id` + `revision`); `aoti_blocks_load` calls `kernels.get_kernel(...)` before loading so the op is registered. (FA3 still won't run on sm_120 — see Attention backends.)
+- **Simpler in-process variant.** For a one-off, skip the Hub round-trip: `spaces.aoti_apply(spaces.aoti_compile(exported), module)` compiles and applies in the same process — but you re-compile on every cold start.
+
+### Reference Spaces
+
+- `multimodalart/Boogu-Image-0.1-Edit-aoti-compile` (compile + upload) and `multimodalart/Boogu-Image` (serving via block loading) — the blocks pattern end to end.
+- `zerogpu-aoti/Qwen-Image`, `zerogpu-aoti/Wan2` — artifact repos showing the `{BlockClass}.{variant}/package.pt2` + `config.{variant}.json` layout.
+- Deeper background on inductor configs and dynamic shapes: https://huggingface.co/blog/zerogpu-aoti
 
 ## Local development
 

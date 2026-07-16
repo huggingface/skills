@@ -94,6 +94,7 @@ Two things to decide here: which reference file to load, and which pipeline clas
 
 - `references/base-models/qwen-image.md` — covers Qwen-Image and Qwen-Image-Edit family (text-to-image and image-to-image).
 - `references/base-models/ltx.md` — covers LTX family (text-to-video, image-to-video, video-to-video, including IC-LoRAs).
+- `references/base-models/krea-2.md` — covers Krea 2 (K2), text-to-image (train on RAW, run inference/LoRAs on the Turbo distilled checkpoint).
 
 If the base model isn't in one of these files, this skill doesn't have first-class support yet. Tell the user, and ask whether they want to proceed by analogy (use the closest model's recipe and adjust) or stop. Don't guess silently.
 
