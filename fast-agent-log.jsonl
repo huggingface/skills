@@ -1,0 +1,3 @@
+{"level":"WARNING","timestamp":"2026-06-19T22:28:27.705020","namespace":"fast_agent.session.session_manager","message":"Session metadata references missing agents","data":{"data":{"session":"2603110801-KCyt4w","agents":["agent"]}}}
+{"level":"WARNING","timestamp":"2026-06-19T22:32:21.821459","namespace":"fast_agent.session.session_manager","message":"Session metadata references missing agents","data":{"data":{"session":"2602200907-Un6nXr","agents":["agent"]}}}
+{"level":"WARNING","timestamp":"2026-06-19T22:32:25.165117","namespace":"fast_agent.session.session_manager","message":"Session metadata references missing agents","data":{"data":{"session":"2602200907-Un6nXr","agents":["agent"]}}}
