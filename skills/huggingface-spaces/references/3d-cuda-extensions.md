@@ -14,7 +14,19 @@ Direct wheel URLs whose tags match the runtime exactly. Check sources in this or
 
 1. **The `multimodalart/zerogpu-blackwell-wheels` dataset** — covers `nvdiffrast`, `diff_gaussian_rasterization` (upstream Inria API), `torchmcubes`, `flash_attn`, `xformers`, `pytorch3d`. Cell-picking rules and per-package caveats in [`requirements.md`](requirements.md).
 2. **The official Space for your model family** — its requirements.txt often links wheels for the model's bespoke extensions (e.g. `microsoft/TRELLIS.2` links Blackwell wheels for `flex_gemm`, `nvdiffrast`, `nvdiffrec_render`, `cumesh`, `o_voxel` on GitHub Releases).
-3. **Build one yourself** on any CUDA machine (`TORCH_CUDA_ARCH_LIST="12.0+PTX" pip wheel .`) and host it in a Hub repo or commit it to the Space.
+3. **Build one yourself** on any CUDA machine (`TORCH_CUDA_ARCH_LIST="12.0+PTX" pip wheel .`) and host it in a Hub repo or commit it to the Space. No CUDA machine at hand? **Build it on HF Jobs** — pick a devel image matching the target runtime and let the job upload the wheel to a Hub repo:
+
+   ```bash
+   hf jobs run --flavor rtx-pro-6000 --timeout 30m --secrets HF_TOKEN \
+     pytorch/pytorch:2.11.0-cuda13.0-cudnn9-devel \
+     bash -c 'export TORCH_CUDA_ARCH_LIST="12.0+PTX" && \
+              pip wheel --no-build-isolation --no-deps \
+                  git+https://github.com/<org>/<extension>.git -w /tmp/wheels && \
+              pip install -U huggingface_hub && \
+              hf upload <user>/zerogpu-wheels /tmp/wheels wheels --repo-type dataset'
+   ```
+
+   Then reference `https://huggingface.co/datasets/<user>/zerogpu-wheels/resolve/main/wheels/<file>.whl` in requirements.txt, or download and commit the wheel to the Space (Strategy 2). Three things to line up: the image's **torch + CUDA** must match the Space's pins (the tag above matches today's torch 2.11/cu130 ZeroGPU runtime — adjust as it moves), and the image's **Python** sets the wheel's cp tag, so check it matches the Space's `python_version:`. The `rtx-pro-6000` flavor is the same Blackwell sm_120 silicon as ZeroGPU, so the same job can `pip install` the fresh wheel and smoke-test the kernel before uploading; a cheaper flavor also works for compile-only (the arch comes from `TORCH_CUDA_ARCH_LIST`, not the attached GPU). Jobs bill by the minute and require a paid plan — a typical extension builds in well under 30 minutes.
 
 When requirements contain a wheel URL, **pin `torch==` and `python_version:` to match its tags** (see `requirements.md`) — otherwise a base-image bump silently breaks the wheel. A tag mismatch is an `ImportError` (or a kernel-launch crash for a missing arch) at first import.
 

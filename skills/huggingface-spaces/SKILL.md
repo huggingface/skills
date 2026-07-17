@@ -240,6 +240,6 @@ If you solve an error that wasn't in the known-errors list, suggest the user PR 
 | Provider proxy (zero-VRAM big LLM via Cerebras / Fireworks / Together / etc.) | [`references/inference-providers.md`](references/inference-providers.md) |
 | **3D generation Spaces** — model selection, duplicate-vs-build, finetuned checkpoints, 3D verification | [`references/3d-generation.md`](references/3d-generation.md) |
 | 3D CUDA extensions on ZeroGPU (no nvcc at build; wheel / committed-wheel / JIT strategies, durations, GPU-boundary rules) | [`references/3d-cuda-extensions.md`](references/3d-cuda-extensions.md) |
-| Mesh & splat outputs: GLB/OBJ/PLY formats, `gr.Model3D` / `LitModel3D` viewers, orientation fixes, preprocessing | [`references/3d-outputs.md`](references/3d-outputs.md) |
+| Mesh & splat outputs: GLB/OBJ/PLY formats, `gr.Model3D` / `LitModel3D` viewers, orientation fixes, preprocessing, headless Blender (bpy / xvfb) | [`references/3d-outputs.md`](references/3d-outputs.md) |
 | Model-family recipes: TRELLIS / TRELLIS.2, TripoSR / SF3D / SPAR3D, Hunyuan3D-2 / 2.1 | [`references/3d-models.md`](references/3d-models.md) |
 | Model-family recipes: gaussian splatting (TripoSplat, LGM, SHARP, Splatter Image) | [`references/3d-gsplat.md`](references/3d-gsplat.md) |

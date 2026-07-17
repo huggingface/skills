@@ -191,7 +191,7 @@ os.system("cd /home/user/app/hy3dpaint/DifferentiableRenderer && bash compile_me
 
 The cp310 wheel means Python 3.10 — pin `python_version: "3.10"` explicitly when duplicating so a runtime default bump can't break it.
 
-**Requirements notes (2.1)** — fully pinned; the non-obvious entries: `--extra-index-url https://download.blender.org/pypi/` + `bpy==4.0` (Blender-as-pip, texture pipeline); `realesrgan==0.3.0` + `basicsr==1.4.2` (texture upscaling — needs the Space's `torchvision_fix.py` shim, applied at the top of `gradio_app.py` *and* again before the texgen import, because basicsr imports the removed `torchvision.transforms.functional_tensor`); `cupy-cuda12x`, `pymeshlab`, `xatlas`, `open3d`, `trimesh`, `pygltflib` (mesh stack); **no torch pin**; `pydantic==2.10.6` (gradio compat).
+**Requirements notes (2.1)** — fully pinned; the non-obvious entries: `--extra-index-url https://download.blender.org/pypi/` + `bpy==4.0` (Blender-as-pip; installs headless with no display setup — see [`3d-outputs.md`](3d-outputs.md) → Headless Blender — though the Space's OBJ→GLB conversion actually runs on trimesh+pygltflib); `realesrgan==0.3.0` + `basicsr==1.4.2` (texture upscaling — needs the Space's `torchvision_fix.py` shim, applied at the top of `gradio_app.py` *and* again before the texgen import, because basicsr imports the removed `torchvision.transforms.functional_tensor`); `cupy-cuda12x`, `pymeshlab`, `xatlas`, `open3d`, `trimesh`, `pygltflib` (mesh stack); **no torch pin**; `pydantic==2.10.6` (gradio compat).
 
 **Model loading** (module level):
 

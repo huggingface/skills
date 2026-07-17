@@ -70,6 +70,45 @@ def start_session(req: gr.Request):
 
 or simply `tempfile.NamedTemporaryFile(suffix=".glb", delete=False)` per call (TripoSR/SF3D). Either works; never a bare `"output.glb"`.
 
+## Headless Blender (bpy / renders)
+
+Blender shows up in 3D Spaces two ways: as the **`bpy` pip module** (`--extra-index-url https://download.blender.org/pypi/` + `bpy==<pin>`; Hunyuan3D-2.1 pins `bpy==4.0` — which installs cleanly on ZeroGPU with no display setup, though that Space's actual GLB conversion runs on trimesh+pygltflib), or as a **standalone binary** driven by a render script (TRELLIS-dataset-toolkit-style turntables, rigging/preprocessing tools). Spaces containers have no display; the working patterns, all verified from running Spaces:
+
+- **pip `bpy` needs no xvfb.** Mesh ops, Cycles, and Workbench renders work headless — bpy creates its GL context via EGL/Mesa, not X11. The `packages.txt` seen in every working bpy demo Space (e.g. `radames/gradio-blender-bpy`) is just:
+
+  ```
+  libegl1-mesa-dev
+  libgl1-mesa-dev
+  ```
+
+  ZeroGPU gotcha: **`import bpy` takes 30–60 s** — never import it inside a `@spaces.GPU` function (it burns the duration budget and aborts the task). Import at module scope, or run a persistent bpy worker in the main process (`VAST-AI/SkinTokens` does file-based IPC to one).
+- **A modern Blender binary (≥3.4) needs no xvfb either**: download the tarball at startup, run `blender -b -noaudio --python script.py -- <args>` as a subprocess (`MajorDaniel/UniRig` on ZeroGPU). `packages.txt` then carries the binary's shared-lib deps: `libx11-6 libxi6 libxrender1 libxxf86vm1 libfontconfig1 libsm6 libxkbcommon0 libxkbcommon-x11-0 libgl1-mesa-glx`. Blender's manual is explicit that CLI/background rendering needs no display; a GPU Cycles subprocess must be launched from **inside** `@spaces.GPU` (it inherits the worker's CUDA), while display/env setup is process-global and belongs at module scope.
+- **Reach for Xvfb only when forced**: a pinned pre-3.4 Blender binary (no EGL headless support yet), EEVEE on legacy setups, or non-Blender GL stacks (Open3D/VTK offscreen, pyglet). On the **gradio SDK**, don't launch raw `Xvfb :99 &` — the container lacks the `/tmp/.X11-unix` permissions for it (UniRig documents this) — use `pyvirtualdisplay` at module scope, the pattern `gradient-spaces/GuideFlow3D` uses to render Cycles through Blender 3.0.1 headlessly. `packages.txt`:
+
+  ```
+  xvfb
+  libx11-6
+  libgl1
+  libxrender1
+  libxi6
+  libxkbcommon-x11-0
+  libsm6
+  ```
+
+  and at the very top of `app.py`, before anything touches Blender/GL (plus `pyvirtualdisplay` in requirements.txt):
+
+  ```python
+  if os.environ.get("DISPLAY") is None:
+      from pyvirtualdisplay import Display   # drives Xvfb with user-owned sockets
+      display = Display(visible=0, size=(1920, 1080))
+      display.start()
+      os.environ.setdefault("DISPLAY", f":{display.display}")
+  ```
+
+  On the **Docker SDK** you control the image: `xvfb-run -a -s '-screen 0 1024x768x24' <cmd>` (or `Xvfb :99 ... & export DISPLAY=:99`), adding Mesa software-GL env on CPU hardware (`LIBGL_ALWAYS_SOFTWARE=1`, `GALLIUM_DRIVER=llvm`).
+- **Keep Space renders on Cycles.** EEVEE is GPU-rasterization by design (no CPU path — headless EEVEE exists on Linux ≥3.4 via EGL, but under Xvfb/software-GL it crawls); Cycles renders fine on CPU or on CUDA inside `@spaces.GPU`.
+- **pyrender** (not Blender, but the same "needs GL" problem): use EGL, not Xvfb — `os.environ["PYOPENGL_PLATFORM"] = "egl"` with `libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev mesa-common-dev` in packages.txt (`H-Liu1997/EMAGE` on ZeroGPU).
+
 ## Examples
 
 `gr.Examples` with a handful of good input images makes or breaks first impressions of a 3D demo. Source them from the official Space's `assets/`/`examples/` dir (they're chosen to work well) or the model repo. On ZeroGPU use `cache_examples=True, cache_mode="lazy"`. Objects that demo well: single centered objects with clear silhouettes — figurines, shoes, furniture, vehicles. Objects that demo poorly: scenes, flat images, humans (most mesh models aren't trained for them), thin structures.
