@@ -1,6 +1,6 @@
 ---
 name: huggingface-spaces
-description: Build, deploy, and maintain applications on Hugging Face Spaces — Gradio / Docker / Static SDKs, ZeroGPU and dedicated hardware, model loading, debugging, buckets, inference providers, community grants. Use whenever the user asks to create or host an app on Hugging Face, port code onto ZeroGPU, fix a Space that won't build or run, or otherwise work with `hf spaces …`, `@spaces.GPU`, Space README frontmatter, or the `spaces` Python package.
+description: Build, deploy, and maintain applications on Hugging Face Spaces — Gradio / Docker / Static SDKs, ZeroGPU and dedicated hardware, model loading, debugging, buckets, inference providers, community grants. Use whenever the user asks to create or host an app on Hugging Face, port code onto ZeroGPU, fix a Space that won't build or run, or otherwise work with `hf spaces …`, `@spaces.GPU`, Space README frontmatter, or the `spaces` Python package. Also covers Spaces for 3D generation models — image-to-3D / text-to-3D mesh generation (TRELLIS, TRELLIS.2, Hunyuan3D-2/2.1, TripoSR, Stable Fast 3D, SPAR3D) and gaussian splatting (TripoSplat, LGM, Apple SHARP), including finetuned checkpoints, CUDA-extension handling, and GLB/OBJ/PLY/splat outputs with gr.Model3D.
 ---
 
 # Hugging Face Spaces
@@ -159,6 +159,7 @@ Short version:
 - **Docker**: https://huggingface.co/docs/hub/spaces-sdks-docker. Examples: `hf spaces list --filter docker`.
 - **Static**: https://huggingface.co/docs/hub/spaces-sdks-static. For built SPAs, set `app_build_command: npm run build` and `app_file: dist/index.html` in frontmatter.
 - **ZeroGPU specifics** (decorator semantics, sizing, AoTI, generators, concurrency, pickle / `gr.State` across the worker boundary): [`references/zerogpu.md`](references/zerogpu.md) — read this whenever the Space targets ZeroGPU.
+- **3D generation models** (image-to-3D / text-to-3D meshes: TRELLIS, Hunyuan3D, TripoSR, SF3D; gaussian splats: TripoSplat, LGM): [`references/3d-generation.md`](references/3d-generation.md) — read this whenever the output is a mesh or splat. Covers model selection, duplicating official Spaces vs building from source, the CUDA-extension strategies these models need, and 3D-specific verification.
 
 
 ## 6. Iterate on the Space, not locally
@@ -237,3 +238,8 @@ If you solve an error that wasn't in the known-errors list, suggest the user PR 
 | Persistent storage, public bucket URLs | [`references/buckets.md`](references/buckets.md) |
 | Community grant requests (non-PRO needing ZeroGPU) | [`references/grants.md`](references/grants.md) |
 | Provider proxy (zero-VRAM big LLM via Cerebras / Fireworks / Together / etc.) | [`references/inference-providers.md`](references/inference-providers.md) |
+| **3D generation Spaces** — model selection, duplicate-vs-build, finetuned checkpoints, 3D verification | [`references/3d-generation.md`](references/3d-generation.md) |
+| 3D CUDA extensions on ZeroGPU (no nvcc at build; wheel / committed-wheel / JIT strategies, durations, GPU-boundary rules) | [`references/3d-cuda-extensions.md`](references/3d-cuda-extensions.md) |
+| Mesh & splat outputs: GLB/OBJ/PLY formats, `gr.Model3D` / `LitModel3D` viewers, orientation fixes, preprocessing | [`references/3d-outputs.md`](references/3d-outputs.md) |
+| Model-family recipes: TRELLIS / TRELLIS.2, TripoSR / SF3D / SPAR3D, Hunyuan3D-2 / 2.1 | [`references/3d-models.md`](references/3d-models.md) |
+| Model-family recipes: gaussian splatting (TripoSplat, LGM, SHARP, Splatter Image) | [`references/3d-gsplat.md`](references/3d-gsplat.md) |
