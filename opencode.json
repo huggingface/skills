@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "name": "huggingface-skills",
+  "version": "1.0.0",
+  "description": "Hugging Face Skills for AI/ML tasks - dataset creation, model training, evaluation, and more",
+  "author": "Hugging Face",
+  "license": "Apache-2.0",
+  "compatibility": ["opencode"],
+  "skills": {
+    "paths": [
+      "skills/"
+    ]
+  }
+}

@@ -1,0 +1,127 @@
+name: CI Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pyyaml
+          # Install project dependencies if requirements.txt exists
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
+      
+      - name: Run tests
+        run: |
+          pytest tests/ -v --tb=short
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.python-version }}
+          path: |
+            .pytest_cache/
+            htmlcov/
+          retention-days: 30
+  
+  validate-skills:
+    name: Validate Skills
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+      
+      - name: Validate SKILL.md files
+        run: |
+          python -c "
+          import os
+          import yaml
+          
+          skills_dir = 'skills'
+          errors = []
+          
+          for skill_name in os.listdir(skills_dir):
+              skill_path = os.path.join(skills_dir, skill_name)
+              if not os.path.isdir(skill_path):
+                  continue
+              
+              skill_md = os.path.join(skill_path, 'SKILL.md')
+              if not os.path.exists(skill_md):
+                  errors.append(f'{skill_name}: Missing SKILL.md')
+                  continue
+              
+              with open(skill_md, 'r') as f:
+                  content = f.read()
+              
+              if not content.startswith('---'):
+                  errors.append(f'{skill_name}: Missing YAML frontmatter')
+                  continue
+              
+              parts = content.split('---', 2)
+              if len(parts) < 3:
+                  errors.append(f'{skill_name}: Incomplete YAML frontmatter')
+                  continue
+              
+              try:
+                  frontmatter = yaml.safe_load(parts[1])
+                  if not frontmatter:
+                      errors.append(f'{skill_name}: Empty YAML frontmatter')
+                  elif 'name' not in frontmatter:
+                      errors.append(f'{skill_name}: Missing name field')
+                  elif 'description' not in frontmatter:
+                      errors.append(f'{skill_name}: Missing description field')
+              except yaml.YAMLError as e:
+                  errors.append(f'{skill_name}: Invalid YAML - {e}')
+          
+          if errors:
+              print('Validation errors:')
+              for error in errors:
+                  print(f'  - {error}')
+              exit(1)
+          else:
+              print('All skills validated successfully!')
+          "
+      
+      - name: Check AGENTS.md
+        run: |
+          if [ -f agentsmd/AGENTS.md ]; then
+            head -1 agentsmd/AGENTS.md | grep -q "^---$" || (echo "AGENTS.md missing YAML frontmatter" && exit 1)
+            echo "AGENTS.md validation passed"
+          else
+            echo "AGENTS.md not found"
+            exit 1
+          fi

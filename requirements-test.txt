@@ -1,0 +1,17 @@
+# Test dependencies for Hugging Face Skills project
+
+# Core testing framework
+pytest>=7.0.0
+
+# YAML parsing (for SKILL.md validation)
+pyyaml>=6.0.0
+
+# Optional: coverage reporting
+# coverage>=5.0.0
+
+# Optional: linting
+# flake8>=4.0.0
+# pylint>=2.0.0
+
+# Optional: type checking
+# mypy>=0.9.0.0

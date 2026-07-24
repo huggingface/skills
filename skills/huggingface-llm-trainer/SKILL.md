@@ -1,10 +1,14 @@
 ---
 name: huggingface-llm-trainer
-description: Train or fine-tune language and vision models using TRL (Transformer Reinforcement Learning) or Unsloth with Hugging Face Jobs infrastructure. Covers SFT, DPO, GRPO and reward modeling training methods, plus GGUF conversion for local deployment. Includes guidance on the TRL Jobs package, UV scripts with PEP 723 format, dataset preparation and validation, hardware selection, cost estimation, Trackio monitoring, Hub authentication, model selection/leaderboards and model persistence. Use for tasks involving cloud GPU training, GGUF conversion, or when users mention training on Hugging Face Jobs without local GPU setup.
+description: '[Cloud Training] Train or fine-tune language and vision models using TRL or Unsloth on Hugging Face Jobs cloud GPUs. No local GPU required. Covers SFT, DPO, GRPO and reward modeling, plus GGUF conversion for local deployment. Use when users want cloud training without local infrastructure.'
 license: Complete terms in LICENSE.txt
 ---
 
 # TRL Training on Hugging Face Jobs
+
+**📝 Which skill to use?**
+- **Use this skill** for cloud training on HF Jobs (no local GPU needed)
+- **Use `trl-training` skill** for local training via TRL CLI commands (requires local GPU/CPU)
 
 ## Overview
 

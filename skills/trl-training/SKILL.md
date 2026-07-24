@@ -1,6 +1,6 @@
 ---
 name: trl-training
-description: Train and fine-tune transformer language models using TRL (Transformers Reinforcement Learning). Supports SFT, DPO, GRPO, KTO, RLOO and Reward Model training via CLI commands.
+description: '[Local Training] Train and fine-tune transformer language models locally using TRL CLI commands (trl sft, trl dpo, etc.). Supports SFT, DPO, GRPO, KTO, RLOO and Reward Model training. Requires local GPU/CPU. Use for local training with CLI workflow.'
 license: Apache-2.0
 metadata:
   version: "1.0.0"
@@ -27,6 +27,10 @@ metadata:
 ---
 
 # TRL Training Skill
+
+**📝 Which skill to use?**
+- **Use this skill** for local training via TRL CLI commands (requires local GPU/CPU)
+- **Use `huggingface-llm-trainer` skill** for cloud training on HF Jobs (no local GPU needed)
 
 You are an expert at using the TRL (Transformers Reinforcement Learning) library to train and fine-tune large language models.
 
