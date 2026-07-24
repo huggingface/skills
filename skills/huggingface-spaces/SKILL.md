@@ -1,6 +1,6 @@
 ---
 name: huggingface-spaces
-description: Build, deploy, and maintain applications on Hugging Face Spaces — Gradio / Docker / Static SDKs, ZeroGPU and dedicated hardware, model loading, debugging, buckets, inference providers, community grants. Use whenever the user asks to create or host an app on Hugging Face, port code onto ZeroGPU, fix a Space that won't build or run, or otherwise work with `hf spaces …`, `@spaces.GPU`, Space README frontmatter, or the `spaces` Python package. Also covers Spaces for 3D generation models — image-to-3D / text-to-3D mesh generation (TRELLIS, TRELLIS.2, Hunyuan3D-2/2.1, TripoSR, Stable Fast 3D, SPAR3D) and gaussian splatting (TripoSplat, LGM, Apple SHARP), including finetuned checkpoints, CUDA-extension handling, and GLB/OBJ/PLY/splat outputs with gr.Model3D.
+description: Build, deploy, and maintain applications on Hugging Face Spaces — Gradio / Docker / Static SDKs, ZeroGPU and dedicated hardware, model loading, debugging, buckets, inference providers, community grants. Use whenever the user asks to create or host an app on Hugging Face, port code onto ZeroGPU, fix a Space that won't build or run, or otherwise work with `hf spaces …`, `@spaces.GPU`, Space README frontmatter, or the `spaces` Python package.
 ---
 
 # Hugging Face Spaces
@@ -238,8 +238,4 @@ If you solve an error that wasn't in the known-errors list, suggest the user PR 
 | Persistent storage, public bucket URLs | [`references/buckets.md`](references/buckets.md) |
 | Community grant requests (non-PRO needing ZeroGPU) | [`references/grants.md`](references/grants.md) |
 | Provider proxy (zero-VRAM big LLM via Cerebras / Fireworks / Together / etc.) | [`references/inference-providers.md`](references/inference-providers.md) |
-| **3D generation Spaces** — model selection, duplicate-vs-build, finetuned checkpoints, 3D verification | [`references/3d-generation.md`](references/3d-generation.md) |
-| 3D CUDA extensions on ZeroGPU (no nvcc at build; wheel / committed-wheel / JIT strategies, durations, GPU-boundary rules) | [`references/3d-cuda-extensions.md`](references/3d-cuda-extensions.md) |
-| Mesh & splat outputs: GLB/OBJ/PLY formats, `gr.Model3D` / `LitModel3D` viewers, orientation fixes, preprocessing, headless Blender (bpy / xvfb) | [`references/3d-outputs.md`](references/3d-outputs.md) |
-| Model-family recipes: TRELLIS / TRELLIS.2, TripoSR / SF3D / SPAR3D, Hunyuan3D-2 / 2.1 | [`references/3d-models.md`](references/3d-models.md) |
-| Model-family recipes: gaussian splatting (TripoSplat, LGM, SHARP, Splatter Image) | [`references/3d-gsplat.md`](references/3d-gsplat.md) |
+| **3D Spaces: generation, CUDA extensions, output formats, and model recipes (incl. gaussian splatting)** | [`references/3d-generation.md`](references/3d-generation.md) |
