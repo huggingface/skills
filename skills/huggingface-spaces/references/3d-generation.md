@@ -2,7 +2,16 @@
 
 Building a Space whose output is a 3D asset — image (occasionally text) in, downloadable and in-browser-viewable **mesh** (GLB/OBJ/PLY/STL) or **gaussian splat** (`.ply`/`.splat`) out. Read this whenever the user wants a Space/demo/playground for a 3D generation model, whether a stock checkpoint or their own finetuned variant. NeRF pipelines and world/scene models (HunyuanWorld, HY-World) are not covered.
 
-The standard workflow in `SKILL.md` applies (create → build → iterate → verify). This file and its siblings cover the 3D-specific deltas.
+The standard workflow in `SKILL.md` applies (create → build → iterate → verify). This file is the 3D entry point; the sub-references below cover the 3D-specific deltas.
+
+## Sub-references
+
+| When to read | File |
+|---|---|
+| CUDA/C++ extension handling — prebuilt wheels, startup-compile tricks, the dominant failure mode | `[3d-cuda-extensions.md](3d-cuda-extensions.md)` |
+| Output formats (GLB/OBJ/PLY/STL, splats), viewers, orientation, preprocessing, temp-file patterns | `[3d-outputs.md](3d-outputs.md)` |
+| Model selection details and per-family recipes (TRELLIS, Hunyuan3D, TripoSR, SF3D, …) | `[3d-models.md](3d-models.md)` |
+| Gaussian-splat deliverables (TripoSplat, LGM) — pure-PyTorch splat decode | `[3d-gsplat.md](3d-gsplat.md)` |
 
 ## What makes 3D Spaces different
 
