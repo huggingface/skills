@@ -153,6 +153,13 @@ Short version:
 - ZeroGPU only accepts torch `2.8.0`, `2.9.1`, `2.10.0`, `2.11.0`. Default to leaving torch unpinned (the runtime preinstalls the latest). Only pin when a dep forces it.
 - For prebuilt CUDA-extension wheels (`flash_attn`, `xformers`, `pytorch3d`, `nvdiffrast`, `diff_gaussian_rasterization`, `torchmcubes`): use the prebuilt Blackwell wheels at `https://huggingface.co/datasets/multimodalart/zerogpu-blackwell-wheels/tree/main/wheels`. Full mapping + caveats in [`references/requirements.md`](references/requirements.md).
 
+### Per-SDK depth
+
+- **Gradio patterns** (themes, `gr.Examples`, streaming, custom HTML components, `gr.Server`): [`references/gradio.md`](references/gradio.md).
+- **Docker**: https://huggingface.co/docs/hub/spaces-sdks-docker. Examples: `hf spaces list --filter docker`.
+- **Static**: https://huggingface.co/docs/hub/spaces-sdks-static. For built SPAs, set `app_build_command: npm run build` and `app_file: dist/index.html` in frontmatter.
+- **ZeroGPU specifics** (decorator semantics, sizing, AoTI, generators, concurrency, pickle / `gr.State` across the worker boundary): [`references/zerogpu.md`](references/zerogpu.md) — read this whenever the Space targets ZeroGPU.
+
 
 ## 6. Iterate on the Space, not locally
 
