@@ -42,7 +42,7 @@
       "name": "hf-cloud-sagemaker-production-defaults",
       "source": "./skills/hf-cloud-sagemaker-production-defaults",
       "skills": "./",
-      "description": "Create a SageMaker endpoint (real-time or async) with autoscaling, CloudWatch alarms, and tagging enabled by default."
+      "description": "Create a SageMaker endpoint (real-time, real-time scale-to-zero, or async) with autoscaling, CloudWatch alarms, and tagging enabled by default."
     },
     {
       "name": "hf-cloud-serving-image-selection",

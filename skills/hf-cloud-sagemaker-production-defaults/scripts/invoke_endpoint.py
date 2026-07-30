@@ -17,6 +17,18 @@ Usage:
     python invoke_endpoint.py --endpoint-name NAME --payload-file img.json \\
         --content-type application/json --region eu-west-1
 
+Inference-component endpoints (including scale-to-zero deployments) need the
+component name, and a cold endpoint needs a wait:
+
+    python invoke_endpoint.py --endpoint-name NAME \\
+        --inference-component-name COMP --payload '{"prompt": "hi"}' \\
+        --wait-for-capacity 900
+
+A component scaled to zero copies answers the first request with a 400
+ValidationError ("has no capacity"). That error is also the wake signal: it
+publishes NoCapacityInvocationFailures, which triggers the step-scaling policy.
+With --wait-for-capacity the helper keeps retrying until a copy is in service.
+
 The endpoint response body is printed to stdout.
 """
 
@@ -29,6 +41,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
+
+NO_CAPACITY_MARKERS = ("has no capacity", "NoCapacity")
 
 
 def log(msg: str) -> None:
@@ -78,6 +93,17 @@ def main() -> int:
     parser.add_argument("--endpoint-name", required=True)
     parser.add_argument("--region")
     parser.add_argument("--content-type", default="application/json")
+    parser.add_argument(
+        "--inference-component-name",
+        help="Required when the endpoint hosts inference components",
+    )
+    parser.add_argument(
+        "--wait-for-capacity", type=int, default=0, metavar="SECONDS",
+        help=(
+            "Retry while the component reports no capacity (scale-to-zero wake). "
+            "0 fails immediately."
+        ),
+    )
     src = parser.add_mutually_exclusive_group(required=True)
     src.add_argument("--payload", help="Inline request body (e.g. a JSON string)")
     src.add_argument("--payload-file", help="Path to a file containing the request body")
@@ -103,22 +129,42 @@ def main() -> int:
         out_fd, out_path = tempfile.mkstemp(suffix=".out")
         os.close(out_fd)
 
+        cmd = [
+            aws_bin(), "sagemaker-runtime", "invoke-endpoint",
+            "--endpoint-name", args.endpoint_name,
+            "--content-type", args.content_type,
+            "--body", f"fileb://{body_path}",
+            "--region", region,
+        ]
+        if args.inference_component_name:
+            cmd += ["--inference-component-name", args.inference_component_name]
+        cmd.append(out_path)
+
         log(f"Invoking {args.endpoint_name} in {region}...")
-        proc = subprocess.run(
-            [
-                aws_bin(), "sagemaker-runtime", "invoke-endpoint",
-                "--endpoint-name", args.endpoint_name,
-                "--content-type", args.content_type,
-                "--body", f"fileb://{body_path}",
-                "--region", region,
-                out_path,
-            ],
-            capture_output=True,
-            text=True,
-        )
-        if proc.returncode != 0:
+        deadline = time.time() + args.wait_for_capacity
+        attempt = 0
+        while True:
+            attempt += 1
+            proc = subprocess.run(cmd, capture_output=True, text=True)
+            if proc.returncode == 0:
+                break
+
+            err = proc.stderr.strip()
+            no_capacity = any(marker in err for marker in NO_CAPACITY_MARKERS)
+            if no_capacity and time.time() < deadline:
+                if attempt == 1:
+                    log("No capacity: the component is at zero copies. "
+                        "This request triggered the wake alarm; retrying.")
+                log(f"  attempt {attempt}: still no capacity, waiting 30s "
+                    f"({int(deadline - time.time())}s left)")
+                time.sleep(30)
+                continue
+
             log("Invocation failed:")
-            log(proc.stderr.strip())
+            log(err)
+            if no_capacity:
+                log("HINT: the component has no copies in service. Pass "
+                    "--wait-for-capacity 900 to wait for the wake-from-zero policy.")
             return 1
 
         # The response body landed in out_path; print it to stdout.

@@ -37,6 +37,7 @@ Do **not** front-load all of these. A common minimal set is just: *what model, a
 | Pathway | When it fits | When it does not |
 |---|---|---|
 | **Real-time endpoint** | Steady traffic, sub-second to few-second latency, always-on | Very spiky or very sparse traffic (wastes money on idle) |
+| **Real-time, scale to zero** | Sparse or scheduled traffic, dev/test endpoints, and a client that tolerates a ~9 min first request after idle | Any interactive SLA: every request during the wake fails with a 400 |
 | **Serverless inference** | Spiky/intermittent, tolerates cold starts (~10s+), simpler models | LLMs above a few B params (memory/cold-start limits), strict SLAs |
 | **Async inference** | Long inference (>60s), large payloads, queue-friendly | Interactive synchronous calls |
 | **Batch transform** | Offline scoring over a dataset | Anything online or interactive |
@@ -48,7 +49,9 @@ For **embeddings**, real-time is again the default — but CPU instances are usu
 
 For **text-to-image, video generation, or other long-inference workloads** (>30s per request) where traffic is also bursty: async inference is the right answer. It supports genuine scale-to-zero between batches and queues requests via S3, so you don't pay for idle GPU. `hf-cloud-sagemaker-production-defaults` has a dedicated `deploy_async.py` for this.
 
-Real-time and async are the two scripted pathways. Serverless, batch transform, and Bedrock Custom Model Import are not currently scripted — for those, hand the user off with a brief explanation rather than trying to deploy them through this workflow.
+Real-time, real-time scale-to-zero, and async are the three scripted pathways (`deploy.py`, `deploy_ic.py`, `deploy_async.py` in `hf-cloud-sagemaker-production-defaults`). Serverless, batch transform, and Bedrock Custom Model Import are not currently scripted — for those, hand the user off with a brief explanation rather than trying to deploy them through this workflow.
+
+**Scale to zero, real-time or async?** Both reach zero and both make the first request after idle slow. Pick async when one inference can exceed the 60s `InvokeEndpoint` limit, when payloads are large, or when the client can accept an S3 result instead of a synchronous response. Pick real-time scale-to-zero when the client needs a normal synchronous HTTP response and can retry through the wake. Real-time scale-to-zero needs inference components; the plain real-time pathway cannot go below one instance.
 
 If two pathways are both reasonable, say so in one sentence each and pick one. Don't bury the recommendation in options.
 
@@ -63,6 +66,8 @@ aws service-quotas list-service-quotas --service-code sagemaker --region <region
 ```
 
 If the type you want isn't in the result, recommend one that is — or tell the user to request an increase (hours to days) *before* creating anything.
+
+If the call itself is denied, say so once and continue. The quota check is an optimization, not a gate: the deployment surfaces the real limit as `ResourceLimitExceeded`. Never stop the workflow, and never ask the user to change IAM, for a preflight check.
 
 GPU family notes for the common 24 GB tier:
 

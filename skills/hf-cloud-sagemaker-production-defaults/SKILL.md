@@ -1,6 +1,6 @@
 ---
 name: hf-cloud-sagemaker-production-defaults
-description: 'Create a SageMaker endpoint (real-time or async) with autoscaling, CloudWatch alarms, and tagging enabled by default. Use this skill whenever about to create a SageMaker endpoint, write deployment code that calls `create_endpoint`, or finalize a deployment after the image URI and IAM role are known. Provides deploy.py for real-time endpoints and deploy_async.py for async endpoints (with genuine scale-to-zero support). This is the last step in the SageMaker deployment workflow. Never generate a bare `create_endpoint` call without these defaults — endpoints without autoscaling or alarms are demos, not deployments.'
+description: 'Create a SageMaker endpoint (real-time, real-time scale-to-zero, or async) with autoscaling, CloudWatch alarms, and tagging enabled by default. Use this skill whenever about to create a SageMaker endpoint, write deployment code that calls `create_endpoint`, or finalize a deployment after the image URI and IAM role are known. Provides deploy.py for real-time endpoints, deploy_ic.py for real-time endpoints that scale to zero instances via inference components, and deploy_async.py for async endpoints (also scale-to-zero). This is the last step in the SageMaker deployment workflow. Never generate a bare `create_endpoint` call without these defaults — endpoints without autoscaling or alarms are demos, not deployments.'
 ---
 
 # SageMaker Production Defaults
@@ -18,6 +18,8 @@ For every endpoint, the skill creates these as a unit:
 3. **Endpoint** — the real-time endpoint serving inference
 4. **Autoscaling target + policy** — target tracking on invocations per instance
 5. **CloudWatch alarms** — latency, errors, platform overhead
+
+An inference-component deployment (`deploy_ic.py`) creates the same set with two changes: the endpoint config carries the execution role and `ManagedInstanceScaling`, and an **inference component** carries the model. Its autoscaling target is the component, not the variant.
 
 Data capture (logging requests/responses to S3) is **off by default** — useful for debugging but creates ongoing S3 costs the user didn't necessarily ask for. Enable with `--enable-data-capture`.
 
@@ -90,6 +92,10 @@ The scripts ship with this skill. If the installed copy is missing the `scripts/
        --filter-pattern '?"Worker died" ?"Load model failed" ?"ImportError"' \
        --region <region> --max-items 5
    ```
+
+   Inference-component deployments log to `/aws/sagemaker/InferenceComponents/<component-name>` instead. `deploy_ic.py` scans that group automatically while it waits.
+
+**General rule for denied diagnostics**: when a read-only call the workflow uses for diagnosis is denied (a restricted role without `logs:FilterLogEvents`, `servicequotas:ListServiceQuotas`, and so on), say so in one line and carry on with the checks that do work. Never block a deployment on a permission needed only for diagnosis, and never read a denied call as evidence that nothing is wrong.
 
 Only report the deployment complete after both pass. If the log scan hits, surface the actual traceback from CloudWatch — not the InService status.
 
@@ -176,9 +182,109 @@ python deploy.py --image-uri "$IMAGE_URI" \
 
 For tags with `cu129` or lower, omit `--inference-ami-version`. See `hf-cloud-serving-image-selection` for the full vLLM AMI lookup table and the env-var requirements for each image family.
 
+## Scale to zero for real-time endpoints
+
+A real-time endpoint reaches zero instances only when it hosts **inference components**. The variant-scoped target that `deploy.py` registers cannot go below one instance. `deploy_ic.py` builds the component-based shape instead.
+
+Use it when traffic is sparse or scheduled, and the client tolerates a multi-minute first request. Do not use it for interactive traffic with an SLA: the wake takes minutes, and every request during the wake fails.
+
+```bash
+python scripts/deploy_ic.py \
+    --model-name qwen3-scale-to-zero \
+    --image-uri "$IMAGE_URI" \
+    --inference-ami-version "$AMI" \
+    --role-arn "$ROLE_ARN" \
+    --instance-type ml.g5.xlarge \
+    --region "$REGION" \
+    --env SM_VLLM_MODEL=Qwen/Qwen3-0.6B \
+    --env SM_VLLM_HOST=0.0.0.0 \
+    --env SM_VLLM_TRUST_REMOTE_CODE=true \
+    --env SM_VLLM_MAX_MODEL_LEN=4096
+```
+
+### How it differs from deploy.py
+
+| Piece | Model-based (`deploy.py`) | Component-based (`deploy_ic.py`) |
+|---|---|---|
+| Execution role | on the Model | on the **endpoint config** (`ExecutionRoleArn`) |
+| Model reference | `ProductionVariants[].ModelName` | `InferenceComponent.Specification.ModelName`; the variant has no `ModelName` |
+| Instance floor | `InitialInstanceCount`, min 1 | `ManagedInstanceScaling {Status: ENABLED, MinInstanceCount: 0}` |
+| Scaling target | `endpoint/<ep>/variant/AllTraffic`, `sagemaker:variant:DesiredInstanceCount` | `inference-component/<ic>`, `sagemaker:inference-component:DesiredCopyCount` |
+| Scaling metric | `SageMakerVariantInvocationsPerInstance` (20/min) | `SageMakerInferenceComponentConcurrentRequestsPerCopyHighResolution` (5 concurrent/copy) |
+| Wake from zero | not applicable | step policy + `NoCapacityInvocationFailures` alarm |
+| Invocation | endpoint name | endpoint name **plus** `InferenceComponentName` |
+
+`InferenceAmiVersion` still belongs on the variant, and it coexists with `ManagedInstanceScaling` (verified on `cu130` + `ml.g5.xlarge`).
+
+Four pieces make zero work, and all four are required. Target tracking cannot leave zero, because it cannot divide by zero copies. Drop the step policy or its alarm and the endpoint scales to zero once, then never answers again. `deploy_ic.py` wires all four.
+
+### Measured behaviour
+
+`Qwen/Qwen3-0.6B` from the Hub, `ml.g5.xlarge`, `us-east-1`, July 2026:
+
+| Step | Time |
+|---|---|
+| Endpoint `InService` (it starts empty, no model loads) | 4 min |
+| Component `InService` (Hub download + vLLM boot + CUDA graphs) | +6 min |
+| Idle to 0 copies | 11 min after the last request |
+| 0 copies to 0 instances | +12 min |
+| First request at zero → HTTP 400 `has no capacity` | immediate |
+| `NoCapacityInvocationFailures` alarm → ALARM | +67 s |
+| Step policy raises desired copies and instances to 1 | +1 min 42 s |
+| HTTP 200 | **+9 min 24 s** |
+
+Scale-in is not tunable through this skill: Application Auto Scaling creates the AlarmLow itself with a 10 s period and 90 evaluation periods, so 15 minutes of idle datapoints are required before it fires.
+
+Pre-stage the weights and pass `--model-s3-uri` when wake time matters. The weights are downloaded again on **every** wake, so the Hub download sits on the critical path of the first request after each idle period.
+
+### Sizing the component
+
+`ComputeResourceRequirements` is a scheduling reservation, not a cap. A component that requests 1024 MB runs vLLM with several GB of host memory without trouble.
+
+The schedulable pool is far smaller than the instance memory. On `ml.g5.xlarge` (16 GiB) the scheduler **accepts 1024 MB and rejects 4096 MB**. Over-asking gives an instant, confusing failure:
+
+```
+There is not enough hardware resources on the instances for this endpoint to
+create a copy of the inference component.
+```
+
+That message appears even when the endpoint has a healthy instance. Treat it as "the request is too large", not "add instances". Start at the 1024 MB default and raise it only when several components share one instance.
+
+`--accelerator-devices` must match `SM_VLLM_TENSOR_PARALLEL_SIZE` for multi-GPU models.
+
+### Invoking and testing
+
+Pass the component name, and allow for the wake:
+
+```bash
+python3 scripts/invoke_endpoint.py \
+    --endpoint-name <endpoint-name> \
+    --inference-component-name <component-name> \
+    --payload '{"prompt": "hello", "max_tokens": 16}' \
+    --wait-for-capacity 900 --region "$REGION"
+```
+
+The 400 `has no capacity` error is the wake signal, not a fault: it publishes the metric that triggers the step policy. With `--wait-for-capacity` the helper retries every 30 s until a copy serves the request. Without it, a cold endpoint always looks broken.
+
+### Teardown order
+
+`teardown.py` handles both shapes, but the order is load-bearing:
+
+1. alarms (`<endpoint>-*` and `<component>-*`)
+2. scaling policies and the scalable target, on the component resource id
+3. **inference components**
+4. endpoint, endpoint config, model
+
+Two behaviours make this necessary:
+
+- **`delete-endpoint` does not delete the components.** They survive, keep reporting `InService`, and block a new component with the same name. Always delete components first.
+- **Component deletion is refused during transient states** — `CREATE_IN_PROGRESS` while the container boots, and `UPDATE_RC_IN_PROGRESS` while a scaling action changes the copy count. The script retries every 15 s for 15 min; a teardown right after a scaling event legitimately takes several minutes.
+
+The `TargetTracking-inference-component/<ic>-AlarmHigh|Low` alarms belong to Application Auto Scaling. Deleting the policy removes them, so the script does not touch them (verified: no alarms remain after teardown).
+
 ## Async inference deployments
 
-For long-running inferences (>60s), large payloads, or workloads that are bursty/sparse enough to benefit from scale-to-zero, use `deploy_async.py` instead of `deploy.py`. Async genuinely supports `MinCapacity=0` — real-time autoscaling can't.
+For long-running inferences (>60s), large payloads, or workloads that are bursty/sparse enough to benefit from scale-to-zero, use `deploy_async.py` instead of `deploy.py`. Async supports `MinCapacity=0` on the variant itself. Real-time endpoints also reach zero, but only through inference components — see "Scale to zero for real-time endpoints" below. Async remains the right choice when a single inference exceeds the 60s `InvokeEndpoint` response limit.
 
 ```bash
 python scripts/deploy_async.py \
@@ -299,5 +405,13 @@ Always tell the user about the teardown command after the deployment summary. Us
 **`403 Forbidden` downloading weights from HF Hub during startup** — the container's bundled `huggingface_hub` predates HF's XET CDN auth. Add `--env HF_HUB_ENABLE_HF_TRANSFER=0`, or pre-stage the weights in S3. Note: this can *mask* a deeper failure (the worker may still crash after the download succeeds) — re-check logs after fixing it.
 
 **Diagnostic rule**: when failures look identical across multiple configurations (different images, roles, instance types) and **no logs are ever produced**, the cause is almost always below the container — host AMI, networking, account-level — not the deployment config. Stop iterating on config; check the AMI version and account state.
+
+**Component stuck in `Creating`, no `FailureReason`** — the container is crash-looping and supervisord restarts it, so the status never changes. The component holds `Creating` until `ContainerStartupHealthCheckTimeoutInSeconds` expires, up to an hour. Read `/aws/sagemaker/InferenceComponents/<component-name>` and look for `exited: app`, `not expected`, or `api_server.py: error:`. `deploy_ic.py` does this scan on every poll and aborts in about a minute.
+
+**`There is not enough hardware resources on the instances for this endpoint`** — the component's `ComputeResourceRequirements` exceed the schedulable pool, which is much smaller than the instance memory. Lower `--min-memory-mb` (1024 works on `ml.g5.xlarge`; 4096 is rejected there). Do not add instances: the message appears with a healthy instance present.
+
+**`Cannot delete inference component ... while it is in state CREATE_IN_PROGRESS` / `UPDATE_RC_IN_PROGRESS`** — normal, not an error. Retry; `teardown.py` retries for 15 min. `UPDATE_RC_IN_PROGRESS` means a scaling action is changing the copy count.
+
+**A component outlives its endpoint** — `delete-endpoint` leaves components behind, still reporting `InService`. They block reuse of the name. Delete components first, which is what `teardown.py` does.
 
 Don't retry blindly. The script prints the specific `FailureReason` from `describe-endpoint` — fix the root cause before retrying.

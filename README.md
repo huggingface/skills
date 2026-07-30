@@ -98,7 +98,7 @@ This repository contains a few skills to get you started. You can also contribut
 | `hf-cloud-python-env-setup` | Set up an isolated Python environment for SageMaker / AWS work, with the right Python version and current boto3. | [SKILL.md](skills/hf-cloud-python-env-setup/SKILL.md) |
 | `hf-cloud-sagemaker-deployment-planner` | Plan and coordinate the deployment of a model to Amazon SageMaker AI. | [SKILL.md](skills/hf-cloud-sagemaker-deployment-planner/SKILL.md) |
 | `hf-cloud-sagemaker-iam-preflight` | Ensure a usable SageMaker execution role exists before deploying or training. | [SKILL.md](skills/hf-cloud-sagemaker-iam-preflight/SKILL.md) |
-| `hf-cloud-sagemaker-production-defaults` | Create a SageMaker endpoint (real-time or async) with autoscaling, CloudWatch alarms, and tagging enabled by default. | [SKILL.md](skills/hf-cloud-sagemaker-production-defaults/SKILL.md) |
+| `hf-cloud-sagemaker-production-defaults` | Create a SageMaker endpoint (real-time, real-time scale-to-zero, or async) with autoscaling, CloudWatch alarms, and tagging enabled by default. | [SKILL.md](skills/hf-cloud-sagemaker-production-defaults/SKILL.md) |
 | `hf-cloud-serving-image-selection` | Pick the right serving container for a SageMaker model deployment and find its current image URI. | [SKILL.md](skills/hf-cloud-serving-image-selection/SKILL.md) |
 | `hf-mem` | Hugging Face CLI to estimate the required memory to load Safetensors or GGUF model weights for inference from the Hugging Face Hub | [SKILL.md](skills/hf-mem/SKILL.md) |
 | `huggingface-best` | Use when the user asks about finding the best, top, or recommended model for a task, wants to know what AI model to use, or wants to compare models by benchmark scores. | [SKILL.md](skills/huggingface-best/SKILL.md) |
