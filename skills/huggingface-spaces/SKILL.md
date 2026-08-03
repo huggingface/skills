@@ -13,7 +13,7 @@ Before anything else:
 
 1. Check the `hf` CLI is installed: `which hf`. If not, `pip install -U huggingface_hub`.
 2. Check the user is logged in: `hf auth whoami`. If not, run `hf auth login` — it prints a URL and a one-time code; ask the user to open the URL and enter the code, then login completes automatically (OAuth, no token needed). Alternatively, pass a write-scoped token from https://huggingface.co/settings/tokens with `--token`.
-3. Note `whoami`'s `canPay` and `isPro` flags — they gate hardware choices below.
+3. Note `whoami`'s `canPay` and `isPro` flags — they gate hardware choices below. A free (`isPro=False`) account can only host Static Spaces and up to 2 ZeroGPU Spaces.
 
 The `hf-cli` skill teaches an agent every `hf` command and is the recommended companion to this one. Install it with `hf skills add hf-cli` (add `--claude --global` to install for Claude Code as well, user-level).
 
@@ -27,15 +27,17 @@ A Space is a git repo with three possible SDKs:
 
 ### Hardware tiers
 
-Free, no creator cost: **`cpu-basic`** and **`zero-a10g`** (ZeroGPU). Static Spaces are also free and don't need hardware.
+Static Spaces are free for everyone and need no hardware. **Gradio and Docker Spaces run on compute and require a paid plan to create** — PRO for personal accounts, Team or Enterprise for organizations — with one exception: **free personal accounts in good standing (verified email, account older than 30 days) can host up to 2 ZeroGPU Spaces.**
 
-**`cpu-basic`** — 2 vCPU / 16 GB. For data viz, API-proxy Spaces, small CPU-bound models.
+So on a free account ZeroGPU is the *only* way to host a Gradio Space. `cpu-basic` is not the safe fallback it used to be — it is gated too.
 
-**ZeroGPU (`zero-a10g`)** — dynamic, per-request GPU allocation on NVIDIA RTX PRO 6000 Blackwell (sm_120). Two sizes: `large` (half MIG, 48 GB, 1× quota) and `xlarge` (full, 96 GB, 2× quota). Free for the Space creator; Space visitors consume their own daily quota (~5 min free / 40 min Pro / 60 min Enterprise). **Gradio-only**, **PyTorch-first**. Requires the creator to be on a PRO / Team / Enterprise plan.
+**ZeroGPU (`zero-a10g`)** — dynamic, per-request GPU allocation on NVIDIA RTX PRO 6000 Blackwell (sm_120). Two sizes: `large` (half MIG, 48 GB, 1× quota) and `xlarge` (full, 96 GB, 2× quota). Free for the Space creator; Space visitors consume their own daily quota (~5 min free / 40 min Pro / 60 min Enterprise). **Gradio-only**, **PyTorch-first**. Hosting caps per account: **2** free personal, **10** PRO, **50** Team / Enterprise org.
+
+**`cpu-basic`** — 2 vCPU / 16 GB, no hourly cost but needs a paid plan. For data viz, API-proxy Spaces, small CPU-bound models.
 
 **Dedicated GPU** (T4, L4, A10G, L40S, A100, H200) — billed to the Space creator by the hour. List + pricing: `hf spaces hardware`. Only the creator can attach these, and only if `canPay=True`. Use when ZeroGPU genuinely doesn't fit — non-PyTorch main model with heavy init, very-large-model long-context inference, etc.
 
-If a non-PRO user has a use case that wants ZeroGPU, you can still build it: create a `cpu-basic` Space, code the app for ZeroGPU, push, then request a community grant. See [`references/grants.md`](references/grants.md).
+If the user needs hardware they can't pay for — a dedicated GPU, or a Gradio Space beyond the free 2-ZeroGPU cap — they can still create a **Static** Space (free for everyone), push the app there, and request a community grant. See [`references/grants.md`](references/grants.md).
 
 For the authoritative reference: https://huggingface.co/docs/hub/spaces-overview
 
@@ -56,7 +58,7 @@ Follow the user's explicit request first. If they were vague:
 - **Default for a public ML demo**: Gradio + ZeroGPU. Use this unless something below applies.
 - **The model's only inference path is non-PyTorch** (ONNX / TF / JAX / vLLM as the MAIN model, with heavy init): dedicated GPU.
   - But: marginal non-torch tools (a small ONNX preprocessor, a TF utility) inside a torch-main pipeline are fine on ZeroGPU. The hijack only patches torch; init the non-torch lib inside `@spaces.GPU` and pay the short per-call init cost.
-- **Tiny / CPU-bound model, or API-proxy Space**: `cpu-basic` (`hardware`-free isn't applicable to Gradio).
+- **Tiny / CPU-bound model, or API-proxy Space**: `cpu-basic` — but it needs a paid plan. On a free account, put it on `zero-a10g` with a no-op decorated function (ZeroGPU requires at least one) and keep the real work outside it — nothing ever requests a GPU, so no quota is burned. See [`references/inference-providers.md`](references/inference-providers.md).
 - **Browser-side ML or project page**: Static.
 - **Container with non-Python stack**: Docker.
 
@@ -80,7 +82,7 @@ hf repos create <namespace>/<name> --type space --space-sdk <gradio|docker|stati
 ```
 
 - `--space-sdk` is required.
-- `--flavor` selects hardware. `zero-a10g` is the (legacy) identifier for ZeroGPU. Omit for `cpu-basic`. Run `hf spaces hardware` for the full paid list and pricing.
+- `--flavor` selects hardware. `zero-a10g` is the (legacy) identifier for ZeroGPU. Omitting it gives `cpu-basic` — which is itself gated behind a paid plan, so on a free account pass `--flavor zero-a10g` explicitly. Run `hf spaces hardware` for the full paid list and pricing.
 - Visibility: `--public` (anyone can view), `--private` (only you), `--protected` (app is reachable but git repo / Files tab is private).
 - `--secrets KEY=val` becomes an environment variable inside the Space and is **not** visible to visitors. Use for API keys, gated-repo tokens (`HF_TOKEN=hf_…`), etc. Can also be set later via `hf spaces secrets set <id> KEY=val`.
 - `--env KEY=val` is **visible to visitors** — use only for non-sensitive config (`GRADIO_SSR_MODE=false`, `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`, etc.).
@@ -235,6 +237,6 @@ If you solve an error that wasn't in the known-errors list, suggest the user PR 
 | Pinning deps, picking wheels, torch-family alignment | [`references/requirements.md`](references/requirements.md) |
 | `gr.Examples` (add when it makes sense), themes, custom HTML components, `gr.Server`, MCP server (`mcp_server=True`) | [`references/gradio.md`](references/gradio.md) |
 | Persistent storage, public bucket URLs | [`references/buckets.md`](references/buckets.md) |
-| Community grant requests (non-PRO needing ZeroGPU) | [`references/grants.md`](references/grants.md) |
+| Community grant requests (hardware the user can't pay for) | [`references/grants.md`](references/grants.md) |
 | Provider proxy (zero-VRAM big LLM via Cerebras / Fireworks / Together / etc.) | [`references/inference-providers.md`](references/inference-providers.md) |
 | **3D Spaces: generation, CUDA extensions, output formats, and model recipes (incl. gaussian splatting)** | [`references/3d-generation.md`](references/3d-generation.md) |

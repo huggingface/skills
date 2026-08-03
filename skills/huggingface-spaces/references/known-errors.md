@@ -35,10 +35,10 @@ These come from the Space build pipeline before the app starts. Read with `hf sp
 **Cause**: README frontmatter failed server validation. Most common: `short_description` over the (undocumented) character cap — target ≤ 60.
 **Fix**: Shorten `short_description`. Long descriptions go in the README body. Also double-check `colorFrom`/`colorTo` are one of `red|yellow|green|blue|indigo|purple|pink|gray`.
 
-### `403 Forbidden` from `create_repo` with `space_hardware="zero-a10g"`
+### `403 Forbidden` from `create_repo` for a Gradio / Docker Space
 
-**Cause**: The user isn't on PRO / Team / Enterprise so the API rejects ZeroGPU at creation.
-**Fix**: Retry without `space_hardware=`. Keep `hardware:` out of README frontmatter (silently ignored anyway). The Space is created on CPU; point the user at PRO upgrade or [community grant](grants.md).
+**Cause**: Gradio and Docker Spaces run on compute and need a paid plan (PRO / Team / Enterprise). The only free exception is ZeroGPU — 2 Spaces for personal accounts in good standing (verified email, account older than 30 days).
+**Fix**: On a free account, pass `space_hardware="zero-a10g"` rather than omitting it — `cpu-basic` is gated too, so dropping the flavor makes this worse, not better. If ZeroGPU is also rejected, the account is over its 2-Space cap or not in good standing: delete an unused ZeroGPU Space, upgrade to PRO, or ship a Static Space and apply for a [community grant](grants.md). Keep `hardware:` out of README frontmatter (silently ignored anyway).
 
 ### `403 Forbidden` from `create_commit(..., create_pr=True)`
 

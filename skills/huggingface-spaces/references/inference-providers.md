@@ -2,9 +2,9 @@
 
 Some Spaces don't need a GPU at all. If the model is available through HF Inference Providers (Cerebras, Fireworks, Together, Replicate, OpenRouter, etc.), the Space can be a thin Gradio shell that proxies to a hosted endpoint:
 
-- Zero VRAM, no `@spaces.GPU`, no model download.
+- Zero VRAM, no real work inside `@spaces.GPU`, no model download.
 - Works for models too large to fit on ZeroGPU (120B+).
-- Hardware can be `cpu-basic` — no GPU at all.
+- No GPU at all — see [Hardware](#hardware) below for which flavor to pick.
 
 ## When to use this pattern
 
@@ -76,10 +76,22 @@ This is the **recommended pattern for public demos** — sustainable cost-wise, 
 
 ## Hardware
 
-`cpu-basic`. No GPU. Don't put `--flavor zero-a10g` — you'd waste a paid grant.
+No GPU needed, so `cpu-basic` is the natural fit — but it requires a paid plan.
+
+On a free account, create the Space with `--flavor zero-a10g` instead. ZeroGPU refuses to start without at least one decorated function, so add a no-op one and leave the provider calls outside it:
+
+```python
+import spaces
+
+@spaces.GPU(duration=1)
+def _noop():  # ZeroGPU requires ≥1 decorated function; never called
+    pass
+```
+
+Nothing ever requests a GPU, so no quota is burned. Just remember the Space still counts against the free 2-Space ZeroGPU cap — don't spend a slot here if the user is saving it for a real GPU demo.
 
 ## Anti-pattern: `@spaces.GPU` wrapping a provider call
 
 If you do use Inference Providers, do **not** wrap the call in `@spaces.GPU`. The decorator reserves a GPU slot on your Space for the full `duration=`, but the function does no GPU work — just an HTTP call out. You burn your own ZeroGPU quota for nothing.
 
-A provider-proxy Space wants `cpu-basic` hardware and zero `@spaces.GPU`.
+Whatever hardware a provider-proxy Space sits on, no provider call belongs inside `@spaces.GPU`.
