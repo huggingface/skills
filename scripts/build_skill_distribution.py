@@ -3,14 +3,19 @@
 # requires-python = ">=3.10"
 # dependencies = ["pyyaml==6.0.3"]
 # ///
-"""Build static skills distribution artifacts (SEP-2640 index format).
+"""Build static skills distribution artifacts.
 
 Single-file skills are emitted as ``<out>/<name>/SKILL.md`` for easy audit.
 Multi-file skills are emitted as ``<out>/<name>.tar.gz`` archives to keep the
-skill package atomic and avoid implying partial direct-resource support. The
-``index.json`` follows SEP-2640: each entry carries verbatim ``frontmatter`` plus
-either ``url`` + ``digest`` for direct ``SKILL.md`` entries, or an ``archives``
-array for archive-only entries.
+skill package atomic for legacy consumers. ``index.json`` retains the legacy
+archive-oriented format.
+
+``skills.json`` contains the current SEP-2640 skill-entry shape. Each entry has
+the URI of its ``SKILL.md``, its complete parsed frontmatter, and a ``resources``
+manifest containing the URI and raw-byte SHA-256 digest of every file in the
+published skill directory. All selected skill files are emitted under
+``<out>/<name>/``; the bucket sync workflow publishes that expanded tree and its
+manifest together.
 """
 
 from __future__ import annotations
@@ -27,6 +32,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import yaml
 
@@ -167,6 +173,36 @@ def uri_join(prefix: str, path: str) -> str:
 	return prefix.rstrip("/") + "/" + path
 
 
+def resource_uri(uri_prefix: str, skill_name: str, relative_path: str) -> str:
+	encoded_path = "/".join(quote(part, safe="") for part in relative_path.split("/"))
+	return uri_join(uri_prefix, f"{quote(skill_name, safe='')}/{encoded_path}")
+
+
+def write_skill_files(skill: Skill, out_dir: Path, uri_prefix: str) -> dict[str, Any]:
+	resources = []
+	for path in skill.files:
+		relative_path = rel_archive_path(skill.dir, path)
+		target = out_dir / skill.name / relative_path
+		target.parent.mkdir(parents=True, exist_ok=True)
+		shutil.copy2(path, target)
+		resources.append(
+			{
+				"uri": resource_uri(uri_prefix, skill.name, relative_path),
+				"digest": f"sha256:{sha256_hex(target)}",
+			}
+		)
+
+	skill_uri = resource_uri(uri_prefix, skill.name, "SKILL.md")
+	if not any(resource["uri"] == skill_uri for resource in resources):
+		raise ValueError(f"{skill.dir}: resource manifest does not include SKILL.md")
+
+	return {
+		"uri": skill_uri,
+		"frontmatter": skill.frontmatter,
+		"resources": resources,
+	}
+
+
 def build_distribution(skills_dir: Path, out_dir: Path, uri_prefix: str) -> None:
 	if out_dir.exists():
 		shutil.rmtree(out_dir)
@@ -174,9 +210,11 @@ def build_distribution(skills_dir: Path, out_dir: Path, uri_prefix: str) -> None
 
 	skills = load_skills(skills_dir)
 	index_entries: list[dict[str, Any]] = []
+	skill_entries: list[dict[str, Any]] = []
 	catalog_entries: list[dict[str, Any]] = []
 
 	for skill in skills:
+		skill_entries.append(write_skill_files(skill, out_dir, uri_prefix))
 		if len(skill.files) == 1 and skill.files[0].name == "SKILL.md":
 			skill_md_path = write_skill_md(skill, out_dir)
 			skill_md_url = uri_join(uri_prefix, f"{skill.name}/SKILL.md")
@@ -233,6 +271,7 @@ def build_distribution(skills_dir: Path, out_dir: Path, uri_prefix: str) -> None
 
 	generated_at = utc_now()
 	write_json(out_dir / "index.json", {"skills": index_entries})
+	write_json(out_dir / "skills.json", {"skills": skill_entries})
 	write_json(
 		out_dir / "ai-catalog.json",
 		{
@@ -256,6 +295,7 @@ def build_distribution(skills_dir: Path, out_dir: Path, uri_prefix: str) -> None
 			"uri_prefix": uri_prefix,
 			"artifacts": {
 				"skills_index": "index.json",
+				"skills_catalog": "skills.json",
 				"ai_catalog": "ai-catalog.json",
 			},
 		},

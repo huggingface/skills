@@ -9,6 +9,7 @@ on:
       - ".claude-plugin/marketplace-internal.json"
       - "scripts/build_skills_index.py"
       - "scripts/build_skill_distribution.py"
+      - "scripts/test_build_skill_distribution.py"
       - ".github/workflows/sync-skills-to-bucket.yml"
 
 concurrency:
@@ -34,6 +35,7 @@ jobs:
 
       - name: Build skills distribution artifact
         run: |
+          uv run scripts/test_build_skill_distribution.py
           uv run scripts/build_skill_distribution.py \
             --skills-dir skills \
             --out-dir out/skills-distribution/latest \

@@ -3,9 +3,13 @@ name: Validate generated agent/plugin artifacts
 on:
   pull_request:
     paths:
+      - ".github/workflows/generate-agents.yml"
+      - ".github/workflows/sync-skills-to-bucket.yml"
       - "scripts/AGENTS_TEMPLATE.md"
       - "scripts/generate_agents.py"
       - "scripts/generate_cursor_plugin.py"
+      - "scripts/build_skill_distribution.py"
+      - "scripts/test_build_skill_distribution.py"
       - "scripts/plugin_versions.py"
       - "scripts/publish.sh"
       - "skills/**"
@@ -45,3 +49,13 @@ jobs:
             --repo-root . \
             --out-dir out/skills-index/latest \
             --branch main
+
+      - name: Test SEP-2640 skills catalog generation
+        run: uv run scripts/test_build_skill_distribution.py
+
+      - name: Ensure skills distribution artifact builds
+        run: |
+          uv run scripts/build_skill_distribution.py \
+            --skills-dir skills \
+            --out-dir out/skills-distribution/latest \
+            --uri-prefix skill://
