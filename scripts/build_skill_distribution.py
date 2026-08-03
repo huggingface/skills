@@ -75,6 +75,29 @@ def validate_skill_name(name: str, skill_dir: Path) -> None:
 		raise ValueError(f"{skill_dir}: SKILL.md name {name!r} must match directory name")
 
 
+def validate_frontmatter(meta: dict[str, Any], skill_md: Path) -> None:
+	description = meta.get("description")
+	if not isinstance(description, str) or not 1 <= len(description) <= 1024:
+		raise ValueError(f"{skill_md}: description must contain 1-1024 characters")
+	license_value = meta.get("license")
+	if license_value is not None and not isinstance(license_value, str):
+		raise ValueError(f"{skill_md}: license must be a string")
+	compatibility = meta.get("compatibility")
+	if compatibility is not None and (
+		not isinstance(compatibility, str) or not 1 <= len(compatibility) <= 500
+	):
+		raise ValueError(f"{skill_md}: compatibility must contain 1-500 characters")
+	metadata = meta.get("metadata")
+	if metadata is not None and (
+		not isinstance(metadata, dict)
+		or any(not isinstance(key, str) or not isinstance(value, str) for key, value in metadata.items())
+	):
+		raise ValueError(f"{skill_md}: metadata must map string keys to string values")
+	allowed_tools = meta.get("allowed-tools")
+	if allowed_tools is not None and not isinstance(allowed_tools, str):
+		raise ValueError(f"{skill_md}: allowed-tools must be a string")
+
+
 def rel_archive_path(skill_dir: Path, path: Path) -> str:
 	rel = path.relative_to(skill_dir).as_posix()
 	if rel.startswith("/") or ".." in rel.split("/"):
@@ -109,6 +132,7 @@ def load_skills(skills_dir: Path) -> list[Skill]:
 		if not isinstance(description, str) or not description.strip():
 			raise ValueError(f"{skill_md}: missing required description")
 		validate_skill_name(name, skill_md.parent)
+		validate_frontmatter(meta, skill_md)
 		files = discover_files(skill_md.parent)
 		if skill_md not in files:
 			raise ValueError(f"{skill_md}: SKILL.md was not included in discovered files")

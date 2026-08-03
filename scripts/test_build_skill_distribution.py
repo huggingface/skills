@@ -114,6 +114,24 @@ class BuildSkillDistributionTest(unittest.TestCase):
 			manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
 			self.assertEqual(manifest["artifacts"]["skills_catalog"], "skills.json")
 
+	def test_rejects_non_string_metadata_values(self) -> None:
+		with tempfile.TemporaryDirectory() as temp_dir:
+			root = Path(temp_dir)
+			skill_dir = root / "skills" / "invalid"
+			skill_dir.mkdir(parents=True)
+			(skill_dir / "SKILL.md").write_text(
+				"---\n"
+				"name: invalid\n"
+				"description: Invalid metadata fixture\n"
+				"metadata:\n"
+				"  tags:\n"
+				"    - one\n"
+				"---\n",
+				encoding="utf-8",
+			)
+			with self.assertRaisesRegex(ValueError, "metadata must map string keys to string values"):
+				builder.build_distribution(root / "skills", root / "out", "skill://")
+
 
 if __name__ == "__main__":
 	unittest.main()

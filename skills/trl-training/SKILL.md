@@ -5,24 +5,9 @@ license: Apache-2.0
 metadata:
   version: "1.0.0"
   author: huggingface
-  commands:
-    - trl sft
-    - trl dpo
-    - trl grpo
-    - trl kto
-    - trl rloo
-    - trl reward
-  categories:
-    - machine-learning
-    - llm-training
-    - reinforcement-learning
-  tags:
-    - rlhf
-    - supervised-fine-tuning
-    - dpo
-    - grpo
-    - huggingface
-    - transformers
+  commands: trl sft, trl dpo, trl grpo, trl kto, trl rloo, trl reward
+  categories: machine-learning, llm-training, reinforcement-learning
+  tags: rlhf, supervised-fine-tuning, dpo, grpo, huggingface, transformers
   documentation: https://huggingface.co/docs/trl/en/clis
 ---
 
