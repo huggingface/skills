@@ -141,6 +141,12 @@
       "description": "AI demos and GPU compute with Gradio Spaces and Hugging Face Spaces ZeroGPU."
     },
     {
+      "name": "iparq-parquet-inspector",
+      "source": "./skills/iparq-parquet-inspector",
+      "skills": "./",
+      "description": "Inspect local or downloaded Parquet file metadata with the iParq CLI, including compression, encodings, physical and logical types, row groups, statistics, dictionary pages, page indexes, Bloom filters, and storage sizes."
+    },
+    {
       "name": "train-sentence-transformers",
       "source": "./skills/train-sentence-transformers",
       "skills": "./",
