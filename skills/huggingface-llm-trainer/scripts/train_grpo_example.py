@@ -27,7 +27,7 @@ Usage with hf_jobs MCP tool:
 Or submit the script content directly inline without saving to a file.
 
 Note: For most GRPO use cases, the TRL maintained script is recommended:
-    https://raw.githubusercontent.com/huggingface/trl/main/examples/scripts/grpo.py
+    https://raw.githubusercontent.com/huggingface/trl/main/trl/scripts/grpo.py
 """
 
 import trackio

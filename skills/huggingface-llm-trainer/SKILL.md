@@ -266,7 +266,7 @@ hf_jobs("uv", {
 
 **Benefits:** No code to write, maintained by TRL team, production-tested
 **When to use:** Standard TRL training, quick experiments, don't need custom code
-**Available:** Scripts are available from https://github.com/huggingface/trl/tree/main/examples/scripts
+**Available:** Scripts are available from https://github.com/huggingface/trl/tree/main/examples
 
 ### Finding More UV Scripts on Hub
 
@@ -720,7 +720,7 @@ Add to PEP 723 header:
 - [TRL Jobs Training Guide](https://huggingface.co/docs/trl/en/jobs_training)
 - [TRL Jobs Package](https://github.com/huggingface/trl-jobs)
 - [HF Jobs Documentation](https://huggingface.co/docs/huggingface_hub/guides/jobs)
-- [TRL Example Scripts](https://github.com/huggingface/trl/tree/main/examples/scripts)
+- [TRL Example Scripts](https://github.com/huggingface/trl/tree/main/examples)
 - [UV Scripts Guide](https://docs.astral.sh/uv/guides/scripts/)
 - [UV Scripts Organization](https://huggingface.co/uv-scripts)
 
