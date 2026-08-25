@@ -60,7 +60,7 @@
       "name": "hol-guard",
       "source": "./skills/hol-guard",
       "skills": "./",
-      "description": "Use when setting up HOL Guard, protecting local AI harnesses, reviewing Guard approvals or receipts, scanning Codex plugins, skills, MCP servers, marketplace packages, or running plugin-scanner verification before release"
+      "description": "Use when protecting a local coding agent that uses Hugging Face Skills or the hf CLI with HOL Guard, reviewing Guard approvals or receipts, or scanning Agent Skills and MCP packages before use or release"
     },
     {
       "name": "huggingface-best",

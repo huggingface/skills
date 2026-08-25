@@ -1,6 +1,6 @@
 ---
 name: hol-guard
-description: Use when setting up HOL Guard, protecting local AI harnesses, reviewing Guard approvals or receipts, scanning Codex plugins, skills, MCP servers, marketplace packages, or running plugin-scanner verification before release.
+description: Use when protecting a local coding agent that uses Hugging Face Skills or the hf CLI with HOL Guard, reviewing Guard approvals or receipts, or scanning Agent Skills and MCP packages before use or release.
 license: Apache-2.0
 ---
 
@@ -47,6 +47,25 @@ After runtime installation:
 hol-guard status
 hol-guard detect --json
 ```
+
+## Use With Hugging Face Skills
+
+HOL Guard protects the local agent harness, not the Hugging Face service. Before giving a supported coding agent access to Hugging Face Skills or `hf` CLI operations, install Guard on that harness and confirm protection:
+
+```bash
+hol-guard install <harness>
+hol-guard run <harness> --dry-run
+hol-guard run <harness>
+hol-guard status
+```
+
+Then install or use Hugging Face Skills normally, for example:
+
+```bash
+hf skills add <skill-name>
+```
+
+If reviewing a downloaded or contributed Agent Skill before use or release, scan its package directory with `plugin-scanner` as described below. Never claim this creates a server-side Hugging Face security integration; the enforcement boundary is the supported local harness.
 
 ## Protect A Local Harness
 
