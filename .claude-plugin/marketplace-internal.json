@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Full Hugging Face Skills manifest for hf skills, MCP, and discovery. Client plugin marketplaces use curated manifests.",
-    "version": "1.0.25"
+    "version": "1.0.26"
   },
   "plugins": [
     {
@@ -55,6 +55,12 @@
       "source": "./skills/hf-mem",
       "skills": "./",
       "description": "Hugging Face CLI to estimate the required memory to load Safetensors or GGUF model weights for inference from the Hugging Face Hub"
+    },
+    {
+      "name": "hol-guard",
+      "source": "./skills/hol-guard",
+      "skills": "./",
+      "description": "Use when setting up HOL Guard, protecting local AI harnesses, reviewing Guard approvals or receipts, scanning Codex plugins, skills, MCP servers, marketplace packages, or running plugin-scanner verification before release"
     },
     {
       "name": "huggingface-best",
