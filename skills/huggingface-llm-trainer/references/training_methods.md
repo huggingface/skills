@@ -82,7 +82,7 @@ trainer.train()
 ```python
 # Use TRL maintained script
 hf_jobs("uv", {
-    "script": "https://raw.githubusercontent.com/huggingface/trl/main/examples/scripts/grpo.py",
+    "script": "https://raw.githubusercontent.com/huggingface/trl/main/trl/scripts/grpo.py",
     "script_args": [
         "--model_name_or_path", "Qwen/Qwen2.5-0.5B-Instruct",
         "--dataset_name", "trl-lib/math_shepherd",
