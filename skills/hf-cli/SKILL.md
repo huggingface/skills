@@ -9,7 +9,7 @@ The Hugging Face Hub CLI tool `hf` is available. IMPORTANT: The `hf` command rep
 
 Use `hf --help` to view available functions. Note that auth commands are now all under `hf auth` e.g. `hf auth whoami`.
 
-Generated with `huggingface_hub v1.28.0`. Run `hf skills add --force` to regenerate.
+Generated with `huggingface_hub v1.29.0`. Run `hf skills add --force` to regenerate.
 
 ## Commands
 
@@ -40,6 +40,7 @@ Generated with `huggingface_hub v1.28.0`. Run `hf skills add --force` to regener
 - `hf buckets list` — List buckets or files in a bucket. `[--human-readable --tree --recursive --search TEXT --format [auto|human|agent|json|quiet]]`
 - `hf buckets move FROM_ID TO_ID` — Move (rename) a bucket to a new name or namespace. `[--format [auto|human|agent|json|quiet]]`
 - `hf buckets remove ARGUMENT` — Remove files from a bucket. `[--recursive --yes --dry-run --include TEXT --exclude TEXT --format [auto|human|agent|json|quiet]]`
+- `hf buckets settings BUCKET_ID` — Update bucket settings (visibility). `[--private --public --format [auto|human|agent|json|quiet]]`
 - `hf buckets sync` — Sync files between local directory and a bucket. `[--delete --ignore-times --ignore-sizes --plan TEXT --apply TEXT --dry-run --include TEXT --exclude TEXT --filter-from TEXT --existing --ignore-existing --verbose --format [auto|human|agent|json|quiet]]`
 
 ### `hf cache` — Manage local cache directory.
@@ -225,7 +226,7 @@ Generated with `huggingface_hub v1.28.0`. Run `hf skills add --force` to regener
 
 To mount Hub repositories or buckets as local filesystems — no download, no copy, no waiting — use `hf-mount`. Files are fetched on demand. GitHub: https://github.com/huggingface/hf-mount
 
-Install: `curl -fsSL https://raw.githubusercontent.com/huggingface/hf-mount/main/install.sh | sh`
+Install: `brew install hf-mount`, or download a binary from https://github.com/huggingface/hf-mount/releases
 
 Some command examples:
 - `hf-mount start repo openai-community/gpt2 /tmp/gpt2` — mount a repo (read-only)
