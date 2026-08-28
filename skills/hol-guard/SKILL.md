@@ -20,11 +20,11 @@ HOL Guard protects local AI harnesses before tools run. Use this skill when the 
 
 ## Install Check
 
-Check both CLIs independently:
+Check both CLIs independently by invoking them directly so the check works across supported shells:
 
 ```bash
-command -v hol-guard
-command -v plugin-scanner
+hol-guard --version
+plugin-scanner --version
 ```
 
 If `hol-guard` is missing and the user asked for runtime setup, prefer:
