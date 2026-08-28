@@ -69,37 +69,18 @@ If reviewing a downloaded or contributed Agent Skill before use or release, scan
 
 ## Protect A Local Harness
 
-Use this flow for Codex, Claude Code, Copilot CLI, Cursor, Gemini, Hermes, OpenClaw, OpenCode, or Antigravity.
+Use `hol-guard detect --json` as the source of truth for current harness support. Select the exact identifier returned for the local harness the user intends to run. Do not maintain or rely on a static support list. If the requested harness is absent or ambiguous, stop rather than substituting another detected harness.
 
 ```bash
 hol-guard bootstrap
-hol-guard install <harness>
-hol-guard run <harness> --dry-run
-hol-guard run <harness>
+hol-guard install <detected-harness>
+hol-guard run <detected-harness> --dry-run
+hol-guard doctor <detected-harness> --json
+hol-guard run <detected-harness>
 hol-guard status
 ```
 
-Harness names:
-
-- `codex`
-- `claude-code`
-- `copilot`
-- `cursor`
-- `gemini`
-- `hermes`
-- `openclaw`
-- `opencode`
-- `antigravity`
-
-Harness aliases:
-
-- `claude` maps to `claude-code`
-- `gemini-cli` maps to `gemini`
-- `open-code` maps to `opencode`
-- `open-claw` maps to `openclaw`
-- `copilot-cli` maps to `copilot`
-
-Use harness-specific bootstrap when available:
+Use harness-specific bootstrap when the detected target requires it. For Hermes:
 
 ```bash
 hol-guard hermes bootstrap
@@ -131,28 +112,18 @@ hol-guard doctor codex --json
 
 Codex supports Guard-owned `PreToolUse` Bash hooks and same-chat MCP elicitation where available.
 
-### Other Harnesses
-
-Use the same Guard flow for:
-
-- Copilot CLI: `hol-guard install copilot`
-- Cursor: `hol-guard install cursor`
-- Gemini CLI: `hol-guard install gemini`
-- Hermes: `hol-guard hermes bootstrap`
-- OpenClaw: `hol-guard install openclaw`
-- OpenCode: `hol-guard install opencode`
-- Antigravity: `hol-guard install antigravity`
-
 ## Approval Work
 
 If Guard blocks or queues work:
 
 ```bash
 hol-guard approvals
-hol-guard approvals open
+hol-guard approvals open <request-id>
 hol-guard receipts
-hol-guard diff <harness>
+hol-guard diff <detected-harness>
 ```
+
+`hol-guard approvals open` requires the pending request ID shown by `hol-guard approvals`. Do not invent or omit that ID.
 
 For terminal-only resolution:
 
