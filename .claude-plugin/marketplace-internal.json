@@ -57,6 +57,12 @@
       "description": "Hugging Face CLI to estimate the required memory to load Safetensors or GGUF model weights for inference from the Hugging Face Hub"
     },
     {
+      "name": "hol-guard",
+      "source": "./skills/hol-guard",
+      "skills": "./",
+      "description": "Use when protecting a local coding agent that uses Hugging Face Skills or the hf CLI with HOL Guard, reviewing Guard approvals or receipts, or scanning Agent Skills and MCP packages before use or release"
+    },
+    {
       "name": "huggingface-best",
       "source": "./skills/huggingface-best",
       "skills": "./",
