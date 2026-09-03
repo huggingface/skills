@@ -96,6 +96,7 @@ class FullHelpArgumentParser(argparse.ArgumentParser):
         super().__init__(*args, **kwargs)
         self._search_parser: argparse.ArgumentParser | None = None
         self._leaderboard_parser: argparse.ArgumentParser | None = None
+        self._model_results_parser: argparse.ArgumentParser | None = None
 
     def format_help(self) -> str:
         text = super().format_help()
@@ -111,6 +112,12 @@ class FullHelpArgumentParser(argparse.ArgumentParser):
             extra_sections.append(
                 "\nleaderboard command options:\n"
                 + textwrap.indent(self._leaderboard_parser.format_help().strip(), "  ")
+            )
+
+        if self._model_results_parser is not None:
+            extra_sections.append(
+                "\nmodel-results command options:\n"
+                + textwrap.indent(self._model_results_parser.format_help().strip(), "  ")
             )
 
         if extra_sections:
@@ -401,10 +408,47 @@ def get_leaderboard(repo_id: str, task_id: str | None = None) -> list[dict[str, 
     return normalized
 
 
-def read_repo_ids_from_stdin() -> list[str]:
+def get_model_results(model_id: str) -> list[dict[str, Any]]:
+    namespace, repo = parse_repo_id(model_id)
+    data = http_get_json(
+        f"/api/models/{namespace}/{repo}",
+        params={"expand[]": "evalResults"},
+    )
+    if not isinstance(data, dict):
+        raise HfApiError(f"Unexpected model response for {model_id}")
+
+    eval_results = data.get("evalResults") or []
+    if not isinstance(eval_results, list):
+        raise HfApiError(f"Unexpected evalResults payload for {model_id}")
+
+    normalized: list[dict[str, Any]] = []
+    for row in eval_results:
+        payload = row.get("data") or {}
+        dataset = payload.get("dataset") or {}
+        source = payload.get("source") or {}
+        normalized.append(
+            {
+                "model_id": model_id,
+                "dataset_id": dataset.get("id"),
+                "task_id": dataset.get("task_id"),
+                "value": payload.get("value"),
+                "date": payload.get("date"),
+                "verified": row.get("verified"),
+                "filename": row.get("filename"),
+                "notes": payload.get("notes"),
+                "pull_request": row.get("pullRequest"),
+                "source_name": source.get("name"),
+                "source_url": source.get("url"),
+            }
+        )
+    return normalized
+
+
+def read_repo_ids_from_stdin(*, json_keys: Iterable[str]) -> list[str]:
     if sys.stdin.isatty():
         return []
 
+    key_list = list(json_keys)
     repo_ids: list[str] = []
     for raw_line in sys.stdin:
         line = raw_line.strip()
@@ -415,7 +459,12 @@ def read_repo_ids_from_stdin() -> list[str]:
                 obj = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            candidate = obj.get("dataset_id") or obj.get("id")
+            candidate = None
+            for key in key_list:
+                value = obj.get(key)
+                if isinstance(value, str) and "/" in value:
+                    candidate = value
+                    break
             if isinstance(candidate, str) and "/" in candidate:
                 repo_ids.append(candidate)
             continue
@@ -476,6 +525,27 @@ def print_leaderboard_table(rows: list[dict[str, Any]]) -> None:
         print("  ".join(v.ljust(w) for v, w in zip(values, widths)))
 
 
+def print_model_results_table(rows: list[dict[str, Any]]) -> None:
+    if not rows:
+        print("No model eval rows returned.")
+        return
+
+    headers = ["model_id", "dataset_id", "task_id", "value", "date", "verified"]
+    widths = [34, 30, 22, 10, 12, 8]
+    print("  ".join(h.ljust(w) for h, w in zip(headers, widths)))
+    print("  ".join("-" * w for w in widths))
+    for row in rows:
+        values = [
+            shorten(str(row.get("model_id") or ""), widths[0]),
+            shorten(str(row.get("dataset_id") or ""), widths[1]),
+            shorten(str(row.get("task_id") or ""), widths[2]),
+            shorten(str(row.get("value") or ""), widths[3]),
+            shorten(str(row.get("date") or ""), widths[4]),
+            str(row.get("verified")),
+        ]
+        print("  ".join(v.ljust(w) for v, w in zip(values, widths)))
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = FullHelpArgumentParser(
         prog="hf_benchmarks.py",
@@ -495,6 +565,20 @@ def build_parser() -> argparse.ArgumentParser:
 
               3) Chain search -> leaderboard:
                    hf_benchmarks.py search --alias coding --format ndjson \\
+                     | hf_benchmarks.py leaderboard --stdin --top 5 --format table
+
+              4) Fetch eval results for a list of models:
+                   printf '%s\\n' Qwen/Qwen3.5-9B microsoft/Phi-3-medium-4k-instruct \\
+                     | hf_benchmarks.py model-results --stdin --format ndjson
+
+              5) Use hf CLI for model discovery, then enrich with this tool:
+                   hf models list --search 'Phi-3' --filter eval-results --limit 5 --format json \\
+                     | jq -r '.[].id' \\
+                     | hf_benchmarks.py model-results --stdin --format table
+
+              6) Use hf CLI for dataset discovery, then fetch leaderboards:
+                   hf datasets list --search 'swe' --filter benchmark:official --limit 5 --format json \\
+                     | jq -r '.[].id' \\
                      | hf_benchmarks.py leaderboard --stdin --top 5 --format table
             """
         ),
@@ -550,6 +634,29 @@ def build_parser() -> argparse.ArgumentParser:
     leaderboard_parser = subparsers.add_parser(
         "leaderboard",
         help="Fetch normalized leaderboard rows for one or more benchmark datasets",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=textwrap.dedent(
+            """
+            Fetch normalized leaderboard rows for one or more benchmark datasets.
+
+            This command is designed to pair well with `hf datasets list`, where
+            `hf` handles benchmark dataset discovery and this tool handles
+            leaderboard retrieval / flattening.
+            """
+        ),
+        epilog=textwrap.dedent(
+            """
+            Examples:
+              hf_benchmarks.py leaderboard allenai/olmOCR-bench --top 10
+
+              printf '%s\\n' openai/gsm8k SWE-bench/SWE-bench_Verified \\
+                | hf_benchmarks.py leaderboard --stdin --top 5 --format ndjson
+
+              hf datasets list --search 'swe' --filter benchmark:official --limit 5 --format json \\
+                | jq -r '.[].id' \\
+                | hf_benchmarks.py leaderboard --stdin --top 5 --format table
+            """
+        ),
     )
     leaderboard_parser.add_argument(
         "datasets",
@@ -579,8 +686,71 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output format (default: table).",
     )
 
+    model_results_parser = subparsers.add_parser(
+        "model-results",
+        help="Fetch normalized evalResults rows for one or more models",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=textwrap.dedent(
+            """
+            Fetch normalized evalResults rows for one or more model repos.
+
+            This command is designed to pair well with `hf models list`, where
+            `hf` handles discovery and this tool handles flattening / filtering
+            per-model benchmark results.
+            """
+        ),
+        epilog=textwrap.dedent(
+            """
+            Examples:
+              hf_benchmarks.py model-results Qwen/Qwen3.5-9B
+
+              printf '%s\\n' Qwen/Qwen3.5-9B microsoft/Phi-3-medium-4k-instruct \\
+                | hf_benchmarks.py model-results --stdin --format ndjson
+
+              hf models list --search 'Phi-3' --filter eval-results --limit 5 --format json \\
+                | jq -r '.[].id' \\
+                | hf_benchmarks.py model-results --stdin --dataset openai/gsm8k --format table
+            """
+        ),
+    )
+    model_results_parser.add_argument(
+        "models",
+        nargs="*",
+        help="Model repo ids (<namespace>/<repo>). Can also be supplied via stdin with --stdin.",
+    )
+    model_results_parser.add_argument(
+        "--stdin",
+        action="store_true",
+        help="Read model ids from stdin. Accepts plain repo ids or NDJSON with model_id/id fields.",
+    )
+    model_results_parser.add_argument(
+        "--dataset",
+        action="append",
+        default=[],
+        help="Only keep eval rows whose dataset_id matches one of these values. Repeatable.",
+    )
+    model_results_parser.add_argument(
+        "--task-id",
+        action="append",
+        default=[],
+        help="Only keep eval rows whose task_id matches one of these values. Repeatable.",
+    )
+    model_results_parser.add_argument(
+        "--top",
+        type=int,
+        default=None,
+        help="Only keep the top N eval rows per model after filtering.",
+    )
+    model_results_parser.add_argument(
+        "--format",
+        choices=["table", "json", "ndjson"],
+        default="table",
+        help="Output format (default: table).",
+    )
+
     parser._search_parser = search_parser
     parser._leaderboard_parser = leaderboard_parser
+    parser._model_results_parser = model_results_parser
 
     return parser
 
@@ -606,7 +776,7 @@ def run_search(args: argparse.Namespace) -> int:
 def run_leaderboard(args: argparse.Namespace) -> int:
     repo_ids = list(args.datasets)
     if args.stdin:
-        repo_ids.extend(read_repo_ids_from_stdin())
+        repo_ids.extend(read_repo_ids_from_stdin(json_keys=["dataset_id", "id"]))
 
     deduped: list[str] = []
     seen: set[str] = set()
@@ -636,6 +806,46 @@ def run_leaderboard(args: argparse.Namespace) -> int:
     return 0
 
 
+def run_model_results(args: argparse.Namespace) -> int:
+    model_ids = list(args.models)
+    if args.stdin:
+        model_ids.extend(read_repo_ids_from_stdin(json_keys=["model_id", "id"]))
+
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for model_id in model_ids:
+        if model_id not in seen:
+            deduped.append(model_id)
+            seen.add(model_id)
+    model_ids = deduped
+
+    if not model_ids:
+        print("Error: provide model ids or use --stdin.", file=sys.stderr)
+        return 2
+
+    dataset_filters = set(args.dataset or [])
+    task_filters = set(args.task_id or [])
+
+    rows: list[dict[str, Any]] = []
+    for model_id in model_ids:
+        model_rows = get_model_results(model_id)
+        if dataset_filters:
+            model_rows = [row for row in model_rows if row.get("dataset_id") in dataset_filters]
+        if task_filters:
+            model_rows = [row for row in model_rows if row.get("task_id") in task_filters]
+        if args.top is not None:
+            model_rows = model_rows[: args.top]
+        rows.extend(model_rows)
+
+    if args.format == "json":
+        print_json(rows)
+    elif args.format == "ndjson":
+        print_ndjson(rows)
+    else:
+        print_model_results_table(rows)
+    return 0
+
+
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
@@ -645,6 +855,8 @@ def main() -> int:
             return run_search(args)
         if args.command == "leaderboard":
             return run_leaderboard(args)
+        if args.command == "model-results":
+            return run_model_results(args)
         parser.error(f"Unknown command: {args.command}")
         return 2
     except HfApiError as exc:
