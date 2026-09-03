@@ -1,0 +1,82 @@
+[
+  {
+    "question": "What is an agent skill?",
+    "answer_a": "A Python library that replaces the coding agent entirely",
+    "answer_b": "A structured set of instructions, scripts, and references that teaches an agent how to perform a specialized task",
+    "answer_c": "A fine-tuned language model for a specific domain",
+    "answer_d": "A plugin that gives the agent access to external APIs",
+    "correct_answer": "B"
+  },
+  {
+    "question": "What is the main file that defines an agent skill?",
+    "answer_a": "README.md",
+    "answer_b": "config.yaml",
+    "answer_c": "SKILL.md",
+    "answer_d": "setup.py",
+    "correct_answer": "C"
+  },
+  {
+    "question": "Which two fields are required in the SKILL.md frontmatter?",
+    "answer_a": "version and author",
+    "answer_b": "name and description",
+    "answer_c": "tags and version",
+    "answer_d": "author and tags",
+    "correct_answer": "B"
+  },
+  {
+    "question": "What is progressive disclosure in the context of agent skills?",
+    "answer_a": "Gradually revealing the skill's source code to the user",
+    "answer_b": "A versioning strategy where features are released incrementally",
+    "answer_c": "The agent loading skill information incrementally — starting with metadata, then instructions, then detailed references — to use context efficiently",
+    "answer_d": "A UI pattern where the skill's documentation is collapsed by default",
+    "correct_answer": "C"
+  },
+  {
+    "question": "Why do skills use markdown as their primary format?",
+    "answer_a": "Markdown files are smaller than YAML or JSON files",
+    "answer_b": "Markdown is readable by both humans and language models, works with version control, and requires no special tooling",
+    "answer_c": "Markdown supports syntax highlighting for all programming languages",
+    "answer_d": "Markdown is the only format that coding agents can parse",
+    "correct_answer": "B"
+  },
+  {
+    "question": "What is a key advantage of skills over detailed prompts?",
+    "answer_a": "Skills run faster than prompts",
+    "answer_b": "Skills don't require a language model to work",
+    "answer_c": "Skills are portable and reusable across conversations, teams, and different coding agents",
+    "answer_d": "Skills can only be used with Claude Code",
+    "correct_answer": "C"
+  },
+  {
+    "question": "In a typical skill directory, where would you find GPU selection guidance for model training?",
+    "answer_a": "In the SKILL.md frontmatter",
+    "answer_b": "In the scripts/ directory",
+    "answer_c": "In the references/ directory",
+    "answer_d": "In the templates/ directory",
+    "correct_answer": "C"
+  },
+  {
+    "question": "What does the upskill tool do?",
+    "answer_a": "It fine-tunes coding agents on skill data",
+    "answer_b": "It generates and evaluates agent skills, using teacher models to create instructions that student models can use",
+    "answer_c": "It automatically installs all available skills on the Hub",
+    "answer_d": "It converts Python scripts into SKILL.md files",
+    "correct_answer": "B"
+  },
+  {
+    "question": "Which of these is NOT a skill in the official Hugging Face Skills repository?",
+    "answer_a": "hugging-face-model-trainer",
+    "answer_b": "hugging-face-evaluation",
+    "answer_c": "hugging-face-web-scraper",
+    "answer_d": "gradio",
+    "correct_answer": "C"
+  },
+  {
+    "question": "When designing a skill for progressive disclosure, what should the main SKILL.md file contain?",
+    "answer_a": "Every piece of information the agent might need, to avoid extra file reads",
+    "answer_b": "Only the frontmatter with name and description",
+    "answer_c": "A concise workflow roadmap that points to scripts and references for deeper detail",
+    "answer_d": "Only code examples without any prose explanation",
+    "correct_answer": "C"
+  }
+]

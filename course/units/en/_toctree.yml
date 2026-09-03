@@ -1,0 +1,45 @@
+  sections:
+  - local: unit0/introduction
+    title: Welcome to the Agent Skills Course
+  - local: unit0/setup
+    title: Setting Up Your Environment
+  - local: unit0/community
+    title: Joining the Community
+
+- title: "1. What Are Agent Skills?"
+  sections:
+  - local: unit1/introduction
+    title: What Are Agent Skills?
+  - local: unit1/why-skills-matter
+    title: Why Skills Matter
+  - local: unit1/skill-format
+    title: The SKILL.md Format
+  - local: unit1/anatomy-of-a-skill
+    title: Anatomy of a Skill
+  - local: unit1/progressive-disclosure
+    title: Progressive Disclosure
+  - local: unit1/hands-on-write-skill
+    title: "Hands-on: Write Your First Skill"
+  - local: unit1/hands-on-find-install
+    title: "Hands-on: Find and Install Skills"
+  - local: unit1/sharing-skills
+    title: Sharing Skills
+  - local: unit1/quiz
+    title: Quiz
+  - local: unit1/conclusion
+    title: Conclusion
+
+- title: "2. Using Skills with Coding Agents"
+  sections:
+  - local: unit2/introduction
+    title: Skills Across Agent Platforms
+
+- title: "3. Sharing Skills"
+  sections:
+  - local: unit3/introduction
+    title: Publishing and Distributing Skills
+
+- title: "4. Deep Dive: CUDA Kernels"
+  sections:
+  - local: unit4/introduction
+    title: Architecture-Aware Optimization with Agent Skills
