@@ -1,0 +1,90 @@
+name: Validate Skill Performance With Upskill
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/upskill-internal-pr.yml"
+      - ".upskill/**"
+      - "evals/**"
+      - "upskill.config.yaml"
+      - "fastagent.config.yaml"
+      - "scripts/upskill_ci.py"
+      - "skills/**/SKILL.md"
+      - "skills/**/references/**"
+      - "skills/**/scripts/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/upskill-internal-pr.yml"
+      - ".upskill/**"
+      - "evals/**"
+      - "upskill.config.yaml"
+      - "fastagent.config.yaml"
+      - "scripts/upskill_ci.py"
+      - "skills/**/SKILL.md"
+      - "skills/**/references/**"
+      - "skills/**/scripts/**"
+
+jobs:
+  upskill:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      UPSKILL_JUDGE_MODEL: "claude-haiku-4-5-20251001"
+      UPSKILL_CI_RUNS: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13.5"
+
+      - name: Resolve comparison ref
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "UPSKILL_BASE_REF=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_ENV"
+            echo "UPSKILL_PERSIST=false" >> "$GITHUB_ENV"
+          else
+            echo "UPSKILL_BASE_REF=${{ github.event.before }}" >> "$GITHUB_ENV"
+            echo "UPSKILL_PERSIST=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Run upskill comparison
+        run: |
+          set -euo pipefail
+          cmd=(
+            uv run
+            --python 3.13.5
+            --with git+https://github.com/huggingface/upskill@main
+            --with huggingface_hub
+            python
+            scripts/upskill_ci.py
+            --base-ref "$UPSKILL_BASE_REF"
+            --runs "$UPSKILL_CI_RUNS"
+          )
+          if [ "$UPSKILL_PERSIST" = "true" ]; then
+            cmd+=(--persist)
+          fi
+          "${cmd[@]}"
+
+      - name: Upload upskill artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: upskill-artifacts-${{ github.run_id }}
+          path: |
+            .upskill/artifacts
+            .upskill/reports
+          if-no-files-found: ignore

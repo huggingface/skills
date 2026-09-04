@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "input": "I want to index arXiv paper 2301.12345 on the Hub. Give the exact command.",
+      "verifiers": [
+        {"type": "contains", "values": ["uv run scripts/paper_manager.py index"]},
+        {"type": "contains", "values": ["--arxiv-id"]},
+        {"type": "contains", "values": ["2301.12345"]}
+      ]
+    }
+  ]
+}

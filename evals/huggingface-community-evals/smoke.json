@@ -1,0 +1,13 @@
+{
+  "cases": [
+    {
+      "input": "I want a quick local inspect-ai smoke test against a Hub model using inference providers, not Hugging Face Jobs. Give the command.",
+      "verifiers": [
+        {"type": "contains", "values": ["uv run scripts/inspect_eval_uv.py"]},
+        {"type": "contains", "values": ["--model"]},
+        {"type": "contains", "values": ["--task"]},
+        {"type": "contains", "values": ["--limit"]}
+      ]
+    }
+  ]
+}
