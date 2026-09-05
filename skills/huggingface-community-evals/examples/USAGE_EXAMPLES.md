@@ -17,7 +17,7 @@ This document provides practical examples for **running evaluations locally** ag
 - model-card PR creation
 - Hugging Face Jobs orchestration
 
-If you want to run these same scripts remotely, use the `hugging-face-jobs` skill and pass one of the scripts in `scripts/`.
+If you want to run these same scripts remotely, use the `huggingface-llm-trainer` skill and pass one of the scripts in `scripts/`.
 
 ## Setup
 
@@ -98,4 +98,4 @@ uv run scripts/lighteval_vllm_uv.py \
 
 ## Hand-off to Hugging Face Jobs
 
-When local hardware is not enough, switch to the `hugging-face-jobs` skill and run one of these scripts remotely. Keep the script path and args; move the orchestration there.
+When local hardware is not enough, switch to the `huggingface-llm-trainer` skill and run one of these scripts remotely. Keep the script path and args; move the orchestration there.
