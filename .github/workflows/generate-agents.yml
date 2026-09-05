@@ -50,7 +50,7 @@ jobs:
             --out-dir out/skills-index/latest \
             --branch main
 
-      - name: Test SEP-2640 skills catalog generation
+      - name: Test skills distribution generation
         run: uv run scripts/test_build_skill_distribution.py
 
       - name: Ensure skills distribution artifact builds
@@ -58,4 +58,6 @@ jobs:
           uv run scripts/build_skill_distribution.py \
             --skills-dir skills \
             --out-dir out/skills-distribution/latest \
-            --uri-prefix skill://
+            --uri-prefix skill:// \
+            --agent-skills-out-dir out/agent-skills-distribution/latest \
+            --agent-skills-public-base-url https://huggingface.co/buckets/huggingface/skills/resolve/agent-skills/latest

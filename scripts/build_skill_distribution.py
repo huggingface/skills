@@ -16,6 +16,10 @@ manifest containing the URI and raw-byte SHA-256 digest of every file in the
 published skill directory. All selected skill files are emitted under
 ``<out>/<name>/``; the bucket sync workflow publishes that expanded tree and its
 manifest together.
+
+When the Agent Skills output options are supplied, a separate v0.2 discovery
+index and its direct or archived artifacts are emitted without changing the
+legacy distribution.
 """
 
 from __future__ import annotations
@@ -42,6 +46,7 @@ IGNORE_DIRS = {"node_modules"}
 IGNORE_FILES = {".DS_Store"}
 SOURCE_REPO = "huggingface/skills"
 ARCHIVE_MEDIA_TYPE = "application/gzip"
+AGENT_SKILLS_SCHEMA_URI = "https://schemas.agentskills.io/discovery/0.2.0/schema.json"
 
 
 @dataclass(frozen=True)
@@ -327,6 +332,35 @@ def build_distribution(skills_dir: Path, out_dir: Path, uri_prefix: str) -> None
 	(out_dir / "_SUCCESS").write_text(generated_at + "\n", encoding="utf-8")
 
 
+def build_agent_skills_distribution(skills_dir: Path, out_dir: Path, public_base_url: str) -> None:
+	if out_dir.exists():
+		shutil.rmtree(out_dir)
+	out_dir.mkdir(parents=True)
+
+	entries = []
+	for skill in load_skills(skills_dir):
+		if len(skill.files) == 1 and skill.files[0].name == "SKILL.md":
+			artifact = write_skill_md(skill, out_dir)
+			artifact_type = "skill-md"
+			relative_url = f"{skill.name}/SKILL.md"
+		else:
+			artifact = write_archive(skill, out_dir)
+			artifact_type = "archive"
+			relative_url = f"{skill.name}.tar.gz"
+
+		entries.append(
+			{
+				"name": skill.name,
+				"type": artifact_type,
+				"description": skill.description,
+				"url": uri_join(public_base_url, relative_url),
+				"digest": f"sha256:{sha256_hex(artifact)}",
+			}
+		)
+
+	write_json(out_dir / "index.json", {"$schema": AGENT_SKILLS_SCHEMA_URI, "skills": entries})
+
+
 def write_json(path: Path, value: dict[str, Any]) -> None:
 	path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
@@ -336,12 +370,23 @@ def parse_args() -> argparse.Namespace:
 	parser.add_argument("--skills-dir", type=Path, default=Path("skills"), help="directory containing skill subdirectories")
 	parser.add_argument("--out-dir", type=Path, required=True, help="distribution output directory")
 	parser.add_argument("--uri-prefix", default="skill://", help="URI prefix used in generated indexes")
+	parser.add_argument("--agent-skills-out-dir", type=Path, help="Cloudflare Agent Skills distribution output directory")
+	parser.add_argument("--agent-skills-public-base-url", help="public base URL for Cloudflare Agent Skills artifacts")
 	return parser.parse_args()
 
 
 def main() -> None:
 	args = parse_args()
-	build_distribution(args.skills_dir.resolve(), args.out_dir.resolve(), args.uri_prefix)
+	if bool(args.agent_skills_out_dir) != bool(args.agent_skills_public_base_url):
+		raise ValueError("--agent-skills-out-dir and --agent-skills-public-base-url must be provided together")
+	skills_dir = args.skills_dir.resolve()
+	build_distribution(skills_dir, args.out_dir.resolve(), args.uri_prefix)
+	if args.agent_skills_out_dir:
+		build_agent_skills_distribution(
+			skills_dir,
+			args.agent_skills_out_dir.resolve(),
+			args.agent_skills_public_base_url,
+		)
 
 
 if __name__ == "__main__":

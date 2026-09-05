@@ -39,7 +39,9 @@ jobs:
           uv run scripts/build_skill_distribution.py \
             --skills-dir skills \
             --out-dir out/skills-distribution/latest \
-            --uri-prefix skill://
+            --uri-prefix skill:// \
+            --agent-skills-out-dir out/agent-skills-distribution/latest \
+            --agent-skills-public-base-url https://huggingface.co/buckets/huggingface/skills/resolve/agent-skills/latest
 
       - name: Sync skills to bucket
         env:
@@ -49,3 +51,4 @@ jobs:
           uvx hf buckets cp ./.claude-plugin/marketplace-internal.json hf://buckets/huggingface/skills/marketplace.json
           uvx hf buckets sync ./out/skills-index/latest hf://buckets/huggingface/skills/index/latest --delete
           uvx hf buckets sync ./out/skills-distribution/latest hf://buckets/huggingface/skills/distribution/latest --delete
+          uvx hf buckets sync ./out/agent-skills-distribution/latest hf://buckets/huggingface/skills/agent-skills/latest --delete
