@@ -246,12 +246,13 @@ def main():
         columns = list(first_row.keys())
         features = rows_data.get("features", [])
         
-        # Get total count if available
+        # Get total count if available (the rows endpoint reports it, /splits does not)
         total_examples = "Unknown"
-        for split_info in splits_data["splits"]:
-            if split_info["config"] == config_to_use and split_info["split"] == args.split:
-                total_examples = f"{split_info.get('num_examples', 'Unknown'):,}" if isinstance(split_info.get('num_examples'), int) else "Unknown"
-                break
+        num_rows_total = rows_data.get("num_rows_total")
+        if isinstance(num_rows_total, int):
+            total_examples = f"{num_rows_total:,}"
+            if rows_data.get("partial"):
+                total_examples += " (partial)"
         
     except Exception as e:
         print(f"ERROR: {str(e)}")
