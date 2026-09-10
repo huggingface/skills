@@ -558,17 +558,20 @@ def main():
 
         # Find the right config
         available_configs = set()
+        configs_with_split = set()
         split_found = False
         config_to_use = args.config
 
         for split_info in splits_data["splits"]:
             available_configs.add(split_info["config"])
+            if split_info["split"] == args.split:
+                configs_with_split.add(split_info["config"])
             if split_info["config"] == args.config and split_info["split"] == args.split:
                 split_found = True
 
-        # If default config not found, try first available
+        # If default config not found, try first config that has the requested split
         if not split_found and available_configs:
-            config_to_use = list(available_configs)[0]
+            config_to_use = sorted(configs_with_split or available_configs)[0]
             print(f"Config '{args.config}' not found, trying '{config_to_use}'...")
 
         # Get rows
