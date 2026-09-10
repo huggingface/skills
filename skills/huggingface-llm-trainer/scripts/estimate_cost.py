@@ -74,8 +74,11 @@ def parse_args():
 
 def extract_model_size(model_name):
     """Extract model size from name or return parsed value."""
-    for size_str, size_val in MODEL_SIZES.items():
-        if size_str in model_name:
+    # Match case-insensitively ("Llama-2-7b-hf") and longest key first, so that
+    # "13B" is not swallowed by the "3B" entry.
+    name_upper = model_name.upper()
+    for size_str, size_val in sorted(MODEL_SIZES.items(), key=lambda item: -len(item[0])):
+        if size_str in name_upper:
             return size_val
     
     # Try to parse directly
