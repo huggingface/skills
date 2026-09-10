@@ -55,7 +55,9 @@ def parse_frontmatter(text: str) -> dict[str, str]:
         key = key.strip()
         value = value.strip()
 
-        if value in {">", "|"}:
+        # Block scalar header: ">" or "|", optionally followed by an
+        # indentation indicator and/or a chomping indicator (e.g. ">-", "|2+").
+        if re.fullmatch(r"[>|][0-9]*[-+]?", value):
             folded: list[str] = []
             index += 1
             while index < len(lines):
