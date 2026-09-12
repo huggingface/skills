@@ -424,20 +424,18 @@ Before submitting:
 
 **Identify models to train based on task type or benchmark results.**
 
-Use `scripts/hf_benchmarks.py` to identify top-performing models for specific tasks. This helps the user select a model as the base for training, whilst keeping size and hardware constraints in mind.
+Use `scripts/hf_benchmarks.py` to help choose a base model while keeping task fit, model size, and hardware constraints in mind.
+
+Capabilities:
+- search official benchmark datasets by free text, alias, task, and modality
+- fetch normalized leaderboard rows for benchmark datasets
+- fetch normalized `evalResults` rows for one or more candidate models
+- work well in pipelines via stdin plus table / JSON / NDJSON output
+
+For command details, examples, and flags, use:
 
 ```bash
-# Get help on the benchmarks command:
 uv run scripts/hf_benchmarks.py --help
-```
-
-### Example -- choosing an OCR base model
-```bash
-# Search for benchmarks containing whose name contains the text `ocr`
-uv run scripts/hf_benchmarks.py search --query ocr
-
-# Get the ranked leaderboard for the allenai/olmOCR-bench benchmark 
-uv run scripts/hf_benchmarks.py leaderboard allenai/olmOCR-bench
 ```
 
 ## Cost Estimation
@@ -710,7 +708,7 @@ Add to PEP 723 header:
 - `scripts/unsloth_sft_example.py` - Unsloth text LLM training template (faster, less VRAM)
 - `scripts/estimate_cost.py` - Estimate time and cost (offer when appropriate)
 - `scripts/convert_to_gguf.py` - Complete GGUF conversion script
-- `scripts/hf_benchmarks.py` - Search for benchmark results and leaderboards by task, alias or free text.
+- `scripts/hf_benchmarks.py` - Search benchmark datasets, fetch dataset leaderboards, and inspect model `evalResults`.
 
 ### External Scripts
 - [Dataset Inspector](https://huggingface.co/datasets/mcp-tools/skills/raw/main/dataset_inspector.py) - Validate dataset format before training (use via `uv run` or `hf_jobs`)
