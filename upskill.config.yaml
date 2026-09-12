@@ -1,0 +1,7 @@
+skill_generation_model: kimi
+eval_model: opus
+executor: local
+num_runs: 1
+max_parallel: 1
+runs_dir: ./.upskill/runs
+fastagent_config: ./fastagent.config.yaml

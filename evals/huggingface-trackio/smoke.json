@@ -1,0 +1,11 @@
+{
+  "cases": [
+    {
+      "input": "How do I retrieve Trackio alerts as JSON for automation?",
+      "verifiers": [
+        {"type": "contains", "values": ["trackio list alerts"]},
+        {"type": "contains", "values": ["--json"]}
+      ]
+    }
+  ]
+}

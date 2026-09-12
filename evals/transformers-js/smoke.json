@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "input": "Show the minimal Node.js sentiment-analysis setup with Transformers.js, including cleanup.",
+      "verifiers": [
+        {"type": "contains", "values": ["npm install @huggingface/transformers"]},
+        {"type": "contains", "values": ["pipeline("]},
+        {"type": "contains", "values": [".dispose()"]}
+      ]
+    }
+  ]
+}
