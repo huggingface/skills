@@ -1,0 +1,135 @@
+# The SKILL.md Format
+
+Every agent skill is defined by atleast one `SKILL.md` file which is a markdown document with YAML frontmatter that tells the agent what the skill does and how to use it. The format is specified by the [Agent Skills Specification](https://agentskills.io), an open standard for defining portable agent capabilities.
+
+## Why Markdown?
+
+The choice of markdown is deliberate. Markdown is universally readable by both humans and language models. It doesn't require special tooling to write or edit. It works with version control systems like Git. And it's already the lingua franca of documentation in the software world. By building on markdown, the Agent Skills Specification ensures that skills are accessible to anyone, regardless of which coding agent they use.
+
+## The Basic Structure
+
+A `SKILL.md` file has two parts: **frontmatter** and **body**.
+
+```markdown
+---
+name: my-skill
+description: A brief description of what this skill does
+---
+
+# My Skill
+
+Instructions that the agent follows when this skill is activated.
+
+## When to Use This Skill
+
+Describe the situations where this skill applies.
+
+## Workflow
+
+1. Step one
+2. Step two
+3. Step three
+
+## Important Notes
+
+Any caveats, edge cases, or best practices.
+```
+
+The frontmatter (between the `---` delimiters) contains metadata. The body contains the actual instructions the agent will follow.
+
+## Frontmatter Fields
+
+The frontmatter uses YAML syntax. In the Agent Skills spec, two fields are required and additional optional metadata can be added as needed:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | ✅ | A unique identifier for the skill (kebab-case) |
+| `description` | ✅ | A short description of the skill's purpose |
+| `license` | ❌ | License information for the skill contents |
+| `metadata` | ❌ | Additional structured metadata for tooling and discovery |
+
+Here's a real example from the `hugging-face-model-trainer` skill:
+
+```yaml
+---
+name: hugging-face-model-trainer
+description: Fine-tune language models using TRL with SFT, DPO, and GRPO on Hugging Face Jobs infrastructure
+license: Complete terms in LICENSE.txt
+---
+```
+
+## Body Content
+
+The body of the `SKILL.md` is where the real instructions live. It contains the instructions that the agent reads and follows. Good skill bodies share several characteristics:
+
+<p style="font-weight: bold;text-decoration: underline;display: inline;">Clear scope</p>: They define exactly when the skill should be used and what tasks it covers. This helps the agent decide whether to activate the skill for a given request. <br><br>
+
+
+<p style="font-weight: bold;text-decoration: underline;display: inline;">Step-by-step workflows</p>: They break complex tasks into sequential steps, making it easy for the agent to follow the process without skipping important details. <br><br>
+
+<p style="font-weight: bold;text-decoration: underline;display: inline;">Configuration guidance</p>: They explain how to make decisions about parameters, hardware selection, and other configuration options based on the user's specific situation. <br><br> 
+
+<p style="font-weight: bold;text-decoration: underline;display: inline;">Error handling</p>: They describe common failure modes and how to recover from them. <br><br>
+
+<p style="font-weight: bold;text-decoration: underline;display: inline;">References to scripts and templates</p>: They point the agent to helper scripts and templates in the skill's directory that automate repetitive work. <br><br>
+
+## A Minimal Example
+
+Here's the simplest skill that teaches an agent to create a Python virtual environment with best practices:
+
+````markdown
+---
+name: python-venv
+description: Create and manage Python virtual environments with best practices
+---
+
+# Python Virtual Environment Skill
+
+## When to Use
+
+Use this skill when the user asks to create a Python project, set up a virtual environment, or manage dependencies.
+
+## Workflow
+
+1. Create a virtual environment in the project directory:
+   ```bash
+   python -m venv .venv
+   ```
+
+2. Activate the environment:
+   ```bash
+   source .venv/bin/activate
+   ```
+
+3. Upgrade pip to the latest version:
+   ```bash
+   pip install --upgrade pip
+   ```
+
+4. If a `requirements.txt` exists, install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## Important Notes
+
+- Always use `.venv` as the directory name for consistency
+- Add `.venv/` to `.gitignore`
+- Use `python -m pip` instead of bare `pip` to avoid path issues
+````
+
+> [!NOTE]
+> **Skills are not always about the 'best' approach.** Sometimes the user will want to use a different approach, and the skill is used to introduce consistency and best practices.
+
+## What Makes a Good SKILL.md
+
+The best skills are **concise but complete**. The `cuda-kernels` skill, for example, is only about 550 tokens — yet it covers GPU architecture guidance, integration patterns, kernel templates, benchmarking workflows, and Hub integration. Every sentence earns its place.
+
+Keep these principles in mind:
+
+- **Be specific**: Vague instructions lead to vague results. Tell the agent exactly what to do.
+- **Be opinionated**: Skills should encode best practices, not present every possible option.
+- **Be structured**: Use headers, numbered lists, and code blocks to make instructions easy to parse.
+- **Be practical**: Include real commands, real file paths, and real examples the agent can use directly.
+
+In the next section, we'll look at the full anatomy of a skill — including the scripts, references, and templates that accompany the `SKILL.md` file.

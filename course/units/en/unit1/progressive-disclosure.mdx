@@ -1,0 +1,101 @@
+# Progressive Disclosure
+
+When you install a skill, the agent doesn't read every file in the skill directory upfront. Instead, skills use a pattern called **progressive disclosure** — the agent loads information incrementally, starting with a high-level overview and diving deeper only when needed. This keeps the agent's context window focused and efficient.
+
+## Why Progressive Disclosure Matters
+
+Coding agents work have a context window which determines the amount of text they can process at once. Loading an entire skill directory (thousands of tokens of scripts, references, and examples) into context for every request would be wasteful. Most requests only need a fraction of the skill's total knowledge. 
+
+> [!NOTE]
+> It's important to only load the information that is needed for the current request. Which we ensure by creating well structured skills with progressive disclosure.
+
+## How It Works in Practice
+
+Let's trace what happens when you ask an agent with the `hugging-face-model-trainer` skill to fine-tune a model:
+
+### Step 1: Discovery
+
+The agent scans its installed skills and sees:
+
+```yaml
+name: hugging-face-model-trainer
+description: Fine-tune language models using TRL with SFT, DPO, and GRPO
+```
+
+This is enough to determine that the skill is relevant to the user's request. The agent decides to activate it.
+
+### Step 2: Activation
+
+The agent reads the `SKILL.md` body, which contains the workflow:
+
+```
+1. Validate the dataset
+2. Select appropriate hardware
+3. Generate training script
+4. Submit job to HF Jobs
+5. Monitor with Trackio
+6. Push model to Hub
+```
+
+Now the agent has a plan. It starts executing the steps.
+
+### Step 3: Deep Dive
+
+At step 2 (select hardware), the agent needs to choose between GPU types. The `SKILL.md` tells it to consult `references/hardware_guide.md`. The agent reads that file to find the mapping between model sizes and GPU types.
+
+At step 3 (generate training script), the agent looks at the `scripts/train_sft_example.py` template and adapts it for the user's specific model and dataset.
+
+The agent never loads the DPO or GRPO templates because this is an SFT task. It never reads the troubleshooting guide because nothing went wrong. Each piece of information is loaded only when it's needed.
+
+## The Agent's Perspective
+
+From the agent's perspective, progressive disclosure works through file system access. The `SKILL.md` acts like a map pointing to the relevant files:
+
+```markdown
+## Hardware Selection
+
+For detailed GPU recommendations by model size, see
+`references/hardware_guide.md`.
+```
+
+When the agent reaches this point in the workflow, it reads the referenced file. This is a natural pattern for coding agents, which already know how to navigate file systems and read documents.
+
+> [!NOTE]
+> You might also think of the `SKILL.md` as a 'home page' for the skill, pointing to the relevant files for the current step.
+
+## Designing for Progressive Disclosure
+
+When writing your own skills, keep progressive disclosure in mind:
+
+**Keep `SKILL.md` focused on the workflow.** The main file should be a concise roadmap — typically 300-800 tokens. It tells the agent what to do and where to find more detail, but doesn't try to contain every piece of information.
+
+**Put deep knowledge in reference files.** Detailed guides, edge case documentation, and technical specifications belong in `references/`. The agent reads them only when the workflow calls for it.
+
+**Use scripts for automation.** Rather than describing how to write a training script in prose, provide a template script that the agent can read, understand, and adapt. This is more reliable than having the agent generate code from scratch.
+
+**Use clear file paths.** When the `SKILL.md` references other files, use explicit relative paths so the agent knows exactly where to look:
+
+````markdown
+## Dataset Validation
+
+Run the validation script before starting training:
+```bash
+python scripts/validate_dataset.py --repo-id "user/dataset"
+```
+````
+
+## Progressive Disclosure vs. Monolithic Prompts
+
+It's worth contrasting progressive disclosure with the alternative: putting everything in one giant prompt.
+
+| Aspect | Monolithic Prompt | Progressive Disclosure |
+|--------|-------------------|----------------------|
+| Context usage | Consumes full context window | Uses context efficiently |
+| Relevance | Many irrelevant details loaded | Only relevant details loaded |
+| Maintainability | One large file to update | Modular files, easy to update |
+| Reusability | Tied to one conversation | Portable across agents |
+| Depth | Limited by prompt length | Unlimited reference depth |
+
+Progressive disclosure gives you the best of both worlds: a concise starting point that expands into deep expertise as needed.
+
+In the next section, we'll put all of this into practice by writing your first skill from scratch.

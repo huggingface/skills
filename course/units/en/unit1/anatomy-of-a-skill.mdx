@@ -1,0 +1,97 @@
+# Anatomy of a Skill
+
+A `SKILL.md` file is the heart of a skill, but production skills typically include additional components: helper scripts, reference documents, templates, and examples. Let's look at how these pieces fit together using real skills from the Hugging Face ecosystem.
+
+## Skill Directory Structure
+
+A complete skill lives in a directory with this general layout:
+
+```
+my-skill/
+├── SKILL.md                    # Main instruction file
+├── scripts/                    # Helper scripts the agent can run
+│   ├── script.py
+├── references/                 # Supplementary documentation
+│   ├── reference.md
+├── templates/                  # Starter templates
+│   └── config.yaml
+└── examples/                   # Worked examples
+    ├── example.md
+    └── data.json
+```
+
+The `SKILL.md` file references these supporting files by relative path. When the agent needs to run a training script, it knows to look in `scripts/`. When it needs to decide which GPU to use, it can consult `references/reference.md`.
+
+## How the Pieces Work Together
+
+When an agent activates a skill, it follows this general pattern:
+
+1. **Read `SKILL.md`** — Understand the high-level workflow and decision points
+2. **Consult references** — Look up specific guidance (e.g., which GPU for a 3B model)
+3. **Use scripts** — Run helper scripts or adapt templates for the user's task
+4. **Follow the workflow** — Execute the steps in order, reporting progress along the way
+
+The key insight is that the `SKILL.md` serves as the **router** — it tells the agent what to do at each step and where to find the details. The scripts and references provide the **depth** that makes execution reliable.
+
+## Real-World Example: The Model Trainer Skill
+
+Let's examine the `hugging-face-model-trainer` skill, which teaches agents to fine-tune language models. Its directory looks like this:
+
+```
+hugging-face-model-trainer/
+├── SKILL.md
+├── scripts/
+│   ├── train_sft_example.py      # SFT training template
+│   ├── train_dpo_example.py      # DPO training template
+│   ├── train_grpo_example.py     # GRPO training template
+│   └── validate_dataset.py       # Dataset format checker
+└── references/
+    ├── training_methods.md       # When to use SFT vs DPO vs GRPO
+    └── hardware_guide.md         # GPU selection by model size
+```
+
+### The SKILL.md File
+
+The main instruction file tells the agent:
+
+- **When to activate**: Any request involving model training, fine-tuning, or alignment
+- **Supported methods**: SFT (Supervised Fine-Tuning), DPO (Direct Preference Optimization), GRPO (Group Relative Policy Optimization)
+- **Workflow**: Validate dataset → select hardware → generate script → submit to HF Jobs → monitor with Trackio → push to Hub
+- **Decision logic**: How to choose between training methods based on the dataset format and user's goal
+
+### Helper Scripts
+
+The scripts in `scripts/` are production-ready templates the agent can use directly or adapt. For example, `train_sft_example.py` includes:
+
+- A trainer configuration with usible defaults.
+- Metric tracking integration for real-time monitoring
+- Optimized training parameters for efficient training
+- Automatic model pushing to the Hub
+
+The agent doesn't write training scripts from scratch — it starts from these tested templates and customizes them for the user's specific task.
+
+### Reference Documents
+
+The reference files provide deeper context that the agent can consult when making decisions:
+
+- **`training_methods.md`** explains when to choose SFT vs DPO vs GRPO, with concrete examples
+- **`hardware_guide.md`** maps model sizes to GPU types and costs:
+
+| Model Size | GPU | Estimated Cost | Notes |
+|-----------|-----|----------------|-------|
+| < 1B | t4-small | $1-2 | Quick test runs |
+| 1-3B | a10g-small | $5-15 | Few hours |
+| 3-7B | a10g-large + LoRA | $15-40 | Production-ready |
+
+## Designing Your Own Skill Structure
+
+When creating a new skill, think about what your agent needs at each stage:
+
+- **What decisions does it need to make?** → Write decision logic in `SKILL.md`, put supporting data in `references/`
+- **What repetitive code does it need to write?** → Create templates in `scripts/`
+- **What edge cases might it encounter?** → Document them in `references/troubleshooting.md`
+- **What does a successful run look like?** → Add worked examples in `examples/`
+
+You don't need all of these for every skill. A simple skill might just be a `SKILL.md` file. But as your skill covers more complex workflows, having supporting files makes the difference between an agent that sometimes gets it right and one that consistently delivers.
+
+In the next section, we'll look at how agents discover and load skills — the mechanism called progressive disclosure.
