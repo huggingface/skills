@@ -35,6 +35,17 @@ for epoch in range(10):
 trackio.finish()
 ```
 
+### Running Scripts With A Logbook
+
+If the working directory has a Trackio logbook, run ML scripts through `trackio logbook run -- ...` instead of invoking `python ...` directly:
+
+```bash
+trackio logbook page "Baseline"
+trackio logbook run -- python train.py --lr 1e-4
+```
+
+The script should still call `trackio.init()`, `trackio.log()`, and `trackio.finish()` normally. The wrapper captures provenance around the run: exact command, detected script/config files, live output, stored truncated output, exit code, and duration.
+
 ### Key Functions
 
 | Function | Purpose |

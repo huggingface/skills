@@ -4,6 +4,9 @@ Alerts let you flag important training events directly from code. They are the p
 
 Alerts are printed to the terminal, stored in the database, displayed in the dashboard, and optionally sent to webhooks (Slack/Discord).
 
+<img width="2972" height="1694" alt="image" src="https://github.com/user-attachments/assets/02d938f8-51a9-4706-85c4-d95b7645bcf4" />
+
+
 ## Core API
 
 ### trackio.alert()
