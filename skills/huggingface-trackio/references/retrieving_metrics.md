@@ -1,6 +1,6 @@
 # Retrieving Metrics with Trackio CLI
 
-The `trackio` CLI provides direct terminal access to query Trackio experiment tracking data locally without needing to start the MCP server.
+The `trackio` CLI provides direct terminal access to query Trackio experiment tracking data without needing to start the MCP server. Commands work against local data by default, or against a remote HF Space when `--space` is provided.
 
 ## Quick Command Reference
 
@@ -11,6 +11,7 @@ The `trackio` CLI provides direct terminal access to query Trackio experiment tr
 | List metrics | `trackio list metrics --project <name> --run <name>` |
 | List system metrics | `trackio list system-metrics --project <name> --run <name>` |
 | List alerts | `trackio list alerts --project <name> [--run <name>] [--level <level>] [--since <timestamp>]` |
+| List traces | `trackio list traces --project <name> [--run <name>] [--search <text>] [--step <N>]` |
 | Get project summary | `trackio get project --project <name>` |
 | Get run summary | `trackio get run --project <name> --run <name>` |
 | Get metric values | `trackio get metric --project <name> --run <name> --metric <name>` |
@@ -18,6 +19,10 @@ The `trackio` CLI provides direct terminal access to query Trackio experiment tr
 | Get metric around step | `trackio get metric ... --metric <name> --around <N> --window <W>` |
 | Get all metrics snapshot | `trackio get snapshot --project <name> --run <name> --step <N>` |
 | Get system metrics | `trackio get system-metric --project <name> --run <name>` |
+| Get one trace + span tree | `trackio get trace --project <name> --trace-id <id>` |
+| Roll up trace operations | `trackio get trace-summary --project <name> [--run <name>]` |
+| Run direct SQL | `trackio query project --project <name> --sql "SELECT ..."` |
+| Query remote Space | `trackio list projects --space <space_id_or_url>` |
 | Show dashboard | `trackio show [--project <name>]` |
 | Sync to Space | `trackio sync --project <name> --space-id <space_id>` |
 
@@ -68,6 +73,53 @@ trackio get system-metric --project <name> --run <name> --metric <name>  # Speci
 trackio get system-metric --project <name> --run <name> --json
 ```
 
+### Trace Commands
+
+Traces are agent/LLM sessions carrying execution spans (model generations, tool
+calls) with latency, status, token usage, and cost.
+
+```bash
+trackio list traces --project <name>                          # Newest traces across all runs
+trackio list traces --project <name> --run <name>             # One run
+trackio list traces --project <name> --search "rate limit"    # Match messages, metadata, span names/models/errors
+trackio list traces --project <name> --step 12                # Traces logged at one step
+trackio list traces --project <name> --sort step_desc --limit 100 --offset 50
+trackio list traces --project <name> --json                   # Adds a per-trace `summary` rollup
+
+trackio get trace --project <name> --trace-id <id>            # Full span tree, per-span cost/tokens/errors
+trackio get trace-summary --project <name> [--run <name>]     # Per-operation rollup
+```
+
+`list traces` prints the short trace id (the `log_id` segment); `get trace`
+accepts either that or the full stored id. `--sort` accepts
+`request_time_desc` (default), `request_time_asc`, `step_asc`, `step_desc`.
+
+**To analyze traces** — "what can we improve", "why is the agent slow or
+expensive", "what's failing" — follow the funnel in
+[traces.md](traces.md): orient, roll up, quantify each anomaly with SQL, then
+verify against one full trace. That reference also has the `json_each` recipes
+for tool failures, cost attribution, bimodal latency, and context growth.
+
+### Query Command
+
+```bash
+trackio query project --project <name> --sql "SELECT name FROM sqlite_master WHERE type = 'table'"
+trackio query project --project <name> --sql "PRAGMA table_info(metrics)" --json
+trackio query project --project <name> --sql "SELECT run_name, MAX(step) AS last_step FROM metrics GROUP BY run_name"
+```
+
+### Remote Space Queries
+
+All `list`, `get`, and `query` commands support querying a remote HF Space with `--space`:
+
+```bash
+trackio list projects --space user/my-space              # Space ID
+trackio list projects --space https://user-my-space.hf.space  # Space URL
+trackio get metric --project <name> --run <name> --metric loss --space user/my-space
+trackio query project --project <name> --sql "SELECT COUNT(*) AS num_alerts FROM alerts" --space user/my-space
+trackio list projects --space user/private-space --hf-token hf_xxx  # Private Space
+```
+
 ### Dashboard Commands
 
 ```bash
@@ -88,7 +140,7 @@ trackio sync --project <name> --space-id <space_id> --force   # Overwrite
 
 ## Output Formats
 
-All `list` and `get` commands support two output formats:
+All `list`, `get`, and `query` commands support two output formats:
 
 - **Human-readable** (default): Formatted text for terminal viewing
 - **JSON** (with `--json` flag): Structured JSON for programmatic use
@@ -145,6 +197,9 @@ trackio get run --project my-project --run my-run --json > run_summary.json
 
 # Filter runs with jq
 trackio list runs --project my-project --json | jq '.runs[] | select(startswith("train"))'
+
+# Run a direct SQL aggregate
+trackio query project --project my-project --sql "SELECT run_name, MAX(step) AS last_step FROM metrics GROUP BY run_name" --json
 ```
 
 ### LLM Agent Workflow
@@ -167,6 +222,14 @@ trackio list alerts --project my-project --json --since "2025-06-01T00:00:00"
 
 # 6. When an alert fires at step N, get all metrics around that point
 trackio get snapshot --project my-project --run my-run --around 200 --window 5 --json
+
+# 7. Review production agent behaviour (see traces.md for the full funnel)
+trackio get trace-summary --project <name> --json
+trackio list traces --project <name> --search "error" --json
+trackio get trace --project <name> --trace-id <id> --json
+
+# 8. Fall back to direct SQL for one-off inspection
+trackio query project --project my-project --sql "SELECT timestamp, run_name, level, title FROM alerts ORDER BY timestamp DESC LIMIT 20" --json
 ```
 
 ## Error Handling
@@ -184,7 +247,10 @@ All errors exit with non-zero status code and write to stderr.
 - `--project`: Project name (required for most commands)
 - `--run`: Run name (required for run-specific commands)
 - `--metric`: Metric name (required for metric-specific commands)
+- `--sql`: Read-only SQL query (for `trackio query`)
 - `--json`: Output in JSON format instead of human-readable
+- `--space`: HF Space ID (e.g. `user/space`) or Space URL to query remotely (for `list`/`get`/`query` commands)
+- `--hf-token`: HF token for accessing private Spaces (for `list`/`get`/`query` commands with `--space`)
 - `--step`: Exact step filter (for `get metric`, `get snapshot`)
 - `--around`: Center step for window filter (for `get metric`, `get snapshot`)
 - `--at-time`: Center ISO timestamp for window filter (for `get metric`, `get snapshot`)
@@ -244,8 +310,23 @@ All errors exit with non-zero status code and write to stderr.
 }
 ```
 
+### Query Result
+```json
+{
+  "project": "my-project",
+  "query": "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
+  "columns": ["name"],
+  "rows": [
+    {"name": "alerts"},
+    {"name": "configs"},
+    {"name": "metrics"}
+  ],
+  "row_count": 3
+}
+```
+
 ## References
 
-- **Complete CLI documentation**: See [docs/source/cli_commands.md](docs/source/cli_commands.md)
-- **API and MCP Server**: See [docs/source/api_mcp_server.md](docs/source/api_mcp_server.md)
-
+- **Complete CLI documentation**: See the [Trackio CLI guide](https://huggingface.co/docs/trackio/cli_commands)
+- **Storage schema and direct SQL**: See [storage_schema.md](storage_schema.md)
+- **API and MCP Server**: See the [Trackio API and MCP server guide](https://huggingface.co/docs/trackio/api_mcp_server)
