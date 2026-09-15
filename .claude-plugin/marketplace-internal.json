@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Full Hugging Face Skills manifest for hf skills, MCP, and discovery. Client plugin marketplaces use curated manifests.",
-    "version": "1.0.28"
+    "version": "1.0.29"
   },
   "plugins": [
     {
@@ -127,6 +127,12 @@
       "source": "./skills/huggingface-trackio",
       "skills": "./",
       "description": "Track and visualize ML training experiments with Trackio."
+    },
+    {
+      "name": "huggingface-transformers-review-pr",
+      "source": "./skills/huggingface-transformers-review-pr",
+      "skills": "./",
+      "description": "Review Hugging Face Transformers pull requests and local branches in fast or deep mode, covering general bug fixes, refactors, and model additions."
     },
     {
       "name": "huggingface-vision-trainer",
