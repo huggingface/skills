@@ -1,0 +1,147 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>deep-review execution graph</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0; padding: 16px 8px; background: #fcfcfb; color: #0b0b0b;
+    font: 13px/1.4 ui-sans-serif, system-ui, sans-serif;
+  }
+  h1 { font-size: 15px; margin: 0 0 2px; }
+  p.sub { margin: 0 0 12px; color: #52514e; font-size: 12px; }
+  .legend { display: flex; gap: 16px; margin-bottom: 8px; font-size: 12px; color: #52514e; flex-wrap: wrap; }
+  .legend span::before {
+    content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+    margin-right: 5px; vertical-align: -1px; background: var(--c);
+  }
+  #wrap { overflow-x: auto; }
+  svg { display: block; max-width: 100%; height: auto; }
+  text { fill: #0b0b0b; font: 11px ui-sans-serif, system-ui, sans-serif; }
+  text.head { font-weight: 600; font-size: 12px; fill: #52514e; }
+  .edge { stroke: #0b0b0b; stroke-opacity: 0.07; fill: none; stroke-width: 1; }
+  .edge.hl { stroke-opacity: 0.85; stroke-width: 1.6; }
+  .node { cursor: default; }
+  .node rect { fill: transparent; }
+  .node .chip { rx: 2; }
+  .node.dim.hl text, .node.hl text { font-weight: 600; }
+  .node.faded { opacity: 0.25; }
+  #tip {
+    position: fixed; pointer-events: none; display: none; max-width: 420px;
+    background: #0b0b0b; color: #fcfcfb; padding: 6px 8px; border-radius: 4px;
+    font: 11px ui-monospace, monospace; z-index: 2;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #1a1a19; color: #ffffff; }
+    p.sub, .legend { color: #c3c2b7; }
+    text { fill: #ffffff; } text.head { fill: #c3c2b7; }
+    .edge { stroke: #ffffff; }
+    #tip { background: #fcfcfb; color: #0b0b0b; }
+  }
+</style>
+</head>
+<body>
+<h1>transformers-deep-review — execution graph</h1>
+<p class="sub">detector fires &rarr; read the dimension's reference section; detector silent &rarr; that grep is the <code>not&nbsp;triggered</code> evidence. Hover any node. All 41 dimensions always get a DIMENSIONS line.</p>
+<div class="legend">
+  <span style="--c:#2a78d6">grep detector</span>
+  <span style="--c:#eb6834">absence check (new_model / refactor)</span>
+  <span style="--c:#1baf7a">always-on dimension</span>
+  <span style="--c:#52514e">reference file</span>
+</div>
+<div id="wrap"></div>
+<div id="tip"></div>
+<script src="execution_graph.js"></script>
+<script>
+(function () {
+  const G = window.GRAPH;
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const C = dark
+    ? { det: "#3987e5", abs: "#d95926", on: "#199e70", ref: "#c3c2b7" }
+    : { det: "#2a78d6", abs: "#eb6834", on: "#1baf7a", ref: "#52514e" };
+
+  const detectors = G.detectors.map(d => ({ ...d, kind: "det" }))
+    .concat(G.absence_checks.map(d => ({ ...d, kind: "abs" })));
+  const rowH = 26, top = 30;
+  const H = top + Math.max(detectors.length, G.dimensions.length) * rowH + 10;
+  const X = { det: 10, dim: 420, ref: 760 };
+  const W = { det: 240, dim: 250, ref: 220 };
+  const SVGW = 1000;
+
+  const dimY = {}, detY = {}, refY = {};
+  G.dimensions.forEach((d, i) => dimY[d.id] = top + i * rowH);
+  detectors.forEach((d, i) => detY[d.id] = top + i * rowH * (G.dimensions.length / detectors.length));
+  const refGap = (H - top) / G.references.length;
+  G.references.forEach((r, i) => refY[r] = top + refGap / 2 + i * refGap);
+
+  const edges = [];
+  detectors.forEach(d => d.dims.forEach(t =>
+    edges.push({ from: d.id, to: t, x1: X.det + W.det, y1: detY[d.id], x2: X.dim, y2: dimY[t], color: C[d.kind] })));
+  G.dimensions.forEach(d =>
+    edges.push({ from: d.id, to: d.ref, x1: X.dim + W.dim, y1: dimY[d.id], x2: X.ref, y2: refY[d.ref], color: C.ref }));
+
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const path = e => `M${e.x1},${e.y1} C${(e.x1 + e.x2) / 2},${e.y1} ${(e.x1 + e.x2) / 2},${e.y2} ${e.x2},${e.y2}`;
+
+  let svg = `<svg viewBox="0 0 ${SVGW} ${H}" width="${SVGW}" height="${H}">`;
+  svg += `<text class="head" x="${X.det}" y="16">detectors</text>`;
+  svg += `<text class="head" x="${X.dim}" y="16">dimensions</text>`;
+  svg += `<text class="head" x="${X.ref}" y="16">references</text>`;
+  edges.forEach((e, i) => svg += `<path class="edge" id="e${i}" d="${path(e)}" data-from="${e.from}" data-to="${e.to}" data-c="${e.color}"/>`);
+
+  detectors.forEach(d => {
+    const y = detY[d.id];
+    svg += `<g class="node" data-id="${d.id}" data-tip="${esc(d.match || d.check)}">` +
+      `<rect x="${X.det - 4}" y="${y - 11}" width="${W.det + 8}" height="22"/>` +
+      `<rect class="chip" x="${X.det}" y="${y - 5}" width="10" height="10" fill="${C[d.kind]}"/>` +
+      `<text x="${X.det + 16}" y="${y + 4}">${esc(d.label)}</text></g>`;
+  });
+  G.dimensions.forEach(d => {
+    const y = dimY[d.id], on = G.always_on.includes(d.id);
+    svg += `<g class="node dim" data-id="${d.id}" data-tip="${d.id} &rarr; ${esc(d.ref)}${on ? " (always-on)" : ""}">` +
+      `<rect x="${X.dim - 4}" y="${y - 11}" width="${W.dim + 8}" height="22"/>` +
+      (on ? `<rect class="chip" x="${X.dim}" y="${y - 5}" width="10" height="10" fill="${C.on}"/>` : "") +
+      `<text x="${X.dim + 16}" y="${y + 4}"><tspan font-weight="600">${d.id}</tspan> ${esc(d.name)}</text></g>`;
+  });
+  G.references.forEach(r => {
+    const y = refY[r];
+    svg += `<g class="node" data-id="${r}" data-tip="references/${esc(r)}">` +
+      `<rect x="${X.ref - 4}" y="${y - 11}" width="${W.ref + 8}" height="22"/>` +
+      `<rect class="chip" x="${X.ref}" y="${y - 5}" width="10" height="10" fill="none" stroke="${C.ref}" stroke-width="1.5"/>` +
+      `<text x="${X.ref + 16}" y="${y + 4}">${esc(r)}</text></g>`;
+  });
+  svg += "</svg>";
+  document.getElementById("wrap").innerHTML = svg;
+
+  const tip = document.getElementById("tip");
+  const nodes = [...document.querySelectorAll(".node")];
+  const paths = [...document.querySelectorAll(".edge")];
+  nodes.forEach(n => {
+    n.addEventListener("mousemove", ev => {
+      tip.style.display = "block";
+      tip.style.left = Math.min(ev.clientX + 12, innerWidth - 440) + "px";
+      tip.style.top = ev.clientY + 12 + "px";
+      tip.textContent = n.dataset.tip;
+    });
+    n.addEventListener("mouseenter", () => {
+      const id = n.dataset.id, near = new Set([id]);
+      paths.forEach(p => {
+        const hit = p.dataset.from === id || p.dataset.to === id;
+        p.classList.toggle("hl", hit);
+        if (hit) { near.add(p.dataset.from); near.add(p.dataset.to); p.style.stroke = p.dataset.c; }
+        else p.style.stroke = "";
+      });
+      nodes.forEach(m => m.classList.toggle("faded", !near.has(m.dataset.id)));
+    });
+    n.addEventListener("mouseleave", () => {
+      tip.style.display = "none";
+      paths.forEach(p => { p.classList.remove("hl"); p.style.stroke = ""; });
+      nodes.forEach(m => m.classList.remove("faded"));
+    });
+  });
+})();
+</script>
+</body>
+</html>

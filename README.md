@@ -113,6 +113,7 @@ This repository contains a few skills to get you started. You can also contribut
 | `huggingface-spaces` | Build, deploy, and maintain applications on Hugging Face Spaces — Gradio / Docker / Static SDKs, ZeroGPU and dedicated hardware, model loading, debugging, buckets, inference providers, community grants. | [SKILL.md](skills/huggingface-spaces/SKILL.md) |
 | `huggingface-tool-builder` | Use this skill when the user wants to build tool/scripts or achieve a task where using data from the Hugging Face API would help. | [SKILL.md](skills/huggingface-tool-builder/SKILL.md) |
 | `huggingface-trackio` | Track and visualize ML training experiments with Trackio. | [SKILL.md](skills/huggingface-trackio/SKILL.md) |
+| `huggingface-transformers-review-pr` | Review Hugging Face Transformers pull requests and local branches in fast or deep mode, covering general bug fixes, refactors, and model additions. | [SKILL.md](skills/huggingface-transformers-review-pr/SKILL.md) |
 | `huggingface-vision-trainer` | Trains and fine-tunes vision models for object detection (D-FINE, RT-DETR v2, DETR, YOLOS), image classification (timm models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3 — plus any Transformers classifier), and SAM/SAM2 segmentation using Hugging Face Transformers on Hugging Face Jobs cloud GPUs. | [SKILL.md](skills/huggingface-vision-trainer/SKILL.md) |
 | `huggingface-zerogpu` | AI demos and GPU compute with Gradio Spaces and Hugging Face Spaces ZeroGPU. | [SKILL.md](skills/huggingface-zerogpu/SKILL.md) |
 | `train-sentence-transformers` | Train or fine-tune sentence-transformers models across `SentenceTransformer` (bi-encoder; dense or static embedding model; for retrieval, similarity, clustering, classification, paraphrase mining, dedup, multimodal), `CrossEncoder` (reranker; pair scoring for two-stage retrieval / pair classification), and `SparseEncoder` (SPLADE, sparse embedding model; for learned-sparse retrieval). | [SKILL.md](skills/train-sentence-transformers/SKILL.md) |
@@ -128,6 +129,8 @@ Once a skill is installed, mention it directly while giving your coding agent in
 - "Use the HF model evaluation skill to launch `run_eval_job.py` on the latest checkpoint."
 - "Use the HF dataset creator skill to draft new few-shot classification templates."
 - "Use the HF paper publisher skill to index my arXiv paper and link it to my model."
+- "Use huggingface-transformers-review-pr to review my bugfix branch." (Defaults to fast.)
+- "Use huggingface-transformers-review-pr MODE=deep to review PR #45123." (Significantly more tokens for a more thorough review and a higher-quality PR.)
 
 Your coding agent automatically loads the corresponding `SKILL.md` instructions and helper scripts while it completes the task.
 
