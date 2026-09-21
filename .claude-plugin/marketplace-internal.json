@@ -129,6 +129,12 @@
       "description": "Track and visualize ML training experiments with Trackio."
     },
     {
+      "name": "huggingface-transformers-review-pr",
+      "source": "./skills/huggingface-transformers-review-pr",
+      "skills": "./",
+      "description": "Review Hugging Face Transformers pull requests and local branches in fast or deep mode, covering general bug fixes, refactors, and model additions."
+    },
+    {
       "name": "huggingface-vision-trainer",
       "source": "./skills/huggingface-vision-trainer",
       "skills": "./",

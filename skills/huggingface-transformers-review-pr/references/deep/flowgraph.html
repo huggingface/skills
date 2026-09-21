@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>deep-review flow graph</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0; padding: 16px 8px; background: #fcfcfb; color: #0b0b0b;
+    font: 13px/1.4 ui-sans-serif, system-ui, sans-serif;
+  }
+  h1 { font-size: 15px; margin: 0 0 2px; }
+  p.sub { margin: 0 0 12px; color: #52514e; font-size: 12px; }
+  .legend { display: flex; gap: 16px; margin-bottom: 8px; font-size: 12px; color: #52514e; flex-wrap: wrap; }
+  .legend span::before {
+    content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+    margin-right: 5px; vertical-align: -1px; background: var(--c);
+  }
+  #wrap { overflow: auto; }
+  svg { display: block; max-width: 100%; height: auto; }
+  text { fill: #0b0b0b; font: 11px ui-sans-serif, system-ui, sans-serif; pointer-events: none; }
+  .edge { fill: none; stroke: #0b0b0b; stroke-opacity: 0.12; }
+  .edge.hl { stroke-opacity: 0.9; }
+  .node circle { cursor: default; }
+  .node.faded, .edge.faded { opacity: 0.15; }
+  #tip {
+    position: fixed; pointer-events: none; display: none; max-width: 460px;
+    background: #0b0b0b; color: #fcfcfb; padding: 6px 8px; border-radius: 4px;
+    font: 11px ui-sans-serif, system-ui, sans-serif; z-index: 2; white-space: pre-line;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #1a1a19; color: #ffffff; }
+    p.sub, .legend { color: #c3c2b7; }
+    text { fill: #ffffff; }
+    .edge { stroke: #ffffff; }
+    #tip { background: #fcfcfb; color: #0b0b0b; }
+  }
+</style>
+</head>
+<body>
+<h1>transformers-deep-review — unrolled flow graph</h1>
+<p class="sub">Directed edges mined from real review trajectories: a finding on the source dimension led reviewers to the target check. Edge width = how often. Hover nodes and edges.</p>
+<div class="legend">
+  <span style="--c:#2a78d6">dimension</span>
+  <span style="--c:#eb6834">terminal action</span>
+  <span style="--c:#1baf7a">entry point (review opened here)</span>
+</div>
+<div id="wrap"></div>
+<div id="tip"></div>
+<script src="execution_graph_full.js"></script>
+<script>
+(function () {
+  const F = window.FLOW;
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const C = dark
+    ? { dim: "#3987e5", act: "#d95926", entry: "#199e70" }
+    : { dim: "#2a78d6", act: "#eb6834", entry: "#1baf7a" };
+  const W = 1080, H = 780, cx = W / 2, cy = H / 2;
+
+  const ids = [...new Set(F.edges.flatMap(e => [e.from, e.to]))];
+  const meta = Object.fromEntries(F.nodes.map(n => [n.id, n]));
+  const deg = {};
+  F.edges.forEach(e => { deg[e.from] = (deg[e.from] || 0) + e.n; deg[e.to] = (deg[e.to] || 0) + e.n; });
+
+  // deterministic force layout: golden-angle seed, repulsion + edge springs + centering
+  const nodes = ids.map((id, i) => {
+    const r = 90 + 240 * Math.sqrt((i + 0.5) / ids.length), a = i * 2.39996;
+    return { id, x: cx + r * Math.cos(a), y: cy + r * Math.sin(a), vx: 0, vy: 0 };
+  });
+  const idx = Object.fromEntries(nodes.map((n, i) => [n.id, i]));
+  for (let it = 0; it < 300; it++) {
+    const k = 1 - it / 300;
+    for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j];
+      let dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy || 1, d = Math.sqrt(d2);
+      const f = Math.min(9000 / d2, 8) * k;
+      dx /= d; dy /= d;
+      a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f;
+    }
+    F.edges.forEach(e => {
+      const a = nodes[idx[e.from]], b = nodes[idx[e.to]];
+      let dx = b.x - a.x, dy = b.y - a.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
+      const f = (d - 150) * 0.012 * k;
+      dx /= d; dy /= d;
+      a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f;
+    });
+    nodes.forEach(n => {
+      n.vx += (cx - n.x) * 0.002 * k; n.vy += (cy - n.y) * 0.002 * k;
+      n.x += n.vx; n.y += n.vy; n.vx *= 0.5; n.vy *= 0.5;
+      n.x = Math.max(60, Math.min(W - 60, n.x)); n.y = Math.max(30, Math.min(H - 30, n.y));
+    });
+  }
+
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  const radius = id => 6 + 2.2 * Math.sqrt(deg[id] || 1);
+  const arc = e => {
+    const a = nodes[idx[e.from]], b = nodes[idx[e.to]];
+    const dx = b.x - a.x, dy = b.y - a.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
+    const t = 1 - (radius(e.to) + 5) / d;
+    const ex = a.x + dx * t, ey = a.y + dy * t;
+    const mx = (a.x + ex) / 2 - dy * 0.12, my = (a.y + ey) / 2 + dx * 0.12;
+    return `M${a.x.toFixed(1)},${a.y.toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${ex.toFixed(1)},${ey.toFixed(1)}`;
+  };
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  svg += `<defs><marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse">` +
+    `<path d="M0,0 L8,4 L0,8 z" fill="${dark ? "#ffffff" : "#0b0b0b"}" fill-opacity="0.55"/></marker></defs>`;
+  F.edges.forEach((e, i) => {
+    svg += `<path class="edge" id="fe${i}" d="${arc(e)}" stroke-width="${Math.min(1 + e.n * 0.7, 5)}" ` +
+      `marker-end="url(#arr)" data-from="${e.from}" data-to="${e.to}" ` +
+      `data-tip="${esc(e.from + " → " + e.to + " (×" + e.n + ")\n" + e.why + "\n" + e.prs.join(", "))}"/>`;
+  });
+  nodes.forEach(n => {
+    const m = meta[n.id] || { kind: "dimension", label: n.id };
+    const kind = m.kind === "action" ? "act" : (F.entries.includes(n.id) ? "entry" : "dim");
+    const r = radius(n.id);
+    svg += `<g class="node" data-id="${n.id}" data-tip="${esc(n.id + " — " + (m.label || n.id) + "\nin+out weight: " + (deg[n.id] || 0))}">` +
+      `<circle cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${r.toFixed(1)}" fill="${C[kind]}"/>` +
+      `<text x="${(n.x + r + 3).toFixed(1)}" y="${(n.y + 4).toFixed(1)}">${esc(n.id)}</text></g>`;
+  });
+  svg += "</svg>";
+  document.getElementById("wrap").innerHTML = svg;
+
+  const tip = document.getElementById("tip");
+  const gs = [...document.querySelectorAll(".node")];
+  const es = [...document.querySelectorAll(".edge")];
+  const show = (ev, t) => {
+    tip.style.display = "block";
+    tip.style.left = Math.min(ev.clientX + 12, innerWidth - 480) + "px";
+    tip.style.top = ev.clientY + 12 + "px";
+    tip.textContent = t;
+  };
+  const clear = () => {
+    tip.style.display = "none";
+    es.forEach(p => p.classList.remove("hl", "faded"));
+    gs.forEach(g => g.classList.remove("faded"));
+  };
+  gs.forEach(g => {
+    g.addEventListener("mousemove", ev => show(ev, g.dataset.tip));
+    g.addEventListener("mouseenter", () => {
+      const id = g.dataset.id, near = new Set([id]);
+      es.forEach(p => {
+        const hit = p.dataset.from === id || p.dataset.to === id;
+        p.classList.toggle("hl", hit); p.classList.toggle("faded", !hit);
+        if (hit) { near.add(p.dataset.from); near.add(p.dataset.to); }
+      });
+      gs.forEach(m => m.classList.toggle("faded", !near.has(m.dataset.id)));
+    });
+    g.addEventListener("mouseleave", clear);
+  });
+  es.forEach(p => {
+    p.addEventListener("mousemove", ev => show(ev, p.dataset.tip));
+    p.addEventListener("mouseenter", () => p.classList.add("hl"));
+    p.addEventListener("mouseleave", clear);
+  });
+})();
+</script>
+</body>
+</html>
