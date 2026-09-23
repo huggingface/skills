@@ -16,8 +16,12 @@ concurrency:
   group: sync-skills-to-bucket
   cancel-in-progress: false
 
+permissions: {}
+
 jobs:
   sync:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

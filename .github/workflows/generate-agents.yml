@@ -23,8 +23,12 @@ on:
       - ".cursor-plugin/plugin.json"
       - ".mcp.json"
 
+permissions: {}
+
 jobs:
   validate:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

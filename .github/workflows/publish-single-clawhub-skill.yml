@@ -92,11 +92,13 @@ concurrency:
   group: publish-clawhub-${{ inputs.owner }}-${{ inputs.skill_id }}
   cancel-in-progress: false
 
-permissions:
-  contents: read
+
+permissions: {}
 
 jobs:
   publish:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
