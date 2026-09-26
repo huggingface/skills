@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# hfx — HuggingFace free-maxxing kit CLI (bash shim → python dispatcher)
+# Works from any cwd; resolves its own location.
+exec python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib/hfx.py" "$@"
