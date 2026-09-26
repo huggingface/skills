@@ -102,6 +102,35 @@ refresh_token (the old one dies; same `sessionId` continues). Persist the new
 value on EVERY exchange — lose it and the user's session cannot be refreshed
 (there is no revocation endpoint either, so treat refresh tokens as secrets).
 
+**(f) When the user DENIES consent** (redirect shapes live-verified 2026-09-26
+on the kit's own K7 client — deny is a normal, recoverable path, not an error
+to fear):
+- **Auth-code flow**: the consent page's Deny button 303s back to YOUR
+  redirect_uri with
+  `?error=access_denied&error_description=The+user+denied+the+request&state=<your state>`
+  — `state` still round-trips, so verify it, then render a "login cancelled"
+  page. There is no `code` to exchange; do not call /oauth/token.
+- **Device flow**: the user lands on a "denied" page; your token poll gets
+  `400 {"error":"access_denied","error_description":"Device code denied"}` —
+  stop polling (RFC 8628 terminal error).
+- **Retry is free**: a deny is NOT cached — send the user through
+  `hfx oauth authorize-url` (or a fresh device grant) and the consent form
+  shows again. Auto-approve only exists AFTER a grant, per (user, app,
+  scope-set) — so a denied user simply re-runs the same login link.
+
+**(g) Logout & disconnect** — no `/oauth/revoke` exists, so:
+- Your app's logout = drop the LOCAL session + refresh token (access tokens
+  live ≤ 8 h; refresh TTL undisclosed — treat both as secrets either way).
+- HF-side logout is the user's browser business (`POST /logout`, the
+  account-menu button; anonymous `GET /logout` is a 404). Whether it kills
+  already-issued app tokens is unverified — your app's session is the
+  source of truth for who is logged in.
+- Full disconnect: the user revokes your app at
+  <https://huggingface.co/settings/connected-applications> (per-app Revoke).
+- Denied because they were in the WRONG HF account? Have them log out of HF
+  in the browser, then retry the authorize URL — fresh consent under the
+  right account.
+
 Gotchas:
 - **No token revocation endpoint** — a leaked refresh token is compromised
   until it expires; treat it like a password.

@@ -23,6 +23,9 @@ hfx etl splits myuser/leads --wait 180      # polls until READY, then probes /ro
 # 3. Query it — server-side, no download
 hfx etl filter myuser/leads --where "score>0.5 AND name LIKE '%acme%'" \
                           --orderby "score desc" --limit 100
+hfx etl filter myuser/leads --where "score>0.5" --wait 300   # COLD dataset:
+                          # polls every 20s until the filter index is queryable,
+                          # then prints the result (exit 1 + last state on timeout)
 hfx etl search myuser/leads --query "acme"          # token match, 100% recall
 hfx etl rows   myuser/leads --offset 5000 --limit 100   # deep offsets OK (6.4M rows verified)
 hfx etl stats  myuser/leads                          # free describe(): mean/median/std/histograms
@@ -44,7 +47,7 @@ Works from browsers too — datasets-server CORS is `*`, so a static site can
 
 | Command | Endpoint | Syntax | Limits & notes |
 |---|---|---|---|
-| `filter` | `/filter` | `--where "\"col\"=25"` · `"col">5` · `"col" LIKE '%x%'` · `AND`/`OR` + parens · `--orderby "\"col\" desc"` (single column, default asc) | page ≤ 100 · index = **first 5 GB** · `num_rows_total` = match count when `where` present · bare column names are auto-quoted by the kit |
+| `filter` | `/filter` | `--where "\"col\"=25"` · `"col">5` · `"col" LIKE '%x%'` · `AND`/`OR` + parens · `--orderby "\"col\" desc"` (single column, default asc) | page ≤ 100 · index = **first 5 GB** · `num_rows_total` = match count when `where` present · bare column names are auto-quoted by the kit · **`--wait SECONDS`** polls until queryable: fresh uploads 404 until processed (~2-3 min), idle datasets 500 "index is loading" — retries every 20s (each poll ≤ 30s), exit 1 with the last observed state on timeout · `--json` adds a `wait` key `{waited_s, attempts, queryable}` |
 | `search` | `/search` | `--query "token"` | token match, 100% recall (7/7 verified) · first 5 GB · index builds LAZILY — can 500 for minutes on fresh/idle datasets |
 | `rows` | `/rows` | `--offset N --limit ≤100` | offset-past-end → 200 + empty; length clamps at end; deep offsets fine (6.5s @ 6.4M rows) |
 | `stats` | `/statistics` | — | min/max/mean/median/std/histograms per column; std is **sample** (ddof=1); text cols → length stats; labels → frequencies |
@@ -71,7 +74,9 @@ JOIN in 1.29s, 420MB shard columnar-read at ~6.4MB/s).
    than usual" — `filter`/`search`/`rows`/`stats` now note it on stderr and
    **auto-retry once after 60s**; a second failure exits 1 with the warming
    message. Budget ~2–3 min for conversion after upload, ~5 min for the filter
-   index on first-ever touch.
+   index on first-ever touch. For a hands-off wait use
+   `hfx etl filter … --wait 300` (polls every 20s until queryable — the failed
+   calls themselves take ~20s each, so a warming window burns few requests).
    Writes are eventually-consistent (no transactions, no instant read-after-write).
 3. **Page size hard cap 100** on every endpoint (client-side enforced too).
 4. **5 GB first-chunk cap** for conversion + filter/search/statistics indexes

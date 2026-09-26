@@ -124,14 +124,21 @@ concurrent sessions share the same pools — numbers can shift between reads.
 ### status — quotas across every entity
 
 ```bash
-hfx status                 # human table: user + every org
+hfx status                 # human table: user + every org (~25-30s)
+hfx status --storage-only  # FAST mode (~3x): storage/bucket standing only
 hfx status --json          # machine-readable
 hfx status --entity <you>   # one entity only
 ```
 
-Reads three free endpoints (no writes, ~$0, a few seconds): per-entity
-billing usage/live SSE (storage private/public used, credits) and — user only —
-ZeroGPU quota (GPU-seconds + runs remaining, rolling 24h).
+Reads three free endpoints (no writes, ~$0): per-entity billing usage/live
+SSE (storage private/public used, credits) and — user only — ZeroGPU quota
+(GPU-seconds + runs remaining, rolling 24h).
+
+`--storage-only` skips the ZeroGPU call and the credits read, and gives each
+entity's SSE a short window — same storage numbers as full mode (back-to-back
+verified identical; measured 13s vs 28s on the 3-entity kit account). Use it
+in scripts/loops that only care about storage standing; the SSE stream stays
+open server-side, so the full mode's 8s/entity window is mostly wait time.
 
 What to look at:
 
@@ -142,6 +149,22 @@ What to look at:
 | credits | inference-providers spend | $0.10/mo included, user account only |
 | ZeroGPU runs | **the binding GPU limit** | 8 per rolling 24h (300 GPU-s secondary) |
 
+**`--json` shape** (stable; `--storage-only` = same shape minus the skipped
+keys):
+
+```json
+{"entities": [
+   {"name": "<user>", "kind": "user",
+    "storage": {"used", "usedPrivate", "usedPublic",
+                "privateStorageLimit", "publicStorageLimit",
+                "summary": {"dataset|space|model|bucket":
+                            {"used", "usedPrivate", "usedPublic", "count"}}},
+    "inference_credits": {"used", "limit", "included"},   // omitted: --storage-only
+    "zero_gpu": {"base", "current", "runs", "resetsAt"}},  // user only; omitted: --storage-only
+   {"name": "<org>", "kind": "org", "storage": {…}}],
+ "generated": "2026-09-26T…Z"}
+```
+
 Notes:
 - Each **org is a fully separate pool** (own 100 GB + 8.7 TB + 30 TB/mo
   bandwidth) — that's the multiplication finding; orgs get $0 credits and no
@@ -150,6 +173,9 @@ Notes:
   after `store rm --purge-lfs`.
 - The first SSE event can be a partial snapshot — the kit waits for the last
   complete event (research gotcha #6).
+- `--storage-only` uses a 3s SSE window per entity (vs 8s): the first
+  complete event lands ~instantly; on an empty fast window the kit retries
+  once with the patient window before failing.
 - Evidence: findings/quota-baseline.md, findings/orgs-multiplication.md.
 
 <!-- SECTION:store -->
@@ -563,6 +589,9 @@ hfx etl splits myuser/leads --wait 180      # polls until READY, then probes /ro
 # 3. Query it — server-side, no download
 hfx etl filter myuser/leads --where "score>0.5 AND name LIKE '%acme%'" \
                           --orderby "score desc" --limit 100
+hfx etl filter myuser/leads --where "score>0.5" --wait 300   # COLD dataset:
+                          # polls every 20s until the filter index is queryable,
+                          # then prints the result (exit 1 + last state on timeout)
 hfx etl search myuser/leads --query "acme"          # token match, 100% recall
 hfx etl rows   myuser/leads --offset 5000 --limit 100   # deep offsets OK (6.4M rows verified)
 hfx etl stats  myuser/leads                          # free describe(): mean/median/std/histograms
@@ -584,7 +613,7 @@ Works from browsers too — datasets-server CORS is `*`, so a static site can
 
 | Command | Endpoint | Syntax | Limits & notes |
 |---|---|---|---|
-| `filter` | `/filter` | `--where "\"col\"=25"` · `"col">5` · `"col" LIKE '%x%'` · `AND`/`OR` + parens · `--orderby "\"col\" desc"` (single column, default asc) | page ≤ 100 · index = **first 5 GB** · `num_rows_total` = match count when `where` present · bare column names are auto-quoted by the kit |
+| `filter` | `/filter` | `--where "\"col\"=25"` · `"col">5` · `"col" LIKE '%x%'` · `AND`/`OR` + parens · `--orderby "\"col\" desc"` (single column, default asc) | page ≤ 100 · index = **first 5 GB** · `num_rows_total` = match count when `where` present · bare column names are auto-quoted by the kit · **`--wait SECONDS`** polls until queryable: fresh uploads 404 until processed (~2-3 min), idle datasets 500 "index is loading" — retries every 20s (each poll ≤ 30s), exit 1 with the last observed state on timeout · `--json` adds a `wait` key `{waited_s, attempts, queryable}` |
 | `search` | `/search` | `--query "token"` | token match, 100% recall (7/7 verified) · first 5 GB · index builds LAZILY — can 500 for minutes on fresh/idle datasets |
 | `rows` | `/rows` | `--offset N --limit ≤100` | offset-past-end → 200 + empty; length clamps at end; deep offsets fine (6.5s @ 6.4M rows) |
 | `stats` | `/statistics` | — | min/max/mean/median/std/histograms per column; std is **sample** (ddof=1); text cols → length stats; labels → frequencies |
@@ -611,7 +640,9 @@ JOIN in 1.29s, 420MB shard columnar-read at ~6.4MB/s).
    than usual" — `filter`/`search`/`rows`/`stats` now note it on stderr and
    **auto-retry once after 60s**; a second failure exits 1 with the warming
    message. Budget ~2–3 min for conversion after upload, ~5 min for the filter
-   index on first-ever touch.
+   index on first-ever touch. For a hands-off wait use
+   `hfx etl filter … --wait 300` (polls every 20s until queryable — the failed
+   calls themselves take ~20s each, so a warming window burns few requests).
    Writes are eventually-consistent (no transactions, no instant read-after-write).
 3. **Page size hard cap 100** on every endpoint (client-side enforced too).
 4. **5 GB first-chunk cap** for conversion + filter/search/statistics indexes
@@ -755,6 +786,35 @@ User model from these): `sub`, `name`, `preferred_username`, `profile`,
 refresh_token (the old one dies; same `sessionId` continues). Persist the new
 value on EVERY exchange — lose it and the user's session cannot be refreshed
 (there is no revocation endpoint either, so treat refresh tokens as secrets).
+
+**(f) When the user DENIES consent** (redirect shapes live-verified 2026-09-26
+on the kit's own K7 client — deny is a normal, recoverable path, not an error
+to fear):
+- **Auth-code flow**: the consent page's Deny button 303s back to YOUR
+  redirect_uri with
+  `?error=access_denied&error_description=The+user+denied+the+request&state=<your state>`
+  — `state` still round-trips, so verify it, then render a "login cancelled"
+  page. There is no `code` to exchange; do not call /oauth/token.
+- **Device flow**: the user lands on a "denied" page; your token poll gets
+  `400 {"error":"access_denied","error_description":"Device code denied"}` —
+  stop polling (RFC 8628 terminal error).
+- **Retry is free**: a deny is NOT cached — send the user through
+  `hfx oauth authorize-url` (or a fresh device grant) and the consent form
+  shows again. Auto-approve only exists AFTER a grant, per (user, app,
+  scope-set) — so a denied user simply re-runs the same login link.
+
+**(g) Logout & disconnect** — no `/oauth/revoke` exists, so:
+- Your app's logout = drop the LOCAL session + refresh token (access tokens
+  live ≤ 8 h; refresh TTL undisclosed — treat both as secrets either way).
+- HF-side logout is the user's browser business (`POST /logout`, the
+  account-menu button; anonymous `GET /logout` is a 404). Whether it kills
+  already-issued app tokens is unverified — your app's session is the
+  source of truth for who is logged in.
+- Full disconnect: the user revokes your app at
+  <https://huggingface.co/settings/connected-applications> (per-app Revoke).
+- Denied because they were in the WRONG HF account? Have them log out of HF
+  in the browser, then retry the authorize URL — fresh consent under the
+  right account.
 
 Gotchas:
 - **No token revocation endpoint** — a leaked refresh token is compromised
