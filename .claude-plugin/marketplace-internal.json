@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Full Hugging Face Skills manifest for hf skills, MCP, and discovery. Client plugin marketplaces use curated manifests.",
-    "version": "1.0.31"
+    "version": "1.0.32"
   },
   "plugins": [
     {
@@ -49,6 +49,12 @@
       "source": "./skills/hf-cloud-serving-image-selection",
       "skills": "./",
       "description": "Pick the right serving container for a SageMaker model deployment and find its current image URI."
+    },
+    {
+      "name": "hf-free-maxxing",
+      "source": "./skills/hf-free-maxxing",
+      "skills": "./",
+      "description": "Every free Hugging Face capability in one CLI (hfx): storage, static hosting, CDN, $0 LLM inference, GPU bursts, data queries, OAuth identity, Docker pulls, webhooks — all live-verified."
     },
     {
       "name": "hf-mem",
