@@ -228,6 +228,11 @@ def write_skill_files(skill: Skill, out_dir: Path, uri_prefix: str) -> dict[str,
 
 
 def build_distribution(skills_dir: Path, out_dir: Path, uri_prefix: str) -> None:
+	skills_dir = skills_dir.resolve()
+	out_dir = out_dir.resolve()
+	if skills_dir.is_relative_to(out_dir) or out_dir.is_relative_to(skills_dir):
+		raise ValueError("skills directory and output directory must not overlap")
+
 	if out_dir.exists():
 		shutil.rmtree(out_dir)
 	out_dir.mkdir(parents=True)

@@ -114,6 +114,42 @@ class BuildSkillDistributionTest(unittest.TestCase):
 			manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
 			self.assertEqual(manifest["artifacts"]["skills_catalog"], "skills.json")
 
+	def test_rejects_overlapping_input_and_output_directories(self) -> None:
+		for output_path in ("skills", ".", "skills/example", "skills/example/references", "skills/../skills"):
+			with self.subTest(output_path=output_path), tempfile.TemporaryDirectory() as temp_dir:
+				root = Path(temp_dir)
+				skills_dir = root / "skills"
+				skill_dir = skills_dir / "example"
+				write_skill(skill_dir)
+				references = skill_dir / "references"
+				references.mkdir()
+				guide = references / "guide.md"
+				guide.write_text("Keep this source file", encoding="utf-8")
+				skill_bytes = (skill_dir / "SKILL.md").read_bytes()
+
+				with self.assertRaisesRegex(ValueError, "must not overlap"):
+					builder.build_distribution(skills_dir, root / output_path, "skill://")
+
+				self.assertEqual((skill_dir / "SKILL.md").read_bytes(), skill_bytes)
+				self.assertEqual(guide.read_text(encoding="utf-8"), "Keep this source file")
+
+	def test_rebuilds_separate_output_directory(self) -> None:
+		with tempfile.TemporaryDirectory() as temp_dir:
+			root = Path(temp_dir)
+			skills_dir = root / "skills"
+			write_skill(skills_dir / "example")
+			out_dir = root / "skills-output"
+			builder.build_distribution(skills_dir, out_dir, "skill://")
+			(out_dir / "stale.txt").write_text("old output", encoding="utf-8")
+
+			builder.build_distribution(skills_dir, out_dir, "skill://")
+
+			self.assertFalse((out_dir / "stale.txt").exists())
+			self.assertEqual(
+				(out_dir / "example" / "SKILL.md").read_bytes(),
+				(skills_dir / "example" / "SKILL.md").read_bytes(),
+			)
+
 	def test_rejects_non_string_metadata_values(self) -> None:
 		with tempfile.TemporaryDirectory() as temp_dir:
 			root = Path(temp_dir)
