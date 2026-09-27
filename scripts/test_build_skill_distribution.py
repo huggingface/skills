@@ -11,6 +11,7 @@ import importlib.util
 import json
 import re
 import sys
+import tarfile
 import tempfile
 import unittest
 from pathlib import Path
@@ -113,6 +114,51 @@ class BuildSkillDistributionTest(unittest.TestCase):
 
 			manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
 			self.assertEqual(manifest["artifacts"]["skills_catalog"], "skills.json")
+
+	def test_writes_cloudflare_agent_skills_distribution(self) -> None:
+		with tempfile.TemporaryDirectory() as temp_dir:
+			root = Path(temp_dir)
+			skills_dir = root / "skills"
+			out_dir = root / "out"
+			public_base_url = "https://example.com/agent-skills/latest"
+
+			single = skills_dir / "single"
+			write_skill(single, "Single-file skill")
+
+			multi = skills_dir / "multi"
+			write_skill(multi, "Multi-file skill")
+			(multi / "reference.md").write_text("# Reference\n", encoding="utf-8")
+
+			builder.build_agent_skills_distribution(skills_dir, out_dir, public_base_url)
+
+			payload = json.loads((out_dir / "index.json").read_text(encoding="utf-8"))
+			self.assertEqual(set(payload), {"$schema", "skills"})
+			self.assertEqual(payload["$schema"], builder.AGENT_SKILLS_SCHEMA_URI)
+			entries = {entry["name"]: entry for entry in payload["skills"]}
+			self.assertEqual((out_dir / "single" / "SKILL.md").read_bytes(), (single / "SKILL.md").read_bytes())
+			with tarfile.open(out_dir / "multi.tar.gz", "r:gz") as archive:
+				self.assertEqual(set(archive.getnames()), {"SKILL.md", "reference.md"})
+				self.assertEqual(archive.extractfile("SKILL.md").read(), (multi / "SKILL.md").read_bytes())
+			self.assertEqual(
+				entries["single"],
+				{
+					"name": "single",
+					"type": "skill-md",
+					"description": "Single-file skill",
+					"url": f"{public_base_url}/single/SKILL.md",
+					"digest": "sha256:" + hashlib.sha256((out_dir / "single" / "SKILL.md").read_bytes()).hexdigest(),
+				},
+			)
+			self.assertEqual(
+				entries["multi"],
+				{
+					"name": "multi",
+					"type": "archive",
+					"description": "Multi-file skill",
+					"url": f"{public_base_url}/multi.tar.gz",
+					"digest": "sha256:" + hashlib.sha256((out_dir / "multi.tar.gz").read_bytes()).hexdigest(),
+				},
+			)
 
 	def test_rejects_non_string_metadata_values(self) -> None:
 		with tempfile.TemporaryDirectory() as temp_dir:
