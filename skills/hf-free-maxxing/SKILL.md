@@ -1,12 +1,12 @@
 ---
 name: hf-free-maxxing
-description: "Every free Hugging Face capability in one CLI (hfx): storage, static hosting, CDN, $0 LLM inference, GPU bursts, data queries, OAuth identity, Docker pulls, webhooks — all live-verified. Use when the user wants free cloud storage, free static hosting or a free CDN, free GPU compute or image/video generation, $0 LLM API calls, or asks what the Hugging Face free tier includes or how to avoid paying for AI infrastructure."
+description: "Every free Hugging Face capability in one CLI (hfx): storage, static hosting, CDN, budget LLM inference ($0.10/mo credits + pinned cheapest lanes), GPU bursts, data queries, OAuth identity, Docker pulls, webhooks — all live-verified. Use when the user wants free cloud storage, free static hosting or a free CDN, free GPU compute or image/video generation, cheap or free LLM API calls, or asks what the Hugging Face free tier includes or how to avoid paying for AI infrastructure."
 license: Apache-2.0
 compatibility: "Requires a Hugging Face account + access token, Python 3.10+, and 'huggingface_hub<2.0' boto3 gradio_client. Bash on Linux/macOS; the CLI is pure Python (stdlib + those deps)."
 metadata:
   author: landogayatri
   source: https://huggingface.co/landogayatri/hf-free-maxxing
-  version: "1.0.0"
+  version: "1.1.0"
   verified: "2026-09"
 ---
 
@@ -15,9 +15,10 @@ metadata:
 This skill gives an agent (or human) verified, measured, working access to
 **everything HuggingFace offers for $0** through one CLI: `kit/bin/hfx`.
 Every command, quota number, and gotcha below was live-verified in Sep 2026
-by the hf-free-maxxing research project. The full 1200-line reference is
-bundled at [kit/AGENTS.md](kit/AGENTS.md) — this file is the distilled
-operating manual.
+by the hf-free-maxxing research project. The full reference is bundled at
+[kit/AGENTS.md](kit/AGENTS.md) and a 15-minute hands-on E2E at
+[kit/QUICKSTART.md](kit/QUICKSTART.md) — this file is the distilled operating
+manual.
 
 **What HF does NOT give free** (route elsewhere — Cloudflare/Supabase/Netlify):
 dynamic compute/serverless functions, cron schedulers, databases (SQL/NoSQL/vector),
@@ -31,7 +32,7 @@ transactional email, custom domains, screenshot/PDF rendering, message queues.
 | Public storage | **8.7 TB** per entity (best-effort) | $0 |
 | Bandwidth / egress | 20 TB/mo (user) + 30 TB/mo per org, CloudFront | $0 |
 | ZeroGPU compute | 300 GPU-sec + **8 runs** per rolling 24h | $0 |
-| LLM API | $0 lane (`inclusionAI/Ling-3.0-flash-Fin:novita`) + $0.10/mo credits | $0 |
+| LLM API | $0.10/mo credits ≈ **5M tok** on the cheapest pinned lane (re-verified 2026-09-28) · $0 promo lanes appear & vanish — `hfx infer models --free-only` re-checks monthly | $0 |
 | Static hosting | unlimited static Spaces, always-on, no cold start | $0 |
 | Media CDN upload | `POST /uploads` — outside BOTH storage+bandwidth quotas, permanent | $0 |
 | Data query engine | datasets-server filter/search/sort/stats, no rate limit | $0 |
@@ -97,8 +98,9 @@ hfx cdn put ./photo.png
 hfx host deploy ./mysite -n my-site-test
 # → https://<you>-<my-site-test>.static.hf.space
 
-# 4. Free LLM call (the $0 lane — ALWAYS pin the :novita suffix!)
-hfx infer chat "Summarize: the quick brown fox..." --free
+# 4. Budget LLM call (default = cheapest pinned lane ≈5M tok per $0.10/mo;
+#    --free searches for a true $0 lane and REFUSES if none exists today)
+hfx infer chat "Summarize: the quick brown fox..."
 
 # 5. Free GPU burst (8 runs/24h is the binding limit — preflight first)
 hfx gpu preflight
@@ -112,14 +114,16 @@ hfx etl filter <you>/hf-free-maxxing-kit-etl --where "score>0.5" --orderby "scor
 
 ## The rules that keep it free (memorize these)
 
-1. **PIN the $0 lane**: never send an unsuffixed chat model id — default
-   routing is `:fastest` which ignores price (unsuffixed Ling-Fin goes to a
-   paid provider). `hfx infer` refuses unsuffixed ids. Pin `:novita` (free),
-   `:nscale`, or `:cheapest`.
-2. **Router burst mechanics**: EVERY router request (even $0-lane) books a
-   $0.01 placeholder against the $0.10/mo cap; >10 unsettled in flight → 402
-   until true-up (~1-5 min). Failed requests are never billed. Credits reset
-   calendar-month.
+1. **PIN the `:provider` suffix on every chat id**: never send an unsuffixed
+   model id — default routing is `:fastest` which ignores price (unsuffixed
+   Ling-Fin went to a paid provider; 3 accidental calls cost 6,480 nU).
+   `hfx infer` refuses unsuffixed ids (exit 2). Lane prices DRIFT — the
+   Ling-Fin `:novita` $0 promo ran Sep 23–26 2026 then retired (a 97-token
+   probe settled $0.01815). Default pin: `:nscale` ($0.01/$0.03 per 1M).
+2. **Router burst mechanics**: EVERY router request books a $0.01 placeholder
+   against the $0.10/mo cap; >10 unsettled in flight → 402 until true-up
+   (~1-5 min). Failed requests are never billed. Credits reset
+   calendar-month and DO NOT roll over — spend down before the 1st.
 3. **ZeroGPU: 8 runs / rolling 24h is the BINDING limit** (300 GPU-s rarely
    binds first). Account-global across ALL public ZeroGPU Spaces. Preflight
    before every batch.
@@ -163,7 +167,7 @@ hfx etl filter <you>/hf-free-maxxing-kit-etl --where "score>0.5" --orderby "scor
 | `hfx store` | put/get/ls/rm/share/cp-repo/tag — durable storage (repos + S3 buckets) |
 | `hfx cdn` | instant permanent media hosting, outside all quotas |
 | `hfx host` | deploy/ls/rm static-site Spaces (unlimited, always-on) |
-| `hfx infer` | $0-lane LLM chat, model catalog scan, budget, embeddings |
+| `hfx infer` | budget-lane LLM chat (cheapest pinned default), model catalog scan, budget, embeddings |
 | `hfx gpu` | ZeroGPU preflight/spaces/run (direct Gradio, 2000+ Spaces) |
 | `hfx mcp` | hosted MCP server (huggingface.co/mcp): 11 tools + 155 skill:// docs |
 | `hfx etl` | upload CSV → hosted filter/search/rows/stats/SQL (DuckDB lane) |
@@ -178,7 +182,10 @@ hfx etl filter <you>/hf-free-maxxing-kit-etl --where "score>0.5" --orderby "scor
 
 ## Where the deep docs live (bundled in this skill)
 
-- **[kit/AGENTS.md](kit/AGENTS.md)** — the full 1200-line consumer reference:
+- **[kit/QUICKSTART.md](kit/QUICKSTART.md)** — the 15-minute end-to-end run
+  (one composed mini-project: storage → LLM → CDN → site → GPU preflight →
+  data query, every step with a done-when oracle; ≤$0.001 total spend).
+- **[kit/AGENTS.md](kit/AGENTS.md)** — the full consumer reference:
   every command's exact syntax, limits tables, measured benchmarks, and
   per-capability gotchas with evidence pointers. Read the section you need
   when a task touches that capability.

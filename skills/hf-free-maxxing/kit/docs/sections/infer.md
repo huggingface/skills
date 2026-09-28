@@ -1,16 +1,23 @@
-## infer — free LLM calls via the router ($0 lane + $0.10/mo credits)
+## infer — LLM calls via the router (cheapest pinned lane + $0.10/mo credits)
 
-The kit's chat default is the **$0 lane**: `inclusionAI/Ling-3.0-flash-Fin:novita`
-($0/$0 per 1M tokens, 262k ctx, ~250 tok/s, tools✅ — verified across 39+ lifetime
-calls, every one settled at 0 nanoUsd). Everything runs through
+The kit's chat default is the **cheapest pinned lane**:
+`Qwen/Qwen3-4B-Instruct-2507:nscale` — $0.01/$0.03 per 1M tokens (≈ **5M blended
+tokens per $0.10/mo**), 262k ctx, tools+structured-output✅. Everything runs through
 `https://router.huggingface.co/v1` (OpenAI-compatible) with your `HF_TOKEN`.
 
+> **Drift log (the lane story — promotions die):** a true $0/$0 lane
+> (`inclusionAI/Ling-3.0-flash-Fin:novita`) existed 2026-09-23→26 and settled
+> $0.00 across 24 lifetime calls; the promo **retired ~2026-09-28** — a live
+> probe then settled **$0.01815 for 97 tokens** (also: not proportional per-1M
+> billing on that lane; ~5 such calls would exhaust a fresh $0.10). $0 promos
+> may return — re-check monthly with `hfx infer models --free-only` (30 s, free).
+
 ```bash
-hfx infer chat "Summarize: ..."            # $0 lane, prints content + cost + budget note
-hfx infer chat "hi" --max-tokens 300       # the lane is a REASONING model — see below
-hfx infer chat "hi" --model Qwen/Qwen3-4B-Instruct-2507:nscale   # paid: warns "this call costs ~$X"
-hfx infer models --free-only               # the 3 $0/$0 lanes (public catalog, free)
-hfx infer models --pattern llama           # price-scan any model
+hfx infer chat "Summarize: ..."            # default lane, prints content + cost + budget note
+hfx infer chat "hi" --max-tokens 300       # budget answers in ~64-300 tokens
+hfx infer chat "hi" --free                 # searches for a TRUE $0 lane; REFUSES (exit 3) if none today
+hfx infer models --free-only               # true $0 lanes (is_free flag); trap lanes flagged, never called
+hfx infer models --pattern llama           # price-scan any model (public, free)
 hfx infer budget                           # credits used/left + burst headroom (read-only)
 hfx infer embed --text "hello world"       # 384-dim vector, ~$0.0000003-6 (NOT free)
 ```
@@ -20,22 +27,28 @@ hfx infer embed --text "hello world"       # 384-dim vector, ~$0.0000003-6 (NOT 
 **Never send an unsuffixed chat model id.** Default router routing is `:fastest`,
 which **ignores price** — unsuffixed Ling-Fin routes to deepinfra at $0.06/$0.18
 (3 accidental calls cost this project 6,480 nanoUsd). `hfx infer` **refuses**
-unsuffixed ids (exit 2). Pin always: `:novita`, `:nscale`, or `:cheapest`
-(verified to actually pick the cheapest provider).
+unsuffixed ids (exit 2). Pin always: `:nscale`, `:novita`, or `:cheapest`
+(picks the lowest input price — non-deterministic under drift; prefer an
+explicit pin in scripts).
 
-The catalog's only $0/$0 lanes (re-verified 2026-09-26 — exactly 3):
+### The budget lane table (prices re-verified 2026-09-28)
 
-| Lane | Verdict |
-|---|---|
-| `inclusionAI/Ling-3.0-flash-Fin:novita` | **THE free lane** — settles at literally $0. Kit default. |
-| `prism-ml/Ternary-Bonsai-27B-gguf:together` | ⚠️ $0.01 placeholder that reverses (~30 min); unreliable — don't build on it |
-| `prism-ml/Ternary-Bonsai-27B-AWQ-4bit:together` | ⚠️ same trap |
+| Lane | $/1M in·out | per $0.10/mo | Notes |
+|---|---|---|---|
+| `Qwen/Qwen3-4B-Instruct-2507:nscale` | $0.01/$0.03 | **≈5M blended tok** | Kit default; tools✅; 262k ctx |
+| `Qwen/Qwen2.5-Coder-3B-Instruct:nscale` | $0.01/$0.03 | ≈5M | code tasks |
+| `meta-llama/Llama-3.1-8B-Instruct:deepinfra` | $0.02/$0.05 | ≈2.9M | |
+| `gpt-oss-120b:novita` | $0.05/$0.25 | ≈667k | cheapest 120B big-brain |
+| `inclusionAI/Ling-3.0-flash-Fin:novita` | ~$0.075/$0.22 | ≈190k | ex-$0 promo lane (retired 2026-09-28); reasoning model — needs `max_tokens ≥512` or content comes back empty |
+| featherless-ai long tail | ~$0.039/$0.108 | ≈1.5M | 1,000+ niche models, uniform rates |
+| `prism-ml/Ternary-Bonsai-*:together` | "$0/$0" | **TRAP** | books $0.01 flat that reverses (~30 min); unreliable — the kit flags and never recommends it |
 
-Reasoning-model gotcha: with small `max_tokens` the free lane returns **empty
-`content`** and the text lands in `reasoning_content` — `hfx infer chat` surfaces
-both, auto-retries once at 3× on the free lane (default 1200 — raise it for long answers).
+Reasoning-model gotcha (Ling-Fin and other reasoning lanes): with small
+`max_tokens` the reply returns **empty `content`** and the text lands in
+`reasoning_content` — `hfx infer chat` surfaces both and auto-retries once at
+3× **only on true $0 lanes** (a retry on a paid lane would double cost).
 
-### Burst mechanics (why 402s happen at $0 spend)
+### Burst mechanics (why 402s happen at low spend)
 
 Every router request — **including $0-lane ones** — instantly books a **$0.01
 placeholder** against the $0.10/mo credit cap; a true-up job (~every minute)
@@ -48,11 +61,12 @@ replaces it with the real cost.
 | Max unsettled in flight | `floor(($0.10 − settled) / $0.01)` ≈ 10 |
 | Self-heal after 402 | ~1-5 min (true-up); 402s are never billed |
 | Kit pacing | 2.2 s between router calls in-process; on 402 → friendly hint, exit 3 |
-| Credits reset | calendar month (Oct 1) |
+| Credits reset | **calendar month** (unused credits do NOT roll over — spend down before the 1st) |
 
 `usage.estimated_cost` appears per-call on **deepinfra** responses only (matches
-settled billing exactly); novita omits it — the kit prints the catalog estimate
-($0 for the free lane) and you can confirm settled truth with `hfx infer budget`.
+settled billing exactly); other providers omit it — the kit prints the catalog
+estimate and you can confirm settled truth with `hfx infer budget` (read the SSE
+≥2 min after a burst for settled numbers).
 
 ### Embeddings (NOT free — spends credits)
 
@@ -61,9 +75,8 @@ passthrough (what `hfx infer embed` does): `BAAI/bge-small-en-v1.5`, 384 dims,
 **242-601 nanoUsd/call** (compute-second dependent; the kit's own live test
 settled at 242) → ~166k-413k calls per $0.10.
 
-Cheapest paid chat fallback if the promo dies: `Qwen/Qwen3-4B-Instruct-2507:nscale`
-($0.01/$0.03, 262k ctx, tools+structured✅; 5M blended tokens per $0.10).
-
 Evidence: findings/zero-cost-models.md · findings/inference-probe.md ·
 findings/review-cost-catalog.md · playbooks/inference-maxxing.md ·
-live test evidence: data/kit-tests/infer-token/
+live test evidence: data/kit-tests/infer-token/ ·
+drift event: data/zero-models/ (catalog snapshots) — retirement documented in
+findings/zero-cost-models.md §8 (2026-09-28)

@@ -39,10 +39,10 @@ hfx doctor                # full credential/deps/endpoint check-up
 JWT=$(hfx token mint-jwt --json | jq -r .jwt)
 curl -s https://router.huggingface.co/v1/chat/completions \
   -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' \
-  -d '{"model":"inclusionAI/Ling-3.0-flash-Fin:novita","messages":[{"role":"user","content":"hi"}],"max_tokens":300}'
+  -d '{"model":"Qwen/Qwen3-4B-Instruct-2507:nscale","messages":[{"role":"user","content":"hi"}],"max_tokens":64}'
 ```
-(max_tokens ≥300 — the free lane is a reasoning model; tiny budgets return
-empty `content` with the text in `reasoning_content`.)
+(cheapest pinned lane — PIN the `:provider` suffix always; unsuffixed ids route
+price-blind. `--verify` probes with max_tokens 5 ≈ $0.0000005.)
 
 Gotchas:
 - Missing `HF_JWT` → exit 2 with extraction hint (devtools → Application →
@@ -62,7 +62,8 @@ Gotchas:
 valid (mint endpoint — note this proves the MINT works; router acceptance of
 minted JWTs: verify with `hfx token mint-jwt --verify`), `huggingface_hub`
 version (**WARN if ≥2.0 — PIN `<2.0`, v2 has breaking changes**), boto3,
-gradio_client, router reachable (+ free-lane presence), datasets-server
+gradio_client, router reachable (+ **default-lane drift sentinel**: the kit's
+default chat lane present and ≤ its price ceiling), datasets-server
 reachable, quota snapshot (usage/live SSE). Fix hints inline; deps one-liner:
 `pip install --user "huggingface_hub<2.0" boto3 gradio_client`.
 

@@ -3,7 +3,7 @@
 > **You are a consumer agent (or human) who wants FREE cloud capacity for a side
 > project.** This kit gives you verified, measured, working access to every free
 > resource HuggingFace offers — storage, bandwidth, CDN, static hosting, GPU
-> bursts, $0 LLM inference, data querying, OAuth identity, a Docker pull-library
+> bursts, budget LLM inference, data querying, OAuth identity, a Docker pull-library
 > and more — through ONE CLI: `kit/bin/hfx` (alias `hfx` below).
 >
 > Everything here was **live-verified and measured** (Sep 2026) by the
@@ -12,6 +12,21 @@
 > kit/ directory, treat them as provenance pointers, not required reading; every
 > command and number you need is in this file or in `--help`. Nothing in this
 > kit costs money or violates ToS when used as documented.
+>
+> **Claim labels:** ✅ = live-verified on our account · 📄 = official-docs only ·
+> ⏳ = time-gated (date attached) · ⚠️ = trap/caveat. Volatile numbers
+> (prices, lane lists, quotas) carry a **re-verified date** — catalogs drift;
+> re-run the quoted check before relying on them.
+
+## When to use this kit
+
+Free storage/CDN/media at absurd scale (100 GB private + 8.7 TB public per
+entity, 20-30 TB/mo egress), always-on static hosting, GPU bursts (image/video/
+TTS/OCR/3D via 100+ Spaces), a small budget LLM lane, a free SQL-ish query
+engine over public data, and OAuth identity. NOT for: serverless functions,
+cron, databases, email, or custom domains — pair with Cloudflare/Supabase/GitHub
+(see the allocation table under Capacity map). New here? Run `kit/QUICKSTART.md`
+(15 min, one composed mini-project, ≤$0.001 total spend).
 
 ## Contents
 1. [TL;DR — the free stack](#tldr--the-free-stack-you-get-per-hf-account-numbers-verified-live)
@@ -21,7 +36,8 @@
 5. [The rules that keep it free](#the-rules-that-keep-it-free-gotchas-distilled--read-once-save-hours)
 6. [Capacity map & limits](#capacity-map--limits-the-full-verified-numbers)
 7. [The 30-day age-gate unlock](#the-30-day-age-gate-unlock)
-8. [Evidence & deeper docs](#evidence--deeper-docs)
+8. [Raw API quick reference](#raw-api-quick-reference-no-python-needed)
+9. [Evidence & deeper docs](#evidence--deeper-docs)
 
 **Shell alias (recommended):** `alias hfx='bash /path/to/kit/bin/hfx'`
 
@@ -34,7 +50,7 @@
 | Entity pools you control | 1 user + each org you create — every entity is its own 100 GB / 8.7 TB pool | $0 | findings/orgs-multiplication.md |
 | Bandwidth / egress | 20 TB/mo (user) + 30 TB/mo per org, CloudFront | $0 | findings/orgs-probe.md |
 | ZeroGPU compute | 300 GPU-sec + **8 runs** / rolling 24h | $0 | findings/spaces-probe.md |
-| LLM API | $0 lane (Ling-3.0-flash-Fin:novita) + $0.10/mo credits | $0 | findings/zero-cost-models.md |
+| LLM API | $0.10/mo credits ≈ **5M tok** (cheapest pinned lane, re-verified 2026-09-28) · $0 promos appear & vanish — recheck monthly | $0 | findings/zero-cost-models.md |
 | Static hosting | unlimited static Spaces, always-on, no cold start | $0 | playbooks/static-hosting.md |
 | Media CDN upload | `POST /uploads` — outside BOTH quotas, permanent | $0 | findings/uploads-cdn-probe.md |
 | Data query engine | datasets-server filter/search/sort/stats, no rate limit | $0 | findings/datasets-etl-final.md |
@@ -99,9 +115,10 @@ hfx cdn put ./photo.png
 hfx host deploy ./mysite -n my-site-test
 # → https://<you>-<my-site-test>.static.hf.space
 
-# 4. Free LLM call (the $0 lane — PIN the :novita suffix!)
-hfx infer chat "Summarize: the quick brown fox..." --free
-# (or: curl https://router.huggingface.co/v1/chat/completions ... model=inclusionAI/Ling-3.0-flash-Fin:novita)
+# 4. Budget LLM call (default = cheapest pinned lane; --free searches for a
+#    true $0 lane and REFUSES if none exists today)
+hfx infer chat "Summarize: the quick brown fox..."
+# (or: curl https://router.huggingface.co/v1/chat/completions ... model=Qwen/Qwen3-4B-Instruct-2507:nscale)
 
 # 5. Free GPU burst (check budget first — 8 runs/24h is the binding limit)
 hfx gpu preflight                             # quota + live GPU availability
@@ -330,19 +347,26 @@ Evidence: playbooks/static-hosting.md · live test: data/kit-tests/cdn-host-md/
 
 <!-- SECTION:infer -->
 
-## infer — free LLM calls via the router ($0 lane + $0.10/mo credits)
+## infer — LLM calls via the router (cheapest pinned lane + $0.10/mo credits)
 
-The kit's chat default is the **$0 lane**: `inclusionAI/Ling-3.0-flash-Fin:novita`
-($0/$0 per 1M tokens, 262k ctx, ~250 tok/s, tools✅ — verified across 39+ lifetime
-calls, every one settled at 0 nanoUsd). Everything runs through
+The kit's chat default is the **cheapest pinned lane**:
+`Qwen/Qwen3-4B-Instruct-2507:nscale` — $0.01/$0.03 per 1M tokens (≈ **5M blended
+tokens per $0.10/mo**), 262k ctx, tools+structured-output✅. Everything runs through
 `https://router.huggingface.co/v1` (OpenAI-compatible) with your `HF_TOKEN`.
 
+> **Drift log (the lane story — promotions die):** a true $0/$0 lane
+> (`inclusionAI/Ling-3.0-flash-Fin:novita`) existed 2026-09-23→26 and settled
+> $0.00 across 24 lifetime calls; the promo **retired ~2026-09-28** — a live
+> probe then settled **$0.01815 for 97 tokens** (also: not proportional per-1M
+> billing on that lane; ~5 such calls would exhaust a fresh $0.10). $0 promos
+> may return — re-check monthly with `hfx infer models --free-only` (30 s, free).
+
 ```bash
-hfx infer chat "Summarize: ..."            # $0 lane, prints content + cost + budget note
-hfx infer chat "hi" --max-tokens 300       # the lane is a REASONING model — see below
-hfx infer chat "hi" --model Qwen/Qwen3-4B-Instruct-2507:nscale   # paid: warns "this call costs ~$X"
-hfx infer models --free-only               # the 3 $0/$0 lanes (public catalog, free)
-hfx infer models --pattern llama           # price-scan any model
+hfx infer chat "Summarize: ..."            # default lane, prints content + cost + budget note
+hfx infer chat "hi" --max-tokens 300       # budget answers in ~64-300 tokens
+hfx infer chat "hi" --free                 # searches for a TRUE $0 lane; REFUSES (exit 3) if none today
+hfx infer models --free-only               # true $0 lanes (is_free flag); trap lanes flagged, never called
+hfx infer models --pattern llama           # price-scan any model (public, free)
 hfx infer budget                           # credits used/left + burst headroom (read-only)
 hfx infer embed --text "hello world"       # 384-dim vector, ~$0.0000003-6 (NOT free)
 ```
@@ -352,22 +376,28 @@ hfx infer embed --text "hello world"       # 384-dim vector, ~$0.0000003-6 (NOT 
 **Never send an unsuffixed chat model id.** Default router routing is `:fastest`,
 which **ignores price** — unsuffixed Ling-Fin routes to deepinfra at $0.06/$0.18
 (3 accidental calls cost this project 6,480 nanoUsd). `hfx infer` **refuses**
-unsuffixed ids (exit 2). Pin always: `:novita`, `:nscale`, or `:cheapest`
-(verified to actually pick the cheapest provider).
+unsuffixed ids (exit 2). Pin always: `:nscale`, `:novita`, or `:cheapest`
+(picks the lowest input price — non-deterministic under drift; prefer an
+explicit pin in scripts).
 
-The catalog's only $0/$0 lanes (re-verified 2026-09-26 — exactly 3):
+### The budget lane table (prices re-verified 2026-09-28)
 
-| Lane | Verdict |
-|---|---|
-| `inclusionAI/Ling-3.0-flash-Fin:novita` | **THE free lane** — settles at literally $0. Kit default. |
-| `prism-ml/Ternary-Bonsai-27B-gguf:together` | ⚠️ $0.01 placeholder that reverses (~30 min); unreliable — don't build on it |
-| `prism-ml/Ternary-Bonsai-27B-AWQ-4bit:together` | ⚠️ same trap |
+| Lane | $/1M in·out | per $0.10/mo | Notes |
+|---|---|---|---|
+| `Qwen/Qwen3-4B-Instruct-2507:nscale` | $0.01/$0.03 | **≈5M blended tok** | Kit default; tools✅; 262k ctx |
+| `Qwen/Qwen2.5-Coder-3B-Instruct:nscale` | $0.01/$0.03 | ≈5M | code tasks |
+| `meta-llama/Llama-3.1-8B-Instruct:deepinfra` | $0.02/$0.05 | ≈2.9M | |
+| `gpt-oss-120b:novita` | $0.05/$0.25 | ≈667k | cheapest 120B big-brain |
+| `inclusionAI/Ling-3.0-flash-Fin:novita` | ~$0.075/$0.22 | ≈190k | ex-$0 promo lane (retired 2026-09-28); reasoning model — needs `max_tokens ≥512` or content comes back empty |
+| featherless-ai long tail | ~$0.039/$0.108 | ≈1.5M | 1,000+ niche models, uniform rates |
+| `prism-ml/Ternary-Bonsai-*:together` | "$0/$0" | **TRAP** | books $0.01 flat that reverses (~30 min); unreliable — the kit flags and never recommends it |
 
-Reasoning-model gotcha: with small `max_tokens` the free lane returns **empty
-`content`** and the text lands in `reasoning_content` — `hfx infer chat` surfaces
-both, auto-retries once at 3× on the free lane (default 1200 — raise it for long answers).
+Reasoning-model gotcha (Ling-Fin and other reasoning lanes): with small
+`max_tokens` the reply returns **empty `content`** and the text lands in
+`reasoning_content` — `hfx infer chat` surfaces both and auto-retries once at
+3× **only on true $0 lanes** (a retry on a paid lane would double cost).
 
-### Burst mechanics (why 402s happen at $0 spend)
+### Burst mechanics (why 402s happen at low spend)
 
 Every router request — **including $0-lane ones** — instantly books a **$0.01
 placeholder** against the $0.10/mo credit cap; a true-up job (~every minute)
@@ -380,11 +410,12 @@ replaces it with the real cost.
 | Max unsettled in flight | `floor(($0.10 − settled) / $0.01)` ≈ 10 |
 | Self-heal after 402 | ~1-5 min (true-up); 402s are never billed |
 | Kit pacing | 2.2 s between router calls in-process; on 402 → friendly hint, exit 3 |
-| Credits reset | calendar month (Oct 1) |
+| Credits reset | **calendar month** (unused credits do NOT roll over — spend down before the 1st) |
 
 `usage.estimated_cost` appears per-call on **deepinfra** responses only (matches
-settled billing exactly); novita omits it — the kit prints the catalog estimate
-($0 for the free lane) and you can confirm settled truth with `hfx infer budget`.
+settled billing exactly); other providers omit it — the kit prints the catalog
+estimate and you can confirm settled truth with `hfx infer budget` (read the SSE
+≥2 min after a burst for settled numbers).
 
 ### Embeddings (NOT free — spends credits)
 
@@ -393,12 +424,11 @@ passthrough (what `hfx infer embed` does): `BAAI/bge-small-en-v1.5`, 384 dims,
 **242-601 nanoUsd/call** (compute-second dependent; the kit's own live test
 settled at 242) → ~166k-413k calls per $0.10.
 
-Cheapest paid chat fallback if the promo dies: `Qwen/Qwen3-4B-Instruct-2507:nscale`
-($0.01/$0.03, 262k ctx, tools+structured✅; 5M blended tokens per $0.10).
-
 Evidence: findings/zero-cost-models.md · findings/inference-probe.md ·
 findings/review-cost-catalog.md · playbooks/inference-maxxing.md ·
-live test evidence: data/kit-tests/infer-token/
+live test evidence: data/kit-tests/infer-token/ ·
+drift event: data/zero-models/ (catalog snapshots) — retirement documented in
+findings/zero-cost-models.md §8 (2026-09-28)
 
 <!-- SECTION:gpu -->
 
@@ -931,10 +961,10 @@ hfx doctor                # full credential/deps/endpoint check-up
 JWT=$(hfx token mint-jwt --json | jq -r .jwt)
 curl -s https://router.huggingface.co/v1/chat/completions \
   -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' \
-  -d '{"model":"inclusionAI/Ling-3.0-flash-Fin:novita","messages":[{"role":"user","content":"hi"}],"max_tokens":300}'
+  -d '{"model":"Qwen/Qwen3-4B-Instruct-2507:nscale","messages":[{"role":"user","content":"hi"}],"max_tokens":64}'
 ```
-(max_tokens ≥300 — the free lane is a reasoning model; tiny budgets return
-empty `content` with the text in `reasoning_content`.)
+(cheapest pinned lane — PIN the `:provider` suffix always; unsuffixed ids route
+price-blind. `--verify` probes with max_tokens 5 ≈ $0.0000005.)
 
 Gotchas:
 - Missing `HF_JWT` → exit 2 with extraction hint (devtools → Application →
@@ -954,7 +984,8 @@ Gotchas:
 valid (mint endpoint — note this proves the MINT works; router acceptance of
 minted JWTs: verify with `hfx token mint-jwt --verify`), `huggingface_hub`
 version (**WARN if ≥2.0 — PIN `<2.0`, v2 has breaking changes**), boto3,
-gradio_client, router reachable (+ free-lane presence), datasets-server
+gradio_client, router reachable (+ **default-lane drift sentinel**: the kit's
+default chat lane present and ≤ its price ceiling), datasets-server
 reachable, quota snapshot (usage/live SSE). Fix hints inline; deps one-liner:
 `pip install --user "huggingface_hub<2.0" boto3 gradio_client`.
 
@@ -1160,12 +1191,20 @@ tjs static: stale/metrics negative + READY domain ✓).
 1. Every router request instantly books a **$0.01 placeholder**; settled truth
    lands ~5 min later. More than **10 unsettled requests in flight** → 402
    "depleted" until placeholders settle (~2-5 min). Pace rapid-fire calls.
-2. The $0 lane (`inclusionAI/Ling-3.0-flash-Fin:novita`) settles at literally
-   $0 — but still consumes placeholder slots. **Always pin `:novita`**;
-   unsuffixed routes to `:fastest` → paid provider.
+2. **PIN the `:provider` suffix on EVERY chat id.** Default routing is
+   `:fastest`, which ignores price — unsuffixed Ling-Fin routed to deepinfra
+   $0.06/$0.18 (3 accidental calls = 6,480 nU). The kit refuses unsuffixed
+   ids (exit 2). Lane prices DRIFT: the Ling-Fin `:novita` $0 promo ran
+   Sep 23→26 2026, then retired (a 97-token probe settled $0.01815).
+   ```
+   hfx infer chat "hi" --model Ling-3.0-flash-Fin        # ❌ exit 2: refused (price-blind)
+   hfx infer chat "hi" --model Qwen/Qwen3-4B-Instruct-2507:nscale   # ✅ pinned, ~$0.000001
+   ```
 3. Failed requests are never billed. `usage.estimated_cost` in each response
    shows the per-call cost.
-4. $0.10/mo included credits reset **calendar-month** (Oct 1).
+4. $0.10/mo included credits reset **calendar-month** (unused credits do NOT
+   roll over — spend down before the 1st; SD3 image batches are the classic
+   month-end burn).
 
 **ZeroGPU:**
 5. **8 runs / rolling 24h is the BINDING limit** (300 GPU-s is rarely the
@@ -1192,8 +1231,10 @@ tjs static: stale/metrics negative + READY domain ✓).
 12. Private sharing: **presigned URLs must be SigV4** (default SigV2 presign →
     403). `hfx store share` handles this.
 13. Upload path choice (measured): <10 MB → hub `upload_file`; 10MB–5GB → hub +
-    `HF_XET_HIGH_PERFORMANCE=1`; >5GB → S3 auto-multipart. `hf_transfer` is a
-    deprecated no-op — don't bother.
+    `HF_XET_HIGH_PERFORMANCE=1`; huge → S3 auto-multipart (**no ceiling found**
+    — 10.2 GB verified at 20.2 MiB/s). `hf_transfer` is a deprecated no-op.
+    ⚠️ The S3 gateway is a *path*, not extra capacity — buckets draw the same
+    100 GB/8.7 TB entity pool; there is no separate S3 quota.
 
 **Static hosting:**
 14. No clean URLs (use a hash-router), no SPA fallback, no custom 404; CORS is
@@ -1216,10 +1257,18 @@ tjs static: stale/metrics negative + READY domain ✓).
 
 **ToS posture (stay safe, stay free):**
 17. Don't farm orgs (2-3 real-project orgs is the safe zone; each new org =
-    its own pools, creation throttled to 2/rolling-24h). Don't mass-follow/
-    mass-like. Keep `blockedPastWeek=0` (`hfx status` shows it). Uploads-CDN
-    files are permanent — never upload anything sensitive. Enforcement waves
-    target storage-pattern abuse (retry loops, multi-TB dumps), not normal use.
+    its own pools, creation throttled to 2/rolling-24h, window anchored to the
+    NEWEST creation). Don't mass-follow/mass-like. Keep `blockedPastWeek=0`
+    (`hfx status` shows it). Uploads-CDN files are permanent — never upload
+    anything sensitive. Enforcement waves target storage-pattern abuse (retry
+    loops, multi-TB dumps), not normal use.
+18. **Credential-management routes are checkup-gated** (mint/delete tokens, org
+    create/delete, app pages): if they 302 to `/security-checkup`, complete it
+    once in a browser → ~48-72h headless window (model verified 3×, Sep 2026).
+    Probe: `curl -I -H "Cookie: token=$HF_JWT" https://huggingface.co/settings/tokens`
+    → 200 = window open, 302 = browser checkup needed. Everything else
+    (storage, inference, Spaces, JWT mint, token *delete*) keeps working
+    regardless.
 
 ---
 
@@ -1230,8 +1279,10 @@ tjs static: stale/metrics negative + READY domain ✓).
   namespace). Max file 500 GB. Buckets share the same pool.
 - **Bandwidth:** 20 TB/mo user, 30 TB/mo per org (CloudFront, no per-GB fee).
 - **ZeroGPU:** 300 GPU-s + 8 runs per rolling 24h from first use; RTX Pro 6000
-  class; pre-flight live GPU count via api.hf.space events SSE.
+  class; pre-flight live GPU count via api.hf.space events SSE. In the quota
+  JSON, **`current` = REMAINING GPU-s** (not used) — proven by delta probes.
 - **Inference credits:** $0.10/mo included (user account only; orgs get $0);
+  budget lane $0.01/$0.03 per 1M (≈5M tok/mo, re-verified 2026-09-28);
   cheapest long-tail provider: featherless-ai (~$0.039/1M in). SD3-medium
   image ≈ $0.00007 on credits (~1400/mo). Embeddings ≈ $0.0000003/call.
 - **Datasets-server:** filter (WHERE + `orderby="col [asc|desc]"`, single col)
@@ -1247,14 +1298,86 @@ tjs static: stale/metrics negative + READY domain ✓).
   unlimited, zero quota. Ship it as a static Space (`hfx host deploy` + the
   `@huggingface/transformers` CDN build) — no quota touched, ever.
 
+### What goes where (the free stack beyond HF)
+
+| Need | Use | Why |
+|---|---|---|
+| Static site / assets | **HF static Space** (this kit) | unlimited, always-on, CORS `*` |
+| Serverless functions | Cloudflare Workers (100k req/day) | HF has none free |
+| SQL database | Supabase (Postgres 500MB) or CF D1 | HF has none free |
+| Cron / schedules | GitHub Actions (public repos) → OIDC trusted publishers → HF | HF Jobs are prepaid-only |
+| Custom domain | Cloudflare Pages in front of an HF-hosted site | HF domains are PRO-only |
+| LLM / GPU bursts / media gen | **HF router credits + ZeroGPU** (this kit) | nobody else gives these free |
+| Bulk storage / CDN origin | **HF public repo or bucket** (this kit) | 8.7 TB/entity + 20-30 TB/mo egress |
+
+### Entity (org) lifecycle — documented recipe, never automated
+
+Orgs multiply every pool (see TL;DR). Creation/deletion are **web-form,
+checkup-gated flows by design** — the kit will NEVER automate them (scripted
+form-POST org creation is the highest-risk ToS signature; scripted
+observation is fine). Recipe when you genuinely need a 2nd/3rd entity:
+1. Complete `/security-checkup` in a browser if credential routes 302 (rule 18).
+2. Create at https://huggingface.co/organizations/new (browser; 2 per rolling
+   24h, anchored to the NEWEST creation — `x-error-message` carries the ETA).
+3. Put REAL distinct content in it fast — an empty shell org is itself a mild
+   risk signal; `hfx status --entity <org>` shows what's standing.
+4. Deletion (round-trip verified): `DELETE /api/organizations/<org>` with
+   session cookie + browser UA inside a checkup window → 200; cascades all org
+   repos; name instantly reusable. Slots free on the same 2/24h clock.
+
 ## The 30-day age-gate unlock
 Accounts younger than **30 days** cannot create ZeroGPU Spaces (402 on
 create — verified). On day 30 the gate lifts: a free personal account may
 create **2 ZeroGPU Spaces** = its own always-wakeable free GPU API endpoints
-(think: media-gen gateway + LLM proxy). Community-blog publishing eligibility
-(`canCreateBlog`) likely unlocks around the same mark (~30d + follower count;
-watch `GET /api/blog` → `.canCreateBlog`). Kit commands gain
-`hfx host zero-gpu` then.
+(think: media-gen gateway + LLM proxy). Day-30 playbook (all mechanics
+live-verified, no account-specific tuning):
+1. **Probe first — a 402 costs nothing:** `POST /api/repos/create` with
+   `sdk:gradio, hardware:zero-a10g`; still 402 → wait, retry later that day.
+2. **Claim BOTH slots immediately** (deletion frees a slot instantly — claim
+   then iterate).
+3. **Validate cheap:** one minimal preset per Space; budget 2 runs + 15-20
+   GPU-s total; `hfx gpu quota` after each (counters lag on errors).
+A minimal hello-world ZeroGPU Space is ~20 lines (README front-matter + gradio
++ `@spaces.GPU` decorator) — reference implementations live in the research
+repo (`spaces/`). Community-blog publishing eligibility (`canCreateBlog`)
+likely unlocks around the same mark (~30d + follower count; watch
+`GET /api/blog` → `.canCreateBlog`).
+
+## Raw API quick reference (no Python needed)
+
+The kit wraps these; raw curls work anywhere (always send a token — anonymous
+limits are 2× worse):
+
+```bash
+T="Authorization: Bearer $HF_TOKEN"
+# who am I (account, orgs, token role)
+curl -s -H "$T" https://huggingface.co/api/whoami-v2
+# ALL quotas in one SSE (storage, credits, ZeroGPU, rate buckets)
+curl -sN -H "$T" https://huggingface.co/api/settings/billing/usage/live | head -4
+# ZeroGPU quota (current = REMAINING GPU-s; runs.remaining = runs left today)
+curl -s -H "$T" https://huggingface.co/api/spaces/zero-gpu/quota
+# create + delete a static Space
+curl -s -X POST -H "$T" -H "Content-Type: application/json" \
+  https://huggingface.co/api/repos/create \
+  -d '{"type":"space","name":"my-site","sdk":"static","private":false}'
+curl -s -X POST -H "$T" -H "Content-Type: application/json" \
+  https://huggingface.co/api/repos/delete \
+  -d '{"type":"space","organization":"<you>","name":"my-site"}'
+# make a bucket private (SDK/rclone mkdir creates PUBLIC by default!)
+curl -s -X PUT -H "$T" -H "Content-Type: application/json" \
+  https://huggingface.co/api/buckets/<ns>/<bucket>/settings -d '{"private":true}'
+# router: cheapest pinned chat + public catalog
+curl -s https://router.huggingface.co/v1/models | jq '[.data[].providers[]? | select(.is_free)] | length'
+curl -s -X POST https://router.huggingface.co/v1/chat/completions -H "$T" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"Qwen/Qwen3-4B-Instruct-2507:nscale","messages":[{"role":"user","content":"hi"}],"max_tokens":64}'
+# datasets-server: free query engine on ANY public dataset
+curl -s "https://datasets-server.huggingface.co/rows?dataset=lhoestq%2Fdemo1&config=default&split=train&offset=0&length=5"
+# OIDC: discovery + a code→token exchange (PKCE flow for your own app)
+curl -s https://huggingface.co/.well-known/openid-configuration
+# registry.hf.space: pull-token for any public Docker Space image
+curl -s -H "$T" "https://huggingface.co/api/spaces/<owner>/<space>/registry-auth-check"
+```
 
 ## Evidence & deeper docs
 - Master map: `RESOURCE-MAP.md` · Research findings: `findings/*.md`
