@@ -429,9 +429,12 @@ def _cmd_embed(a, ctx: dict) -> int:
         return hfx.EXIT_OK
     print(f"dim    : {len(vec)}")
     print(f"first3 : {[round(v, 6) for v in vec[:3]]}")
-    print("settled: lands at ~242-601 nanoUsd in billing within ~2-5 min "
-          "(hf-inference reports no estimated_cost) — verify: hfx infer budget")
-    print("budget : embeddings spend real credits ($0.10/mo) — ~166k-413k calls/mo.")
+    lo, hi = EMBED_COST_NANOUSD
+    print(f"settled: lands at ~{lo:,}-{hi:,} nanoUsd in billing within ~2-5 min "
+          "(hf-inference reports no estimated_cost; REPRICED 2026-09-28 — was "
+          "242-601 nU before) — verify: hfx infer budget")
+    print(f"budget : embeddings spend real credits ($0.10/mo) — "
+          f"~{int(100_000_000 / hi):,}-{int(100_000_000 / lo):,} calls/mo.")
     return hfx.EXIT_OK
 
 

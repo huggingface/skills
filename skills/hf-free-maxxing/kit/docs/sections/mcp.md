@@ -39,7 +39,8 @@ STRING**, not a nested object; file inputs are public URLs (HF dataset
 `resolve/` URLs verified) or base64 data-URLs; unknown kwargs are
 warned-then-passed-through and rejected at argument binding BEFORE GPU attach
 ($0, no run); outputs arrive as content blocks — download URL outputs
-IMMEDIATELY (same session-bound rules as the GPU section).
+IMMEDIATELY (same tmp capability-URL rules as the GPU section — fetchable
+by anyone until the replica GCs, 5.5-24h).
 
 **The sandbox verdict** (why hf_sandbox is ❌): `create` → 402 Payment
 Required; the underlying Jobs API wants a prepaid balance. With credits it

@@ -10,7 +10,7 @@ Two credentials, two jobs:
 ```bash
 hfx token info            # whoami-v2: account, token role, orgs (token masked to 8 chars)
 hfx token mint-jwt        # mint + decode a 1h inference-only JWT (prints the JWT — that's the point)
-hfx token mint-jwt --verify    # + ONE $0-lane probe proving the router accepts it RIGHT NOW
+hfx token mint-jwt --verify    # + ONE cheap-lane probe (≈$0.0000005) proving the router accepts it RIGHT NOW
 hfx token mint-jwt --ttl-note  # + the mint-per-CI-run TTL strategy note
 hfx doctor                # full credential/deps/endpoint check-up
 ```

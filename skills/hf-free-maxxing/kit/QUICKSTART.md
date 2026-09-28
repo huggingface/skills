@@ -133,7 +133,7 @@ hfx etl rows lhoestq/demo1 --limit 5
 **Done-when:** `VERDICT: GO` (8 runs + 300 GPU-s budget OK; add `--space
 mrfakename/Z-Image-Turbo` for live slot counts) and 5 data rows print (the free
 query engine works — no rate limit, no auth for public data). Real GPU run is
-optional `[GATED: 1 run + ~3-6 GPU-s (measured 2.7-5.3)]`: `hfx gpu run
+optional `[GATED: 1 run + ~3-6 GPU-s (measured 2.6-5.3)]`: `hfx gpu run
 mrfakename/Z-Image-Turbo --fn generate_image --arg '"a cat astronaut"' --arg
 1024 --arg 1024 --arg 4 --arg 42 --arg false --out ./out` → **done-when:**
 `out/image.png` + `out/run-*.json` sidecar exist (the sidecar IS the

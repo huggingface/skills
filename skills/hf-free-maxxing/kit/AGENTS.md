@@ -577,7 +577,8 @@ STRING**, not a nested object; file inputs are public URLs (HF dataset
 `resolve/` URLs verified) or base64 data-URLs; unknown kwargs are
 warned-then-passed-through and rejected at argument binding BEFORE GPU attach
 ($0, no run); outputs arrive as content blocks — download URL outputs
-IMMEDIATELY (same session-bound rules as the GPU section).
+IMMEDIATELY (same tmp capability-URL rules as the GPU section — fetchable
+by anyone until the replica GCs, 5.5-24h).
 
 **The sandbox verdict** (why hf_sandbox is ❌): `create` → 402 Payment
 Required; the underlying Jobs API wants a prepaid balance. With credits it
@@ -949,7 +950,7 @@ Two credentials, two jobs:
 ```bash
 hfx token info            # whoami-v2: account, token role, orgs (token masked to 8 chars)
 hfx token mint-jwt        # mint + decode a 1h inference-only JWT (prints the JWT — that's the point)
-hfx token mint-jwt --verify    # + ONE $0-lane probe proving the router accepts it RIGHT NOW
+hfx token mint-jwt --verify    # + ONE cheap-lane probe (≈$0.0000005) proving the router accepts it RIGHT NOW
 hfx token mint-jwt --ttl-note  # + the mint-per-CI-run TTL strategy note
 hfx doctor                # full credential/deps/endpoint check-up
 ```

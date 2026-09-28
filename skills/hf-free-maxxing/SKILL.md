@@ -6,7 +6,7 @@ compatibility: "Requires a Hugging Face account + access token, Python 3.10+, an
 metadata:
   author: landogayatri
   source: https://huggingface.co/landogayatri/hf-free-maxxing
-  version: "1.1.1"
+  version: "1.1.2"
   verified: "2026-09"
 ---
 

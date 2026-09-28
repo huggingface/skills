@@ -50,7 +50,18 @@ WARMING = ("dataset warming (cold start up to ~2-4 min after idle; the search "
 
 # ------------------------------------------------------------------ helpers
 
-def _check_repo(repo: str) -> str:
+def _check_repo(repo: str, ctx: dict | None = None) -> str:
+    """Validate (and auto-namespace) a dataset repo id. A bare `name` is
+    auto-prefixed with the authenticated user's namespace — same ergonomics
+    as `store`/`host` (R2-A fix: bare ids used to exit 2)."""
+    if repo and "/" not in repo:
+        tok = ((ctx or {}).get("env") or {}).get("HF_TOKEN") or os.environ.get("HF_TOKEN")
+        if tok:
+            try:
+                ns = hfx.entities(tok)[0]["name"]
+                return f"{ns}/{repo}"
+            except Exception:
+                pass  # fall through to the strict error (no network guess)
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo or ""):
         hfx.die(f"bad repo id '{repo}' — expected <namespace>/<name> "
                 f"(e.g. <you>/{DEFAULT_REPO_NAME})", hfx.EXIT_CONFIG)
@@ -271,7 +282,7 @@ def cmd_upload(a: argparse.Namespace, ctx: dict) -> int:
     token = hfx.need_token(ctx["env"])
     if not a.repo:  # D1 P1-1: namespace resolved from the token, never baked in
         a.repo = _default_repo(token)
-    _check_repo(a.repo)
+    a.repo = _check_repo(a.repo, ctx)
     from huggingface_hub import HfApi
     api = HfApi(token=token)
 
@@ -337,7 +348,7 @@ FILTER_POLL_INTERVAL = 20  # seconds between --wait polls (findings: warming
 
 
 def cmd_filter(a: argparse.Namespace, ctx: dict) -> int:
-    _check_repo(a.repo)
+    a.repo = _check_repo(a.repo, ctx)
     _check_page(a.limit, a.offset)
     if not a.where and not a.orderby:
         hfx.die("give --where and/or --orderby (plain pagination = `hfx etl rows`)",
@@ -410,7 +421,7 @@ def cmd_filter(a: argparse.Namespace, ctx: dict) -> int:
 
 
 def cmd_search(a: argparse.Namespace, ctx: dict) -> int:
-    _check_repo(a.repo)
+    a.repo = _check_repo(a.repo, ctx)
     _check_page(a.limit, a.offset)
     if not a.query:
         hfx.die("--query is required (token match, 100% recall, first 5GB indexed)",
@@ -463,7 +474,7 @@ def cmd_search(a: argparse.Namespace, ctx: dict) -> int:
 
 
 def cmd_rows(a: argparse.Namespace, ctx: dict) -> int:
-    _check_repo(a.repo)
+    a.repo = _check_repo(a.repo, ctx)
     _check_page(a.limit, a.offset)
     d = ds_get("/rows", {"dataset": a.repo, "config": a.config,
                          "split": a.split, "offset": a.offset,
@@ -478,7 +489,7 @@ def cmd_rows(a: argparse.Namespace, ctx: dict) -> int:
 
 
 def cmd_stats(a: argparse.Namespace, ctx: dict) -> int:
-    _check_repo(a.repo)
+    a.repo = _check_repo(a.repo, ctx)
     d = ds_get("/statistics", {"dataset": a.repo, "config": a.config,
                                "split": a.split}, auth=a.auth, ctx=ctx,
                warming_retry=True)
@@ -529,7 +540,7 @@ def _parquet_files(repo: str, a: argparse.Namespace, ctx: dict) -> list[dict]:
 
 
 def cmd_parquet(a: argparse.Namespace, ctx: dict) -> int:
-    _check_repo(a.repo)
+    a.repo = _check_repo(a.repo, ctx)
     files = _parquet_files(a.repo, a, ctx)
     if ctx["json"] or a.json:
         hfx.jprint({"repo": a.repo, "parquet_files": files})
@@ -554,7 +565,7 @@ resolve URL instead.""")
 
 
 def cmd_splits(a: argparse.Namespace, ctx: dict) -> int:
-    _check_repo(a.repo)
+    a.repo = _check_repo(a.repo, ctx)
     deadline = time.time() + a.wait if a.wait else 0.0
     if a.wait:
         print(f"  waiting for conversion (first poll in {min(60, a.wait)}s; "
@@ -635,7 +646,7 @@ def cmd_rm(a: argparse.Namespace, ctx: dict) -> int:
     """Teardown: delete a whole dataset REPO (U6 #1) via the verified
     DELETE /api/repos/delete route (same one huggingface_hub.delete_repo and
     hfx host rm use; body {name, organization, type:'dataset'})."""
-    repo = _check_repo(a.repo)
+    repo = a.repo = _check_repo(a.repo, ctx)
     token = hfx.need_token(ctx["env"])
     ns, name = repo.split("/", 1)
 
@@ -684,7 +695,7 @@ def cmd_sql(a: argparse.Namespace, ctx: dict) -> int:
     """EXPERIMENTAL: full SQL (GROUP BY/JOIN/window fns) via local DuckDB over
     the dataset's auto-converted parquet URLs. The query runs against view
     `data` (= chosen config/split)."""
-    _check_repo(a.repo)
+    a.repo = _check_repo(a.repo, ctx)
     files = _parquet_files(a.repo, a, ctx)
     # pick config/split: requested, else default/train, else first available
     want = [(a.config, a.split)] if (a.config and a.split) else []
