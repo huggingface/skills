@@ -415,10 +415,45 @@ def cmd_search(a: argparse.Namespace, ctx: dict) -> int:
     if not a.query:
         hfx.die("--query is required (token match, 100% recall, first 5GB indexed)",
                 hfx.EXIT_CONFIG)
-    d = ds_get("/search", {"dataset": a.repo, "config": a.config,
-                           "split": a.split, "query": a.query,
-                           "offset": a.offset, "length": a.limit},
-               auth=a.auth, ctx=ctx, warming_retry=True)
+    params = {"dataset": a.repo, "config": a.config, "split": a.split,
+              "query": a.query, "offset": a.offset, "length": a.limit}
+
+    # `--wait SECONDS` (same lazy-index reality as filter): the /search index
+    # warms on first touch / after idle eviction (500 "index is loading",
+    # observed up to ~15 min on a fresh upload) — poll until 200, then print.
+    if a.wait:
+        if a.wait < 1:
+            hfx.die("--wait must be >= 1 second", hfx.EXIT_CONFIG)
+        deadline = time.time() + a.wait
+        t0 = time.time()
+        attempt, d, last = 0, None, {}
+        print(f"  polling /search until queryable (max {a.wait}s, first check "
+              "now, then every " + f"{FILTER_POLL_INTERVAL}s)...", file=sys.stderr,
+              flush=True)
+        while True:
+            attempt += 1
+            last = {}
+            params["_"] = int(time.time() * 1000)  # cache-buster (CDN 120s)
+            d = ds_get("/search", params, auth=a.auth, ctx=ctx, timeout=30,
+                       transient_ok=True, quiet_404=True, poll=last)
+            if d is not None:
+                break
+            if time.time() >= deadline:
+                hfx.die(f"search still not queryable after {a.wait}s — last "
+                        f"state: {last.get('state', 'no response')}. The search "
+                        "index warms lazily (observed up to ~15 min on first-ever "
+                        "touch). Try: a longer window (hfx etl search ... "
+                        f"--wait 600), or fall back to /filter with a LIKE "
+                        f"pattern: hfx etl filter {a.repo} --where "
+                        "'\"col\" LIKE \'%tok%\''", hfx.EXIT_FAIL)
+            left = int(deadline - time.time())
+            print(f"  ... {last.get('state', '?')} — {left}s left",
+                  file=sys.stderr, flush=True)
+            time.sleep(min(FILTER_POLL_INTERVAL, max(1, left)))
+        print(f"  search queryable — attempt {attempt}, "
+              f"{time.time() - t0:.0f}s", file=sys.stderr, flush=True)
+    else:
+        d = ds_get("/search", params, auth=a.auth, ctx=ctx, warming_retry=True)
     if ctx["json"] or a.json:
         _page_json(d, repo=a.repo, kind="search", offset=a.offset)
     else:
@@ -783,6 +818,12 @@ def run(argv: list[str], ctx: dict) -> int:
                                 "with the last observed state on timeout")
         if name == "search":
             s.add_argument("--query", help="token(s) to match (no ranking/highlights)")
+            s.add_argument("--wait", type=int, default=0, metavar="SECONDS",
+                           help="poll until the search index is queryable, then "
+                                "print — the index warms LAZILY (500 'index is "
+                                "loading', observed up to ~15 min on first-ever "
+                                "touch); polls every 20s up to SECONDS, exit 1 "
+                                "with the last observed state on timeout")
         if name == "splits":
             s.add_argument("--wait", type=int, default=0, metavar="SECONDS",
                            help="poll until queryable (max seconds; e.g. --wait 180)")

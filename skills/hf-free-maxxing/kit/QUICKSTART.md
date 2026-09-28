@@ -15,10 +15,18 @@ assert success mechanically.
 - A HF account + PAT (role **write**) from <https://huggingface.co/settings/tokens>.
 - Python deps: `pip install --user "huggingface_hub<2.0" boto3 gradio_client`
   (⚠️ PIN hub `<2.0` — v2 has breaking changes).
-- `export HF_TOKEN=hf_...` (or a `.env` next to the kit's parent).
+- A token in the environment: either `export HF_TOKEN=hf_...` **or** a `.env`
+  file at the repo root next to `kit/` (the kit auto-loads `kit/.env` then the
+  parent dir's `.env` — if you run `echo $HF_TOKEN` and it's empty but the
+  `.env` exists, that's fine: the kit reads the file itself).
 - Optional: `export HF_JWT=<browser cookie "token">` unlocks JWT minting (skip for now).
+- Set the alias every shell will need (adjust the path to where you put the kit):
+  ```bash
+  alias hfx='bash /path/to/kit/bin/hfx'   # all commands below assume this
+  ```
 
-**Done-when:** `echo $HF_TOKEN` prints a value.
+**Done-when:** `hfx doctor` in step 1 runs and reaches the credential check
+(if it says `HF_TOKEN is not set`, fix the env/.env first).
 
 ## 1. Doctor — full setup check `$0`
 
@@ -26,8 +34,10 @@ assert success mechanically.
 hfx doctor
 ```
 
-**Done-when:** the line `All checks PASS — you're fully set up` (HF_JWT absent →
-WARN is fine; exit code 0). FAIL lines carry their own fix hints.
+**Done-when:** a line starting `All checks PASS` (grep for `All checks PASS` —
+the suffix varies: with `HF_JWT` set it reads "— you're fully set up", without
+it "(1 warn …)" which is expected and fine; exit code 0). FAIL lines carry
+their own fix hints.
 
 ## 2. Status — your free capacity `$0`
 
@@ -35,8 +45,9 @@ WARN is fine; exit code 0). FAIL lines carry their own fix hints.
 hfx status --storage-only
 ```
 
-**Done-when:** your username row appears with `private 0 B/93.13 GB` (100 GB
-per entity). Full `hfx status` (~30 s) adds credits + ZeroGPU + every org pool.
+**Done-when:** your username row appears showing the private-pool limit
+(≈93.13 GiB = 100 GB per entity; a brand-new account shows `0 B/93.13 GB`).
+Full `hfx status` (~30 s) adds credits + ZeroGPU + every org pool.
 
 ## 3. Storage round-trip (repo path) `$0 · ~KB`
 
@@ -49,7 +60,9 @@ hfx store rm qs.txt --repo hfx-qs-test --purge-lfs
 ```
 
 **Done-when:** `ROUND-TRIP-OK` prints (byte-identical) and `hfx store ls
---repo hfx-qs-test` is empty again (`--purge-lfs` frees quota, ≤60 s).
+--repo hfx-qs-test` is empty again (`--purge-lfs` frees quota in ~25-80 s).
+The empty dataset-repo shell remains (harmless, 0 bytes) — remove it too with
+`hfx etl rm hfx-qs-test` if you want a spotless account.
 (S3-bucket variant `[GATED: S3 creds minted from a write token]`:
 `hfx store put f --bucket my-b` — same pool, deletable.)
 
@@ -75,21 +88,24 @@ hfx infer chat "Write a 2-line haiku about free GPUs. Reply with ONLY the haiku.
 ≈5M tokens per $0.10/mo. Note: each router call books a **$0.01 placeholder**
 against the cap for ~1-2 min — if you watch `hfx status` right after, credits
 look $0.01 higher; that's the placeholder, not real spend. Settled truth:
-`hfx infer budget` after 3 min.) Save the haiku:
-`hfx infer chat ... --json | jq -r .content > /tmp/haiku.txt`.
+`hfx infer budget` after 3 min.) Save the haiku with the same budget:
+`hfx infer chat "...same prompt..." --max-tokens 64 --json | jq -r .content > /tmp/haiku.txt`.
 
 ## 6. CDN upload — the site's image (PERMANENT!) `$0 · outside all quotas`
 
 ```bash
-printf '\x89PNG\r\n\x1a\n' > /tmp/pixel-head.png   # minimal PNG header stub
+# a real 1×1 PNG (70 B, no deps needed — 12+ bytes so the magic-byte sniffer reads it)
+printf 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==' \
+  | base64 -d > /tmp/pixel-head.png
 hfx cdn put /tmp/pixel-head.png --check            # dry-run: sniff only, NO upload
 ```
 
-**Done-when (`--check`):** prints the sniffed type and exits 0 — nothing was
-uploaded. **Real upload is PERMANENT (no delete endpoint exists)** — when you
-have a real image, drop `--check` and **Done-when:** a
-`https://cdn-uploads.huggingface.co/production/uploads/...` URL that returns
-HTTP 200 with `Content-Type: image/...`. Never upload anything sensitive.
+**Done-when (`--check`):** prints `PNG → Content-Type image/png … ALLOWED
+(dry-run, nothing uploaded)` and exits 0. **Real upload is PERMANENT (no
+delete endpoint exists)** — when you have a real image, drop `--check` and
+**Done-when:** a `https://cdn-uploads.huggingface.co/production/uploads/...`
+URL that returns HTTP 200 with `Content-Type: image/...`. Never upload
+anything sensitive.
 
 ## 7. Host the site `$0`
 
@@ -102,9 +118,10 @@ hfx host deploy /tmp/qs-site -n hfx-qs-test
 ```
 
 **Done-when:** the `LIVE: https://<you>-hfx-qs-test.static.hf.space` line, then
-`curl -s <url>` returns 200 and contains your haiku text; `curl -sI <url>` shows
-`x-repo-commit:`. (No clean URLs — link explicit `/dir/index.html` paths; hash
-routes for SPAs.)
+`curl -sL <url>/` returns 200 (follow the redirect — the bare root 302s to
+`/index.html`; there are no clean URLs) and contains your haiku text;
+`curl -sI <url>/index.html` shows `x-repo-commit:`. (Link explicit
+`/dir/index.html` paths; hash routes for SPAs.)
 
 ## 8. GPU preflight (no invoke) + data query `$0`
 
@@ -116,16 +133,18 @@ hfx etl rows lhoestq/demo1 --limit 5
 **Done-when:** `VERDICT: GO` (8 runs + 300 GPU-s budget OK; add `--space
 mrfakename/Z-Image-Turbo` for live slot counts) and 5 data rows print (the free
 query engine works — no rate limit, no auth for public data). Real GPU run is
-optional `[GATED: 1 run + ~3 GPU-s]`: `hfx gpu run mrfakename/Z-Image-Turbo
---fn generate_image --arg '"a cat astronaut"' --arg 1024 --arg 1024 --arg 4
---arg 42 --arg false --out ./out` → **done-when:** `out/image.png` +
-`out/run-*.json` sidecar exist (the sidecar IS the measurement record).
+optional `[GATED: 1 run + ~3-6 GPU-s (measured 2.7-5.3)]`: `hfx gpu run
+mrfakename/Z-Image-Turbo --fn generate_image --arg '"a cat astronaut"' --arg
+1024 --arg 1024 --arg 4 --arg 42 --arg false --out ./out` → **done-when:**
+`out/image.png` + `out/run-*.json` sidecar exist (the sidecar IS the
+measurement record).
 
 ## 9. Teardown + where next
 
 ```bash
 hfx host rm hfx-qs-test --yes
-hfx host ls                # done-when: no hfx-qs-test rows
+hfx etl rm hfx-qs-test --yes    # removes the step-3 repo shell (dry-run without --yes)
+hfx host ls                     # done-when: no hfx-qs-test rows
 ```
 
 | Want next | Go to |

@@ -30,7 +30,10 @@ Gotchas (all live-verified):
 - **Read-only**: pushes 404 (`allow: GET,HEAD,OPTIONS`). You cannot host your
   own images here — for HF-built images, create a Docker Space (PRO-gated for
   young accounts; the kit's `host` module covers static instead).
-- **Login mandatory even for public images** (anon → 401 everywhere).
+- **Auth required on the API surface** (anon → 401 everywhere). Nuance
+  (live-tested 2026-09-28): public manifest/blob PULLS accept any password
+  with a valid username — the docker login is formality for pulls, but keep
+  using `login-cmd` (your PAT) so gated/auth-check flows behave uniformly.
 - Image names are **hyphenated**: `owner/space` → `owner-space`. Tags look
   like `cpu-<shortsha>` (+ PR-build suffixes); `latest` usually doesn't exist
   — get one from `hfx registry manifest`.

@@ -389,7 +389,7 @@ explicit pin in scripts).
 | `meta-llama/Llama-3.1-8B-Instruct:deepinfra` | $0.02/$0.05 | ≈2.9M | |
 | `gpt-oss-120b:novita` | $0.05/$0.25 | ≈667k | cheapest 120B big-brain |
 | `inclusionAI/Ling-3.0-flash-Fin:novita` | ~$0.075/$0.22 | ≈190k | ex-$0 promo lane (retired 2026-09-28); reasoning model — needs `max_tokens ≥512` or content comes back empty |
-| featherless-ai long tail | ~$0.039/$0.108 | ≈1.5M | 1,000+ niche models, uniform rates |
+| featherless-ai long tail | **unpriced** (pricing:null, 2026-09-28) | unknown | ~76 lanes currently — the catalog omits them from price scans; treat as pay-per-use, verify with 1 tiny call + `hfx infer budget` (historically ~$0.039/$0.108 per 1M) |
 | `prism-ml/Ternary-Bonsai-*:together` | "$0/$0" | **TRAP** | books $0.01 flat that reverses (~30 min); unreliable — the kit flags and never recommends it |
 
 Reasoning-model gotcha (Ling-Fin and other reasoning lanes): with small
@@ -417,12 +417,15 @@ settled billing exactly); other providers omit it — the kit prints the catalog
 estimate and you can confirm settled truth with `hfx infer budget` (read the SSE
 ≥2 min after a burst for settled numbers).
 
-### Embeddings (NOT free — spends credits)
+### Embeddings (NOT free — spends credits; REPRICED 2026-09-28)
 
 The router has **no `/v1/embeddings`** (live-probed → 404). Use the hf-inference
-passthrough (what `hfx infer embed` does): `BAAI/bge-small-en-v1.5`, 384 dims,
-**242-601 nanoUsd/call** (compute-second dependent; the kit's own live test
-settled at 242) → ~166k-413k calls per $0.10.
+passthrough (what `hfx infer embed` does): `BAAI/bge-small-en-v1.5`, 384 dims.
+⚠️ **Drift #2 (2026-09-28): settled 48,443 nanoUsd/call** on 2 identical warm
+calls — ~100× the 242-601 nU measured Sep 23-26 (the hf-inference passthrough
+repriced). At the current rate: **~2,065 calls per $0.10**. Verify with one
+call + `hfx infer budget` before batch work — embed pricing has already moved
+once.
 
 Evidence: findings/zero-cost-models.md · findings/inference-probe.md ·
 findings/review-cost-catalog.md · playbooks/inference-maxxing.md ·
@@ -472,11 +475,13 @@ the durable evidence trail; the run log path is printed at the end).
    {"_type": "gradio.FileData"}}` — the shape verified working in
    findings/wan22-measurement.md (base64 data-URIs in `url` ALWAYS work, and
    bypass broken Space egress entirely).
-3. **Outputs are session-bound** — the returned tmp URLs 403 from any later or
-   foreign session, and die with the serving replica (public window closes
-   somewhere between 5.5 h and 24 h). `hfx gpu run` fetches outputs in the
-   same client session and copies them to `--out` immediately; treat that copy
-   as the only durable one (re-host with `hfx cdn put` for sharing).
+3. **Outputs are tmp capability-URLs** — fetch them promptly. Live evidence
+   (2026-09-28): right after a run the tmp URLs are fetchable by ANYONE
+   (anon curl 200 — not session-bound); the public window then closes with
+   the serving replica (all 6 session-1 outputs 403'd at the 24 h mark; 5/6
+   still alive at 5.5 h). `hfx gpu run` fetches outputs in the same client
+   session and copies them to `--out` immediately — treat that copy as the
+   only durable one (re-host with `hfx cdn put` for sharing).
 
 **Billing states (all measured, findings/wan22-measurement.md):**
 
@@ -504,7 +509,8 @@ the count fluctuates by the second, and it can be stale at the reset boundary.
 `zero-gpu-count: 0` just means your run will QUEUE (wall-clock, not quota).
 
 **The catalog:** `hfx gpu spaces` enumerates the `mcp-server` hub tag —
-**2000+ MCP-enabled Spaces (774 on ZeroGPU hardware at last count)**, not just
+**2000+ MCP-enabled Spaces** (default = first 20 pages ≈ 2000; `--max-pages
+N` for more; 774 on ZeroGPU hardware at last count), not just
 the 16 curated ones: video (Wan2.2, LTX), 3D (TRELLIS, Shap-E), STT
 (whisper-large-v3), lip-sync, upscaling, captioning… every one scriptable via
 `hfx gpu run` (direct Gradio) or `hfx mcp call dynamic_space` (see the MCP
@@ -619,6 +625,9 @@ hfx etl splits myuser/leads --wait 180      # polls until READY, then probes /ro
 # 3. Query it — server-side, no download
 hfx etl filter myuser/leads --where "score>0.5 AND name LIKE '%acme%'" \
                           --orderby "score desc" --limit 100
+hfx etl search myuser/leads --query "error" --wait 600       # search index warms
+                          # LAZILY (observed ~15 min first touch) — same --wait
+                          # pattern as filter; exit 1 + last state on timeout
 hfx etl filter myuser/leads --where "score>0.5" --wait 300   # COLD dataset:
                           # polls every 20s until the filter index is queryable,
                           # then prints the result (exit 1 + last state on timeout)
@@ -644,7 +653,7 @@ Works from browsers too — datasets-server CORS is `*`, so a static site can
 | Command | Endpoint | Syntax | Limits & notes |
 |---|---|---|---|
 | `filter` | `/filter` | `--where "\"col\"=25"` · `"col">5` · `"col" LIKE '%x%'` · `AND`/`OR` + parens · `--orderby "\"col\" desc"` (single column, default asc) | page ≤ 100 · index = **first 5 GB** · `num_rows_total` = match count when `where` present · bare column names are auto-quoted by the kit · **`--wait SECONDS`** polls until queryable: fresh uploads 404 until processed (~2-3 min), idle datasets 500 "index is loading" — retries every 20s (each poll ≤ 30s), exit 1 with the last observed state on timeout · `--json` adds a `wait` key `{waited_s, attempts, queryable}` |
-| `search` | `/search` | `--query "token"` | token match, 100% recall (7/7 verified) · first 5 GB · index builds LAZILY — can 500 for minutes on fresh/idle datasets |
+| `search` | `/search` | `--query "token"` | token match, 100% recall (7/7 verified) · first 5 GB · index builds LAZILY — can 500 for minutes on fresh/idle datasets (observed ~15 min) · **`--wait SECONDS`** polls until queryable (exit 1 + last state on timeout) |
 | `rows` | `/rows` | `--offset N --limit ≤100` | offset-past-end → 200 + empty; length clamps at end; deep offsets fine (6.5s @ 6.4M rows) |
 | `stats` | `/statistics` | — | min/max/mean/median/std/histograms per column; std is **sample** (ddof=1); text cols → length stats; labels → frequencies |
 | `parquet` | `/parquet` | — | lists `refs/convert/parquet` URLs; conversion = first 5 GB (`partial:true` beyond) |
@@ -706,6 +715,11 @@ hfx store ls                       # confirm your namespace is clean
 Quota reclaims within ~1-2 min. Programmatic (non-CLI) scripts must load the
 token via the kit (`import hfx; hfx.load_env()`) — ambient `HF_TOKEN` is empty
 in a fresh shell.
+
+**Exit codes (all etl subcommands):** 0 = ok · 1 = failure or --wait timeout
+(carries the last observed state) · 2 = usage/config error · 3 = deliberate
+refusal (e.g. `rm` without `--yes` is a dry-run + exit 3 so scripts can
+distinguish "shown" from "done").
 
 **Evidence:** `findings/datasets-etl-final.md` (the full verified matrix) ·
 `data/kit-tests/etl/` (this kit's live test: 25 calls, 10/10 ground-truth
@@ -894,7 +908,10 @@ Gotchas (all live-verified):
 - **Read-only**: pushes 404 (`allow: GET,HEAD,OPTIONS`). You cannot host your
   own images here — for HF-built images, create a Docker Space (PRO-gated for
   young accounts; the kit's `host` module covers static instead).
-- **Login mandatory even for public images** (anon → 401 everywhere).
+- **Auth required on the API surface** (anon → 401 everywhere). Nuance
+  (live-tested 2026-09-28): public manifest/blob PULLS accept any password
+  with a valid username — the docker login is formality for pulls, but keep
+  using `login-cmd` (your PAT) so gated/auth-check flows behave uniformly.
 - Image names are **hyphenated**: `owner/space` → `owner-space`. Tags look
   like `cpu-<shortsha>` (+ PR-build suffixes); `latest` usually doesn't exist
   — get one from `hfx registry manifest`.
@@ -1200,8 +1217,9 @@ tjs static: stale/metrics negative + READY domain ✓).
    hfx infer chat "hi" --model Ling-3.0-flash-Fin        # ❌ exit 2: refused (price-blind)
    hfx infer chat "hi" --model Qwen/Qwen3-4B-Instruct-2507:nscale   # ✅ pinned, ~$0.000001
    ```
-3. Failed requests are never billed. `usage.estimated_cost` in each response
-   shows the per-call cost.
+3. Failed requests are never billed. `usage.estimated_cost` appears in each
+   response **on deepinfra only** (matches settled billing); other providers
+   omit it — the kit prints the catalog estimate instead.
 4. $0.10/mo included credits reset **calendar-month** (unused credits do NOT
    roll over — spend down before the 1st; SD3 image batches are the classic
    month-end burn).
@@ -1211,10 +1229,10 @@ tjs static: stale/metrics negative + READY domain ✓).
    constraint). Account-global across ALL public ZeroGPU spaces.
 6. Inputs to ZeroGPU spaces must be **base64 data-URIs** (or same-repo assets);
    remote URLs fail pre-GPU with a misleading "404" (at $0 charge).
-7. Outputs are **session-bound**: fetch them in the same client session
-   (gradio_client does this automatically); raw URLs 403 later. Fetch
-   immediately; public access window dies with the serving replica
-   (between 5.5h and 24h).
+7. Outputs are **tmp capability-URLs**: fetch them in the same client session
+   (gradio_client does; `--out` copies immediately). They are fetchable by
+   anyone while the replica lives, then die with it (window closes between
+   5.5 h and 24 h) — treat the local copy as the only durable one.
 8. Errored runs still consume a run slot **with counter lag** (immediate quota
    reads lie — recheck at +30 min).
 
@@ -1231,8 +1249,9 @@ tjs static: stale/metrics negative + READY domain ✓).
 12. Private sharing: **presigned URLs must be SigV4** (default SigV2 presign →
     403). `hfx store share` handles this.
 13. Upload path choice (measured): <10 MB → hub `upload_file`; 10MB–5GB → hub +
-    `HF_XET_HIGH_PERFORMANCE=1`; huge → S3 auto-multipart (**no ceiling found**
-    — 10.2 GB verified at 20.2 MiB/s). `hf_transfer` is a deprecated no-op.
+    `HF_XET_HIGH_PERFORMANCE=1`; huge → S3 multipart via `store put --bucket`
+    (**explicit --bucket — not auto-selected**; no ceiling found — 10.2 GB
+    verified at 20.2 MiB/s). `hf_transfer` is a deprecated no-op.
     ⚠️ The S3 gateway is a *path*, not extra capacity — buckets draw the same
     100 GB/8.7 TB entity pool; there is no separate S3 quota.
 
@@ -1283,8 +1302,10 @@ tjs static: stale/metrics negative + READY domain ✓).
   JSON, **`current` = REMAINING GPU-s** (not used) — proven by delta probes.
 - **Inference credits:** $0.10/mo included (user account only; orgs get $0);
   budget lane $0.01/$0.03 per 1M (≈5M tok/mo, re-verified 2026-09-28);
-  cheapest long-tail provider: featherless-ai (~$0.039/1M in). SD3-medium
-  image ≈ $0.00007 on credits (~1400/mo). Embeddings ≈ $0.0000003/call.
+  cheapest long-tail provider: featherless-ai (currently UNPRICED in the
+  catalog — verify with a tiny call). SD3-medium image ≈ $0.00007 on credits
+  (~1400/mo). Embeddings REPRICED 2026-09-28: ~$0.000048/call (~2,065 per
+  $0.10; was ~$0.0000003 until Sep 27 — verify before batch work).
 - **Datasets-server:** filter (WHERE + `orderby="col [asc|desc]"`, single col)
   / search (token-match, 100% recall) / rows (pagination 100/page, works at
   6.4M rows) / statistics / first-rows; 5 GB conversion cap; cold start on

@@ -39,11 +39,13 @@ the durable evidence trail; the run log path is printed at the end).
    {"_type": "gradio.FileData"}}` — the shape verified working in
    findings/wan22-measurement.md (base64 data-URIs in `url` ALWAYS work, and
    bypass broken Space egress entirely).
-3. **Outputs are session-bound** — the returned tmp URLs 403 from any later or
-   foreign session, and die with the serving replica (public window closes
-   somewhere between 5.5 h and 24 h). `hfx gpu run` fetches outputs in the
-   same client session and copies them to `--out` immediately; treat that copy
-   as the only durable one (re-host with `hfx cdn put` for sharing).
+3. **Outputs are tmp capability-URLs** — fetch them promptly. Live evidence
+   (2026-09-28): right after a run the tmp URLs are fetchable by ANYONE
+   (anon curl 200 — not session-bound); the public window then closes with
+   the serving replica (all 6 session-1 outputs 403'd at the 24 h mark; 5/6
+   still alive at 5.5 h). `hfx gpu run` fetches outputs in the same client
+   session and copies them to `--out` immediately — treat that copy as the
+   only durable one (re-host with `hfx cdn put` for sharing).
 
 **Billing states (all measured, findings/wan22-measurement.md):**
 
@@ -71,7 +73,8 @@ the count fluctuates by the second, and it can be stale at the reset boundary.
 `zero-gpu-count: 0` just means your run will QUEUE (wall-clock, not quota).
 
 **The catalog:** `hfx gpu spaces` enumerates the `mcp-server` hub tag —
-**2000+ MCP-enabled Spaces (774 on ZeroGPU hardware at last count)**, not just
+**2000+ MCP-enabled Spaces** (default = first 20 pages ≈ 2000; `--max-pages
+N` for more; 774 on ZeroGPU hardware at last count), not just
 the 16 curated ones: video (Wan2.2, LTX), 3D (TRELLIS, Shap-E), STT
 (whisper-large-v3), lip-sync, upscaling, captioning… every one scriptable via
 `hfx gpu run` (direct Gradio) or `hfx mcp call dynamic_space` (see the MCP

@@ -157,7 +157,7 @@ def _cmd_mint_jwt(a, ctx: dict) -> int:
     if verify is not None:
         if verify.get("pass"):
             print(f"verify: PASS — router accepted this JWT right now "
-                  f"($0-lane probe, http {verify['http_status']}"
+                  f"(cheap-lane probe ≈$0.0000005, http {verify['http_status']}"
                   + (f", reply: {verify['reply']!r}" if verify.get("reply") else "")
                   + ")")
         else:

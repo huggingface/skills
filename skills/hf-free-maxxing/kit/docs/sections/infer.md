@@ -40,7 +40,7 @@ explicit pin in scripts).
 | `meta-llama/Llama-3.1-8B-Instruct:deepinfra` | $0.02/$0.05 | ≈2.9M | |
 | `gpt-oss-120b:novita` | $0.05/$0.25 | ≈667k | cheapest 120B big-brain |
 | `inclusionAI/Ling-3.0-flash-Fin:novita` | ~$0.075/$0.22 | ≈190k | ex-$0 promo lane (retired 2026-09-28); reasoning model — needs `max_tokens ≥512` or content comes back empty |
-| featherless-ai long tail | ~$0.039/$0.108 | ≈1.5M | 1,000+ niche models, uniform rates |
+| featherless-ai long tail | **unpriced** (pricing:null, 2026-09-28) | unknown | ~76 lanes currently — the catalog omits them from price scans; treat as pay-per-use, verify with 1 tiny call + `hfx infer budget` (historically ~$0.039/$0.108 per 1M) |
 | `prism-ml/Ternary-Bonsai-*:together` | "$0/$0" | **TRAP** | books $0.01 flat that reverses (~30 min); unreliable — the kit flags and never recommends it |
 
 Reasoning-model gotcha (Ling-Fin and other reasoning lanes): with small
@@ -68,12 +68,15 @@ settled billing exactly); other providers omit it — the kit prints the catalog
 estimate and you can confirm settled truth with `hfx infer budget` (read the SSE
 ≥2 min after a burst for settled numbers).
 
-### Embeddings (NOT free — spends credits)
+### Embeddings (NOT free — spends credits; REPRICED 2026-09-28)
 
 The router has **no `/v1/embeddings`** (live-probed → 404). Use the hf-inference
-passthrough (what `hfx infer embed` does): `BAAI/bge-small-en-v1.5`, 384 dims,
-**242-601 nanoUsd/call** (compute-second dependent; the kit's own live test
-settled at 242) → ~166k-413k calls per $0.10.
+passthrough (what `hfx infer embed` does): `BAAI/bge-small-en-v1.5`, 384 dims.
+⚠️ **Drift #2 (2026-09-28): settled 48,443 nanoUsd/call** on 2 identical warm
+calls — ~100× the 242-601 nU measured Sep 23-26 (the hf-inference passthrough
+repriced). At the current rate: **~2,065 calls per $0.10**. Verify with one
+call + `hfx infer budget` before batch work — embed pricing has already moved
+once.
 
 Evidence: findings/zero-cost-models.md · findings/inference-probe.md ·
 findings/review-cost-catalog.md · playbooks/inference-maxxing.md ·

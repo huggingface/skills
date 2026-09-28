@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""hfx infer — LLM calls on the HF router, $0-first (OpenAI-compatible).
+"""hfx infer — LLM calls on the HF router, cheapest-pinned-lane-first.
 
 Ground truth (VERIFIED live, findings/zero-cost-models.md + review-cost-catalog.md):
-  * The ONE reliably-$0 lane is `inclusionAI/Ling-3.0-flash-Fin:novita` —
-    $0/$0 per 1M tokens, 262k ctx, tools. It is the DEFAULT model here.
+  * The $0-lane era ENDED 2026-09-28: the Ling-Fin:novita $0 promo retired
+    (a 97-token probe settled $0.01815). Default = cheapest pinned lane
+    (Qwen3-4B-Instruct-2507:nscale, $0.01/$0.03 per 1M ≈ 5M tok per $0.10).
+    `--free` searches for a true is_free lane and REFUSES (exit 3) if none.
   * NEVER send unsuffixed chat ids: default routing is :fastest which IGNORES
     price (unsuffixed Ling-Fin -> deepinfra $0.06/$0.18 PAID). This command
     refuses unsuffixed ids for that reason.
@@ -40,8 +42,11 @@ DEFAULT_CHAT_IN_CEILING = 0.05          # $/1M input ceiling for doctor's drift 
 RETIRED_FREE_LANE = "inclusionAI/Ling-3.0-flash-Fin:novita"  # now ~$0.075/$0.22 (novita)
 TRAP_MATCH = "ternary-bonsai"          # together $0.01-placeholder trap
 PLACEHOLDER_NANOUSD = 10_000_000       # $0.01 booked per request until true-up
-DEFAULT_EMBED_MODEL = "BAAI/bge-small-en-v1.5"   # hf-inference, ~242-601 nanoUsd/call
-EMBED_COST_NANOUSD = (242, 601)        # measured range (input-length/load dependent; 242 = this kit’s own test call)
+DEFAULT_EMBED_MODEL = "BAAI/bge-small-en-v1.5"   # hf-inference passthrough
+# Embed pricing REPRICED (drift #2, 2026-09-28): settled 48,443 nU/call on 2
+# identical warm calls (was 242-601 nU Sep 23-26 — hf-inference passthrough
+# got ~100x pricier). ~2,065 calls per $0.10 at the current rate.
+EMBED_COST_NANOUSD = (48_443, 60_000)    # (typical, load-ceiling estimate)
 PACING_S = 2.2                         # between router calls in one process
 
 # ------------------------------------------------------------------ pacing
@@ -327,6 +332,12 @@ def _cmd_models(a, ctx: dict) -> int:
 
     print(f"hfx infer models — {len(data)} models / {len(lanes)} matching lanes "
           f"(prices USD per 1M tokens: in / out; public catalog, no auth needed)")
+    unpriced = sum(1 for e in data for p in (e.get("providers") or [])
+                   if not p.get("pricing"))
+    if unpriced:
+        print(f"  ({unpriced} unpriced provider lanes omitted — unknown cost; "
+              "e.g. featherless-ai lanes are currently unpriced: treat as "
+              "pay-per-use and verify with one tiny call + `hfx infer budget`)")
     for lane in lanes:
         flags = ""
         if lane["id"] == DEFAULT_CHAT:

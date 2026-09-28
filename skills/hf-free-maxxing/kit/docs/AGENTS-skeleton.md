@@ -169,8 +169,9 @@ concurrent sessions share the same pools — numbers can shift between reads.
    hfx infer chat "hi" --model Ling-3.0-flash-Fin        # ❌ exit 2: refused (price-blind)
    hfx infer chat "hi" --model Qwen/Qwen3-4B-Instruct-2507:nscale   # ✅ pinned, ~$0.000001
    ```
-3. Failed requests are never billed. `usage.estimated_cost` in each response
-   shows the per-call cost.
+3. Failed requests are never billed. `usage.estimated_cost` appears in each
+   response **on deepinfra only** (matches settled billing); other providers
+   omit it — the kit prints the catalog estimate instead.
 4. $0.10/mo included credits reset **calendar-month** (unused credits do NOT
    roll over — spend down before the 1st; SD3 image batches are the classic
    month-end burn).
@@ -180,10 +181,10 @@ concurrent sessions share the same pools — numbers can shift between reads.
    constraint). Account-global across ALL public ZeroGPU spaces.
 6. Inputs to ZeroGPU spaces must be **base64 data-URIs** (or same-repo assets);
    remote URLs fail pre-GPU with a misleading "404" (at $0 charge).
-7. Outputs are **session-bound**: fetch them in the same client session
-   (gradio_client does this automatically); raw URLs 403 later. Fetch
-   immediately; public access window dies with the serving replica
-   (between 5.5h and 24h).
+7. Outputs are **tmp capability-URLs**: fetch them in the same client session
+   (gradio_client does; `--out` copies immediately). They are fetchable by
+   anyone while the replica lives, then die with it (window closes between
+   5.5 h and 24 h) — treat the local copy as the only durable one.
 8. Errored runs still consume a run slot **with counter lag** (immediate quota
    reads lie — recheck at +30 min).
 
@@ -200,8 +201,9 @@ concurrent sessions share the same pools — numbers can shift between reads.
 12. Private sharing: **presigned URLs must be SigV4** (default SigV2 presign →
     403). `hfx store share` handles this.
 13. Upload path choice (measured): <10 MB → hub `upload_file`; 10MB–5GB → hub +
-    `HF_XET_HIGH_PERFORMANCE=1`; huge → S3 auto-multipart (**no ceiling found**
-    — 10.2 GB verified at 20.2 MiB/s). `hf_transfer` is a deprecated no-op.
+    `HF_XET_HIGH_PERFORMANCE=1`; huge → S3 multipart via `store put --bucket`
+    (**explicit --bucket — not auto-selected**; no ceiling found — 10.2 GB
+    verified at 20.2 MiB/s). `hf_transfer` is a deprecated no-op.
     ⚠️ The S3 gateway is a *path*, not extra capacity — buckets draw the same
     100 GB/8.7 TB entity pool; there is no separate S3 quota.
 
@@ -252,8 +254,10 @@ concurrent sessions share the same pools — numbers can shift between reads.
   JSON, **`current` = REMAINING GPU-s** (not used) — proven by delta probes.
 - **Inference credits:** $0.10/mo included (user account only; orgs get $0);
   budget lane $0.01/$0.03 per 1M (≈5M tok/mo, re-verified 2026-09-28);
-  cheapest long-tail provider: featherless-ai (~$0.039/1M in). SD3-medium
-  image ≈ $0.00007 on credits (~1400/mo). Embeddings ≈ $0.0000003/call.
+  cheapest long-tail provider: featherless-ai (currently UNPRICED in the
+  catalog — verify with a tiny call). SD3-medium image ≈ $0.00007 on credits
+  (~1400/mo). Embeddings REPRICED 2026-09-28: ~$0.000048/call (~2,065 per
+  $0.10; was ~$0.0000003 until Sep 27 — verify before batch work).
 - **Datasets-server:** filter (WHERE + `orderby="col [asc|desc]"`, single col)
   / search (token-match, 100% recall) / rows (pagination 100/page, works at
   6.4M rows) / statistics / first-rows; 5 GB conversion cap; cold start on

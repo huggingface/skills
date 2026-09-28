@@ -23,6 +23,9 @@ hfx etl splits myuser/leads --wait 180      # polls until READY, then probes /ro
 # 3. Query it — server-side, no download
 hfx etl filter myuser/leads --where "score>0.5 AND name LIKE '%acme%'" \
                           --orderby "score desc" --limit 100
+hfx etl search myuser/leads --query "error" --wait 600       # search index warms
+                          # LAZILY (observed ~15 min first touch) — same --wait
+                          # pattern as filter; exit 1 + last state on timeout
 hfx etl filter myuser/leads --where "score>0.5" --wait 300   # COLD dataset:
                           # polls every 20s until the filter index is queryable,
                           # then prints the result (exit 1 + last state on timeout)
@@ -48,7 +51,7 @@ Works from browsers too — datasets-server CORS is `*`, so a static site can
 | Command | Endpoint | Syntax | Limits & notes |
 |---|---|---|---|
 | `filter` | `/filter` | `--where "\"col\"=25"` · `"col">5` · `"col" LIKE '%x%'` · `AND`/`OR` + parens · `--orderby "\"col\" desc"` (single column, default asc) | page ≤ 100 · index = **first 5 GB** · `num_rows_total` = match count when `where` present · bare column names are auto-quoted by the kit · **`--wait SECONDS`** polls until queryable: fresh uploads 404 until processed (~2-3 min), idle datasets 500 "index is loading" — retries every 20s (each poll ≤ 30s), exit 1 with the last observed state on timeout · `--json` adds a `wait` key `{waited_s, attempts, queryable}` |
-| `search` | `/search` | `--query "token"` | token match, 100% recall (7/7 verified) · first 5 GB · index builds LAZILY — can 500 for minutes on fresh/idle datasets |
+| `search` | `/search` | `--query "token"` | token match, 100% recall (7/7 verified) · first 5 GB · index builds LAZILY — can 500 for minutes on fresh/idle datasets (observed ~15 min) · **`--wait SECONDS`** polls until queryable (exit 1 + last state on timeout) |
 | `rows` | `/rows` | `--offset N --limit ≤100` | offset-past-end → 200 + empty; length clamps at end; deep offsets fine (6.5s @ 6.4M rows) |
 | `stats` | `/statistics` | — | min/max/mean/median/std/histograms per column; std is **sample** (ddof=1); text cols → length stats; labels → frequencies |
 | `parquet` | `/parquet` | — | lists `refs/convert/parquet` URLs; conversion = first 5 GB (`partial:true` beyond) |
@@ -110,6 +113,11 @@ hfx store ls                       # confirm your namespace is clean
 Quota reclaims within ~1-2 min. Programmatic (non-CLI) scripts must load the
 token via the kit (`import hfx; hfx.load_env()`) — ambient `HF_TOKEN` is empty
 in a fresh shell.
+
+**Exit codes (all etl subcommands):** 0 = ok · 1 = failure or --wait timeout
+(carries the last observed state) · 2 = usage/config error · 3 = deliberate
+refusal (e.g. `rm` without `--yes` is a dry-run + exit 3 so scripts can
+distinguish "shown" from "done").
 
 **Evidence:** `findings/datasets-etl-final.md` (the full verified matrix) ·
 `data/kit-tests/etl/` (this kit's live test: 25 calls, 10/10 ground-truth

@@ -126,6 +126,12 @@ def run(argv: list[str], ctx: dict) -> int:
             print(f"\n[{item['kind']}] {item['name']}")
             for rt, used, limit in _storage_rows({"storage": item["storage"]}):
                 print(f"  storage/{rt:<10} {used:>12} used / {limit}")
+            if item["kind"] == "org":
+                st = item["storage"]
+                if not ((st.get("usedPrivate") or 0) or (st.get("usedPublic") or 0)):
+                    print("  ⚠️ empty-shell org (0 bytes standing) — a mild inauthentic-"
+                          "signal risk if reviewed; add real distinct content or delete "
+                          "(recipe: kit/AGENTS.md 'Entity (org) lifecycle')")
             if not a.storage_only:
                 ic = item["inference_credits"]
                 print(f"  credits        {ic['used']} used / {ic['limit']} "
