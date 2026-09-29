@@ -6,7 +6,7 @@ compatibility: "Requires a Hugging Face account + access token, Python 3.10+, an
 metadata:
   author: landogayatri
   source: https://huggingface.co/landogayatri/hf-free-maxxing
-  version: "1.1.2"
+  version: "1.1.3"
   verified: "2026-09"
 ---
 
@@ -129,9 +129,9 @@ hfx etl filter <you>/hf-free-maxxing-kit-etl --where "score>0.5" --orderby "scor
    before every batch.
 4. **ZeroGPU inputs must be base64 data-URIs** (or same-repo assets) — remote
    URLs fail pre-GPU with a misleading "404". `hfx gpu run` auto-converts.
-5. **ZeroGPU outputs are session-bound** — fetch them in the same client
-   session (`--out` does); raw URLs 403 later and the public window dies with
-   the replica (5.5-24h).
+5. **ZeroGPU outputs are tmp capability-URLs** — fetch them in the same
+   client session (`--out` does; anyone can fetch them while the replica
+   lives, 5.5-24h — treat the local copy as the only durable one).
 6. **Storage**: 100 GB private / 8.7 TB public **per entity**; max file
    500 GB. Repo files keep quota in git history until `store rm --purge-lfs`;
    bucket objects free quota ≤90s after delete. SDK/rclone `mkdir` creates
