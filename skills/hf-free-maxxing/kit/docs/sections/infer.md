@@ -1,5 +1,7 @@
 ## infer — LLM calls via the router (cheapest pinned lane + $0.10/mo credits)
 
+> **SDK parity:** chat/embed = PARTIAL (both InferenceClients) · models/budget = UNIQUE (no SDK pricing/credits surface) — [hfx vs the official SDKs](#hfx-vs-the-official-sdks-when-a-typed-sdk-is-the-better-tool).
+
 The kit's chat default is the **cheapest pinned lane**:
 `Qwen/Qwen3-4B-Instruct-2507:nscale` — $0.01/$0.03 per 1M tokens (≈ **5M blended
 tokens per $0.10/mo**), 262k ctx, tools+structured-output✅. Everything runs through

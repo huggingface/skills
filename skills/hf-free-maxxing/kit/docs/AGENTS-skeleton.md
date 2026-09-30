@@ -28,16 +28,86 @@ cron, databases, email, or custom domains — pair with Cloudflare/Supabase/GitH
 (see the allocation table under Capacity map). New here? Run `kit/QUICKSTART.md`
 (15 min, one composed mini-project, ≤$0.001 total spend).
 
+## hfx vs the official SDKs (when a typed SDK is the better tool)
+
+This kit does **not** replace `@huggingface/hub` / `huggingface_hub` /
+`@huggingface/inference` — those are typed, HF-maintained, and their
+definitions double as a quick API doc. Audited live against `@huggingface/hub`
+2.17.5, `@huggingface/inference` 4.13.30 and `huggingface_hub` 1.9.2
+(2026-09-30): **14 of 16 hfx commands wrap at least one surface the SDKs do
+not expose at all** — uploads-CDN, datasets-server queries, credits/budget,
+catalog pricing, ZeroGPU, JWT mint, bucket change-feed, notifications, OIDC
+flows, registry.hf.space, the blog renderer, metrics SSE. For everything else
+the SDK is the better tool. Route per table; the last column lists the
+gotchas that bite SDK users just as hard (they come from HF's server
+behavior, not from any client).
+
+**Surface:** UNIQUE = no SDK equivalent · PARTIAL = SDK covers part of it ·
+PARITY = SDK fully covers it (hfx = bash convenience + the trap-guard listed).
+
+| hfx | Surface | Typed pointer (JS · Python) | hfx adds | Gotcha that bites SDK users too |
+|---|---|---|---|---|
+| `store put/get/ls/rm` (repo) | PARITY | `uploadFiles`/`downloadFile`/`listFiles`/`deleteFile` · `upload_file`/`upload_folder`/`list_repo_tree`/`delete_file` | size-based path + `HF_XET_HIGH_PERFORMANCE` + measured speed table | deleting a file keeps quota in git history (Py: `permanently_delete_lfs_files()`); dedup saves wire, not quota |
+| `store --bucket`/`rm-bucket`/`share` | PARTIAL | — · `create_bucket(private=True)`/`delete_bucket("ns/name")`/`list_buckets`/`list_bucket_tree` | default-safe create + private flip-verify + SigV4 presign | **`create_bucket` defaults PUBLIC** (live-verified 1.9.2) · `delete_bucket` wants the `"ns/name"` id, bare names 404 · presign must be SigV4 (`boto3 Config(signature_version="s3v4")`), SigV2 → 403 |
+| `store cp-repo`/`tag` | PARITY | — · `duplicate_repo`/`create_tag` | entity flag + visibility default handling | duplicates count toward quota; SDK duplicate defaults public |
+| `host deploy`/`ls`/`rm` | PARITY | `createRepo({type:"space"})`+`uploadFiles`+`listSpaces` · `create_repo`+`upload_folder`+`list_spaces` | README `sdk:`-guard, dotfile skip, rm name-safety | **uploading your own README.md without `sdk: static` front-matter breaks the static Space** — never `upload_folder` a README over it |
+| `infer chat` | PARTIAL | `InferenceClient.chatCompletion({provider:"nscale"})` · `InferenceClient(model=…, provider="nscale")` | PIN enforcement (refuses unsuffixed ids), per-call cost display, pacing, $0-lane-only reasoning retry | **`provider` defaults to "auto" = price-blind routing** (the deepinfra $0.06/$0.18 trap) · every router request books a **$0.01 placeholder** — ~10 unsettled in flight → 402 "depleted" for minutes · reasoning lanes return **empty `content`** at small `max_tokens` (text lands in `reasoning_content`) |
+| `infer embed` | PARTIAL | `featureExtraction` · `feature_extraction` | hf-inference passthrough choice + per-call cost | embeds REPRICED ~100× on 2026-09-28 (≈$0.000048/call) — one call + budget check before batches |
+| `infer models` | UNIQUE | — (`list_inference_catalog` = inference-ENDPOINTS catalog, no prices; `getInferenceProviderMapping` = availability only) | price tables, `is_free` flags, trap-lane flags, **drift sentinel** | catalog schema itself drifts (moved to `providers[].pricing` + `is_free`, 2026-09-28) — re-parse before relying |
+| `infer budget` | UNIQUE | — | credits standing + burst/placeholder math + settle semantics | — |
+| `gpu preflight`/`spaces`/`run` | UNIQUE | — (`gradio_client` does direct calls; no quota/preflight anywhere) | quota semantics, run-refusal, base64 conversion, audit sidecar, MCP-Space catalog | quota `current` = REMAINING, not used · inputs must be **base64 data-URIs** (`{"path":null,"url":"data:<mime>;base64,…","meta":{"_type":"gradio.FileData"}}`) — remote URLs fail pre-GPU with a misleading 404 · duplicate fns (`fn_1`,`fn_2` = same fn) · outputs are tmp capability-URLs that die with the replica |
+| `etl upload`/`rm` | PARITY | `createRepo`+`uploadFiles`+`deleteRepo` · `create_repo`+`upload_file`+`delete_repo` | flow glue + dry-run/exit-3 + 404-verify | private datasets 501 on free accounts · filename→split-name trap (`*_test.csv` becomes split `test`) |
+| `etl filter`/`search`/`rows`/`stats`/`splits`/`sql` | UNIQUE | — | `--wait` index orchestration + auto-namespace | page cap 100 · 5 GB first-chunk cap · fresh datasets 500 "index is loading" for 2-15 min — poll, don't panic |
+| `etl parquet` | PARTIAL | — · `list_dataset_parquet_files` | copy-paste DuckDB one-liner | signed CDN URLs behind the 302 expire ~10 min — share `resolve/` URLs |
+| `token info` | PARITY | `whoAmI` · `whoami` | masking | — |
+| `token mint-jwt` | UNIQUE | — | the whole JWT surface + verify probe | use the FULL `accessToken` incl. `hf_jwt_` prefix (bare JWT 401s) · mint fresh per CI step, re-mint on any 401 · endpoint 302s when the checkup gate is enforced |
+| `token doctor` | UNIQUE | — | scoped mint probe (alias of `hfx doctor`) | — |
+| `oauth discovery`/`register`/`authorize-url`/`token`/`device` | UNIQUE | (`oauthLoginUrl`/`oauthHandleRedirect` = browser login INTO HF — the opposite direction) | RFC 7591 dynreg + PKCE + device flow + exchange + rotation/deny semantics | dynreg clients are UN-DELETABLE (one per project) · refresh tokens ROTATE (persist every exchange) · id_token is RS256, only 1 h |
+| `registry login-cmd`/`manifest` | UNIQUE | — | Basic-auth token mint + manifest read | image names are hyphenated (`owner/space` → `owner-space`) · only Docker-SDK spaces have images (`GET /api/spaces/{id}` → `.sdk=="docker"`) |
+| `watch webhooks` | PARITY | — · `create_webhook`/`list_webhooks`/`update_webhook`/`delete_webhook` (JS: none) | bash convenience | HF's delivery workers cannot resolve webhook.site (DNS) — use ntfy.sh or your own endpoint · replay is HTML-page-only |
+| `watch bucket`/`notifications` | UNIQUE | — | SSE change-feed + notification feed | `reset` = cursor older than the ~15-min buffer — re-list |
+| `social discuss` | PARITY | — · `create_discussion`/`comment_discussion`/`get_repo_discussions` (JS: none) | bash convenience | — |
+| `social collect` | PARTIAL | `createCollection`/`listCollections`/`deleteCollection` (JS **cannot add items** — not exported) · Python full CRUD `add_collection_item`/`update_collection_item`/`delete_collection_item` | bash convenience | keep the full slug incl. `-<id>` suffix — every follow-up call wants it |
+| `social like`/`unlike` | unlike PARITY (`unlike` · `unlike`) | like: — in both | csrf recipe | `like` needs the web cookie **plus a `{"csrf":…}` JSON body** (PAT → 401; token scraped from the homepage) |
+| `mcp tools`/`call`/`resources` | PARTIAL | any MCP client speaks to `huggingface.co/mcp` | hosted-endpoint gotchas + arg marshaling | `parameters` must be a **JSON-encoded STRING**, not a nested object · every `dynamic_space` invoke = 1 of your 8 ZeroGPU runs |
+| `md render` | UNIQUE | — | cookie+Origin recipe | PATs get 401 — web-session cookie + Origin/Referer headers required |
+| `monitor live`/`space` | UNIQUE | — | SSE parse + rate-limit counters + static-space stale-vs-healthy verdict | first SSE event can be a partial snapshot — wait for the last complete one |
+| `status` | UNIQUE (aggregation) | `whoAmI` · `whoami` only | billing-usage SSE parse + ZeroGPU read + per-entity aggregation + fast mode | same partial-snapshot rule; `--storage-only` semantics matter in loops |
+| `doctor` | UNIQUE (meta) | — | kit env + deps + **default-lane drift sentinel** | — |
+
+**If you go SDK-native, the four rules that still apply to you** (full list in
+the next section — they describe HF's server behavior, not hfx):
+1. **Pin the provider** — JS `provider:"nscale"` option / Py
+   `InferenceClient(provider="nscale")`. Never rely on the default: "auto"
+   routes for speed and **ignores price**.
+2. **Burst mechanics** — every router call books a $0.01 placeholder against
+   the $0.10/mo cap; ~10 unsettled in flight → 402 for minutes. Pace loops;
+   re-check with `GET /api/settings/inference-providers/usage-limits` (or
+   `hfx infer budget`).
+3. **`create_bucket(private=True)`** — the default is PUBLIC (verified live).
+   And presign with SigV4, not SigV2.
+4. **Uploads-CDN + datasets-server + ZeroGPU + JWT + OIDC + registry have no
+   SDK functions** — use the raw endpoints (Raw API quick reference, §9) or hfx.
+
+**Language-lane asymmetry** (verified 2026-09-30): Python-only in the hub SDK —
+discussions, webhook CRUD, buckets, `duplicate_repo`/`create_tag`, LFS purge,
+Space runtime actions (`pause_space`/`restart_space`/`set_space_sleep_time`/
+`request_space_hardware`), Space variables/secrets. JS-only — nothing
+load-bearing. Neither — the 12 UNIQUE surfaces above (that's what hfx is for).
+Both SDKs also expose **Jobs APIs — prepaid-credits-only, out of $0 scope**
+(the free $0.10 inference credit does NOT count toward Jobs/sandboxes).
+
 ## Contents
 1. [TL;DR — the free stack](#tldr--the-free-stack-you-get-per-hf-account-numbers-verified-live)
-2. [Prerequisites](#prerequisites-5-minutes-once)
-3. [Quick wins](#quick-wins-copy-paste--most-land-in-under-a-minute-data-queries-warm-up-for-a-few-minutes)
-4. [Command reference](#command-reference) — status · store · cdn · host · infer · gpu · mcp · etl · oauth · registry · token · watch · social · md · monitor
-5. [The rules that keep it free](#the-rules-that-keep-it-free-gotchas-distilled--read-once-save-hours)
-6. [Capacity map & limits](#capacity-map--limits-the-full-verified-numbers)
-7. [The 30-day age-gate unlock](#the-30-day-age-gate-unlock)
-8. [Raw API quick reference](#raw-api-quick-reference-no-python-needed)
-9. [Evidence & deeper docs](#evidence--deeper-docs)
+2. [hfx vs the official SDKs](#hfx-vs-the-official-sdks-when-a-typed-sdk-is-the-better-tool) — when a typed SDK is the better tool
+3. [Prerequisites](#prerequisites-5-minutes-once)
+4. [Quick wins](#quick-wins-copy-paste--most-land-in-under-a-minute-data-queries-warm-up-for-a-few-minutes)
+5. [Command reference](#command-reference) — status · store · cdn · host · infer · gpu · mcp · etl · oauth · registry · token · watch · social · md · monitor
+6. [The rules that keep it free](#the-rules-that-keep-it-free-gotchas-distilled--read-once-save-hours)
+7. [Capacity map & limits](#capacity-map--limits-the-full-verified-numbers)
+8. [The 30-day age-gate unlock](#the-30-day-age-gate-unlock)
+9. [Raw API quick reference](#raw-api-quick-reference-no-python-needed)
+10. [Evidence & deeper docs](#evidence--deeper-docs)
 
 **Shell alias (recommended):** `alias hfx='bash /path/to/kit/bin/hfx'`
 
@@ -165,6 +235,9 @@ concurrent sessions share the same pools — numbers can shift between reads.
    $0.06/$0.18 (3 accidental calls = 6,480 nU). The kit refuses unsuffixed
    ids (exit 2). Lane prices DRIFT: the Ling-Fin `:novita` $0 promo ran
    Sep 23→26 2026, then retired (a 97-token probe settled $0.01815).
+   **SDK form of the same rule:** never leave provider on "auto" — JS
+   `chatCompletion(…, {provider: "nscale"})`, Python
+   `InferenceClient(model=…, provider="nscale")`.
    ```
    hfx infer chat "hi" --model Ling-3.0-flash-Fin        # ❌ exit 2: refused (price-blind)
    hfx infer chat "hi" --model Qwen/Qwen3-4B-Instruct-2507:nscale   # ✅ pinned, ~$0.000001
@@ -178,7 +251,8 @@ concurrent sessions share the same pools — numbers can shift between reads.
 
 **ZeroGPU:**
 5. **8 runs / rolling 24h is the BINDING limit** (300 GPU-s is rarely the
-   constraint). Account-global across ALL public ZeroGPU spaces.
+   constraint). Account-global across ALL public ZeroGPU spaces. Raw check
+   (no kit): `GET /api/spaces/zero-gpu/quota` — `current` = REMAINING GPU-s.
 6. Inputs to ZeroGPU spaces must be **base64 data-URIs** (or same-repo assets);
    remote URLs fail pre-GPU with a misleading "404" (at $0 charge).
 7. Outputs are **tmp capability-URLs**: fetch them in the same client session
@@ -190,16 +264,20 @@ concurrent sessions share the same pools — numbers can shift between reads.
 
 **Storage:**
 9. **Public vs private bucket trap:** SDK/rclone `mkdir` creates buckets
-   **PUBLIC by default**. Flip: `PUT /api/buckets/{ns}/{name}/settings
-   {"private":true}`. (The kit's `store` command handles this.)
+   **PUBLIC by default** (`create_bucket` with `private=None` verified PUBLIC
+   live on 1.9.2). Flip: `create_bucket(private=True)` or
+   `PUT /api/buckets/{ns}/{name}/settings {"private":true}`.
+   (The kit's `store` command handles this.)
 10. **Repos vs buckets:** repo files (LFS/Xet) are versioned and permanent;
     bucket objects are deletable and quota-frees within ~90s. Use buckets for
     scratch/deletable, repos for durable/CDN-served.
 11. Xet dedup saves **upload bandwidth** (13.7× faster re-uploads of identical
     content) but NOT quota; identical content in different repos counts twice.
-    The duplicate API copies whole repos near-instantly (341 MB in 0.82 s).
+    The duplicate API copies whole repos near-instantly (341 MB in 0.82 s;
+    Python: `duplicate_repo`).
 12. Private sharing: **presigned URLs must be SigV4** (default SigV2 presign →
-    403). `hfx store share` handles this.
+    403). `hfx store share` handles this; raw boto3:
+    `Config(signature_version="s3v4")`.
 13. Upload path choice (measured): <10 MB → hub `upload_file`; 10MB–5GB → hub +
     `HF_XET_HIGH_PERFORMANCE=1`; huge → S3 multipart via `store put --bucket`
     (**explicit --bucket — not auto-selected**; no ceiling found — 10.2 GB
@@ -230,9 +308,10 @@ concurrent sessions share the same pools — numbers can shift between reads.
 17. Don't farm orgs (2-3 real-project orgs is the safe zone; each new org =
     its own pools, creation throttled to 2/rolling-24h, window anchored to the
     NEWEST creation). Don't mass-follow/mass-like. Keep `blockedPastWeek=0`
-    (`hfx status` shows it). Uploads-CDN files are permanent — never upload
-    anything sensitive. Enforcement waves target storage-pattern abuse (retry
-    loops, multi-TB dumps), not normal use.
+    (`hfx status` shows it; raw: `GET /api/whoami-v2` → `.policy.blockedPastWeek`,
+    or the `GET /api/settings/metrics/live` SSE). Uploads-CDN files are
+    permanent — never upload anything sensitive. Enforcement waves target
+    storage-pattern abuse (retry loops, multi-TB dumps), not normal use.
 18. **Credential-management routes are checkup-gated** (mint/delete tokens, org
     create/delete, app pages): if they 302 to `/security-checkup`, complete it
     once in a browser → ~48-72h headless window (model verified 3×, Sep 2026).

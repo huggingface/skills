@@ -1,5 +1,7 @@
 ## etl — datasets as a free queryable data backend
 
+> **SDK parity:** upload/rm = PARITY (create_repo/upload_file/delete_repo) · filter/search/rows/stats/splits/sql = UNIQUE — [hfx vs the official SDKs](#hfx-vs-the-official-sdks-when-a-typed-sdk-is-the-better-tool).
+
 > **You have data, no database.** Push a CSV to a public dataset repo and
 > HuggingFace gives you — for $0 — a hosted REST API over it: SQL-ish WHERE +
 > ORDER BY, full-text search, paginated rows, per-column statistics, and

@@ -1,5 +1,7 @@
 ## social — discussions, collections, likes (free content layer)
 
+> **SDK parity:** discuss = PARITY (Python) · collect = PARTIAL (JS create/list/delete only) · like = UNIQUE (csrf recipe) — [hfx vs the official SDKs](#hfx-vs-the-official-sdks-when-a-typed-sdk-is-the-better-tool).
+
 Thin wrappers over the community APIs — free "comments + curation + applause"
 for any project living on HF repos. Discussions and collections take a PAT
 (no CSRF); **likes need the web-session cookie** (`HF_JWT`).

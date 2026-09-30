@@ -1,5 +1,7 @@
 ## host — free static-site hosting (Spaces, sdk: static)
 
+> **SDK parity: PARITY** (create_repo + upload_folder + list_spaces) — the README `sdk:`-guard is the trap-guard that stays: [hfx vs the official SDKs](#hfx-vs-the-official-sdks-when-a-typed-sdk-is-the-better-tool).
+
 `hfx host deploy DIR -n NAME` creates (if absent) a **public static Space**
 and uploads every non-dotfile in `DIR` recursively via `huggingface_hub`.
 Always-on from birth, no cold start, free within the 20 TB/mo bandwidth quota,

@@ -1,5 +1,7 @@
 ## token — credentials: identity + the CI-safe disposable JWT
 
+> **SDK parity:** info = PARITY (`whoami`) · mint-jwt = UNIQUE (no SDK JWT surface) — [hfx vs the official SDKs](#hfx-vs-the-official-sdks-when-a-typed-sdk-is-the-better-tool).
+
 Two credentials, two jobs:
 
 | Credential | What it is | Use |

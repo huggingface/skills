@@ -1,5 +1,7 @@
 ## watch — events: webhooks, bucket change-feed, notifications
 
+> **SDK parity:** webhooks = PARITY (Python `create_webhook`…; JS none) · bucket SSE + notifications = UNIQUE — [hfx vs the official SDKs](#hfx-vs-the-official-sdks-when-a-typed-sdk-is-the-better-tool).
+
 Three event surfaces, all free:
 
 ```bash

@@ -2,11 +2,11 @@
 name: hf-free-maxxing
 description: "Every free Hugging Face capability in one CLI (hfx): storage, static hosting, CDN, budget LLM inference ($0.10/mo credits + pinned cheapest lanes), GPU bursts, data queries, OAuth identity, Docker pulls, webhooks — all live-verified. Use when the user wants free cloud storage, free static hosting or a free CDN, free GPU compute or image/video generation, cheap or free LLM API calls, or asks what the Hugging Face free tier includes or how to avoid paying for AI infrastructure."
 license: Apache-2.0
-compatibility: "Requires a Hugging Face account + access token, Python 3.10+, and 'huggingface_hub<2.0' boto3 gradio_client. Bash on Linux/macOS; the CLI is pure Python (stdlib + those deps)."
+compatibility: "Knowledge works with any HTTP client (curl) or the official SDKs (@huggingface/hub / huggingface_hub / @huggingface/inference). The optional CLI (kit/bin/hfx) needs Python 3.10+ and pip install --user 'huggingface_hub<2.0' boto3 gradio_client; bash on Linux/macOS."
 metadata:
   author: landogayatri
   source: https://huggingface.co/landogayatri/hf-free-maxxing
-  version: "1.1.3"
+  version: "1.2.0"
   verified: "2026-09"
 ---
 
@@ -44,6 +44,22 @@ transactional email, custom domains, screenshot/PDF rendering, message queues.
 **Orgs multiply pools**: each org is a fully separate 100 GB / 8.7 TB / 30 TB
 entity. 2–3 real-project orgs is the safe zone (creation throttled to 2 per
 rolling 24h; don't farm — see ToS posture below).
+
+## hfx or the official SDKs?
+
+The official SDKs are typed, HF-maintained, and double as a quick API doc —
+use them when they cover the job (repo/file CRUD, listings, collections,
+raw inference calls). Audited live 2026-09-30 against `@huggingface/hub`
+2.17.5 / `@huggingface/inference` 4.13.30 / `huggingface_hub` 1.9.2:
+**14 of 16 hfx commands wrap at least one surface no SDK exposes** —
+uploads-CDN (`POST /uploads`), datasets-server queries, credits/budget,
+catalog pricing, ZeroGPU quota, JWT mint, bucket change-feed SSE,
+notifications, OIDC flows, registry.hf.space, the blog renderer, metrics
+SSE. That undocumented layer is what this kit is for. Per-command routing
+table (typed pointers + which gotchas still bite SDK users):
+[kit/AGENTS.md § “hfx vs the official SDKs”](kit/AGENTS.md). No-CLI? Every
+rule below is plain HTTPS — raw endpoints in AGENTS.md § “Raw API quick
+reference”.
 
 ## Setup (5 minutes, once)
 
@@ -120,24 +136,37 @@ hfx etl filter <you>/hf-free-maxxing-kit-etl --where "score>0.5" --orderby "scor
    `hfx infer` refuses unsuffixed ids (exit 2). Lane prices DRIFT — the
    Ling-Fin `:novita` $0 promo ran Sep 23–26 2026 then retired (a 97-token
    probe settled $0.01815). Default pin: `:nscale` ($0.01/$0.03 per 1M).
+   SDK form: JS `chatCompletion(…, {provider: "nscale"})` · Python
+   `InferenceClient(model=…, provider="nscale")` — never leave provider on
+   "auto".
 2. **Router burst mechanics**: EVERY router request books a $0.01 placeholder
    against the $0.10/mo cap; >10 unsettled in flight → 402 until true-up
    (~1-5 min). Failed requests are never billed. Credits reset
    calendar-month and DO NOT roll over — spend down before the 1st.
+   Raw check: `GET /api/settings/inference-providers/usage-limits`.
+   Applies identically to both official InferenceClients.
 3. **ZeroGPU: 8 runs / rolling 24h is the BINDING limit** (300 GPU-s rarely
    binds first). Account-global across ALL public ZeroGPU Spaces. Preflight
-   before every batch.
+   before every batch. Raw check: `GET /api/spaces/zero-gpu/quota`
+   (`current` = REMAINING GPU-s, not used).
 4. **ZeroGPU inputs must be base64 data-URIs** (or same-repo assets) — remote
-   URLs fail pre-GPU with a misleading "404". `hfx gpu run` auto-converts.
-5. **ZeroGPU outputs are tmp capability-URLs** — fetch them in the same
-   client session (`--out` does; anyone can fetch them while the replica
-   lives, 5.5-24h — treat the local copy as the only durable one).
+   URLs fail pre-GPU with a misleading "404". `hfx gpu run` auto-converts;
+   raw shape: `{"path": null, "url": "data:<mime>;base64,…",
+   "meta": {"_type": "gradio.FileData"}}`.
+5. **ZeroGPU outputs are tmp capability-URLs** — fetch them before the
+   serving replica recycles (window closes between 5.5-24 h; `--out` or any
+   gradio_client call copies them in-session — treat the local copy as the
+   only durable one; anyone can fetch them while the replica lives).
 6. **Storage**: 100 GB private / 8.7 TB public **per entity**; max file
-   500 GB. Repo files keep quota in git history until `store rm --purge-lfs`;
-   bucket objects free quota ≤90s after delete. SDK/rclone `mkdir` creates
-   buckets PUBLIC by default — `hfx store` force-flips private.
+   500 GB. Repo files keep quota in git history until `store rm --purge-lfs`
+   (SDK: `permanently_delete_lfs_files()`); bucket objects free quota ≤90s
+   after delete. SDK/rclone `mkdir` creates buckets PUBLIC by default
+   (verified live on huggingface_hub 1.9.2) — pass `create_bucket(private=True)`
+   or flip `PUT /api/buckets/{ns}/{name}/settings {"private":true}`;
+   `hfx store` force-flips + verifies.
 7. **Presigned share URLs must be SigV4** (default SigV2 presign → 403) —
-   `hfx store share` handles it.
+   `hfx store share` handles it; raw boto3:
+   `Config(signature_version="s3v4")`.
 8. **Uploads CDN is PERMANENT** — no delete endpoint exists; never upload
    anything sensitive. Magic-byte type allowlist (images/video/audio only).
 9. **Static Spaces**: exact file paths only (no clean URLs/SPA fallback — use
@@ -151,13 +180,17 @@ hfx etl filter <you>/hf-free-maxxing-kit-etl --where "score>0.5" --orderby "scor
     media 10000 · search 300 · sensitive 50. Parse `x-error-message` headers —
     they carry precise retry ETAs.
 12. **ToS posture**: don't farm orgs, don't mass-follow/mass-like, keep
-    `blockedPastWeek=0` (`hfx status` shows it). Enforcement targets
+    `blockedPastWeek=0` (`hfx status` shows it; raw:
+    `GET /api/whoami-v2` → `.policy.blockedPastWeek`). Enforcement targets
     storage-pattern abuse, not normal use. Never multi-account (suspension
     wave confirmed) — multi-org is the safe pattern.
 13. **Credentials**: `HF_TOKEN` (PAT) for everything everyday; `HF_JWT`
     (cookie) for web-only surfaces. `hfx token mint-jwt` mints 1h
     router-only JWTs — CI-safe (leaked JWT can run inference but cannot
-    touch repos). OAuth RFC-7591 clients are UN-DELETABLE — one per project.
+    touch repos). Raw: `GET /api/settings/jwt-inference-only` with
+    `Cookie: token=$HF_JWT` — use the FULL `accessToken` incl. the
+    `hf_jwt_` prefix, and mint fresh per CI step (re-mint on any 401).
+    OAuth RFC-7591 clients are UN-DELETABLE — one per project.
 
 ## Command map (every command has `--help`; most have `--json`)
 
