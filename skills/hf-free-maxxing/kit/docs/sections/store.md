@@ -1,6 +1,6 @@
 ### store — durable storage & sharing
 
-> **SDK parity:** repo put/get/ls/rm = PARITY · buckets/cp-repo/tag = PARTIAL — typed pointers: [hfx vs the official SDKs](#hfx-vs-the-official-sdks-when-a-typed-sdk-is-the-better-tool).
+> **SDK parity:** repo put/get/ls/rm = PARITY · buckets = PARTIAL · cp-repo/tag = PARITY — typed pointers: [hfx vs the official SDKs](#hfx-vs-the-official-sdks-when-a-typed-sdk-is-the-better-tool).
 
 ```bash
 # durable upload — fastest path auto-selected by size (measured)

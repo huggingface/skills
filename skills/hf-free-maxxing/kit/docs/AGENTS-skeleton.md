@@ -35,9 +35,11 @@ This kit does **not** replace `@huggingface/hub` / `huggingface_hub` /
 definitions double as a quick API doc. Audited live against `@huggingface/hub`
 2.17.5, `@huggingface/inference` 4.13.30 and `huggingface_hub` 1.9.2
 (2026-09-30): **14 of 16 hfx commands wrap at least one surface the SDKs do
-not expose at all** — uploads-CDN, datasets-server queries, credits/budget,
-catalog pricing, ZeroGPU, JWT mint, bucket change-feed, notifications, OIDC
-flows, registry.hf.space, the blog renderer, metrics SSE. For everything else
+not expose at all** — every command except `host` and `store`-repo-mode
+(the two pure-SDK-glue paths) — spanning uploads-CDN, datasets-server
+queries, credits/budget, catalog pricing, ZeroGPU, JWT mint, bucket
+change-feed, notifications, OIDC flows, registry.hf.space, the blog
+renderer, metrics SSE. For everything else
 the SDK is the better tool. Route per table; the last column lists the
 gotchas that bite SDK users just as hard (they come from HF's server
 behavior, not from any client).
@@ -50,10 +52,11 @@ PARITY = SDK fully covers it (hfx = bash convenience + the trap-guard listed).
 | `store put/get/ls/rm` (repo) | PARITY | `uploadFiles`/`downloadFile`/`listFiles`/`deleteFile` · `upload_file`/`upload_folder`/`list_repo_tree`/`delete_file` | size-based path + `HF_XET_HIGH_PERFORMANCE` + measured speed table | deleting a file keeps quota in git history (Py: `permanently_delete_lfs_files()`); dedup saves wire, not quota |
 | `store --bucket`/`rm-bucket`/`share` | PARTIAL | — · `create_bucket(private=True)`/`delete_bucket("ns/name")`/`list_buckets`/`list_bucket_tree` | default-safe create + private flip-verify + SigV4 presign | **`create_bucket` defaults PUBLIC** (live-verified 1.9.2) · `delete_bucket` wants the `"ns/name"` id, bare names 404 · presign must be SigV4 (`boto3 Config(signature_version="s3v4")`), SigV2 → 403 |
 | `store cp-repo`/`tag` | PARITY | — · `duplicate_repo`/`create_tag` | entity flag + visibility default handling | duplicates count toward quota; SDK duplicate defaults public |
-| `host deploy`/`ls`/`rm` | PARITY | `createRepo({type:"space"})`+`uploadFiles`+`listSpaces` · `create_repo`+`upload_folder`+`list_spaces` | README `sdk:`-guard, dotfile skip, rm name-safety | **uploading your own README.md without `sdk: static` front-matter breaks the static Space** — never `upload_folder` a README over it |
+| `host deploy`/`ls`/`rm` | PARITY | `createRepo({type:"space", sdk:"static"})`+`uploadFiles`+`listSpaces` · `create_repo(repo_type="space", space_sdk="static")`+`upload_folder`+`list_spaces` | README `sdk:`-guard, dotfile skip, rm name-safety | **uploading your own README.md without `sdk: static` front-matter breaks the static Space** — never `upload_folder` a README over it |
+| `cdn put` | UNIQUE | — | the endpoint itself + client-side magic-byte sniff + anon/cookie lanes | **PERMANENT — no delete endpoint exists** · PATs are ignored (web-session cookie or anonymous only) · magic-byte type allowlist (images/video/audio only) |
 | `infer chat` | PARTIAL | `InferenceClient.chatCompletion({provider:"nscale"})` · `InferenceClient(model=…, provider="nscale")` | PIN enforcement (refuses unsuffixed ids), per-call cost display, pacing, $0-lane-only reasoning retry | **`provider` defaults to "auto" = price-blind routing** (the deepinfra $0.06/$0.18 trap) · every router request books a **$0.01 placeholder** — ~10 unsettled in flight → 402 "depleted" for minutes · reasoning lanes return **empty `content`** at small `max_tokens` (text lands in `reasoning_content`) |
 | `infer embed` | PARTIAL | `featureExtraction` · `feature_extraction` | hf-inference passthrough choice + per-call cost | embeds REPRICED ~100× on 2026-09-28 (≈$0.000048/call) — one call + budget check before batches |
-| `infer models` | UNIQUE | — (`list_inference_catalog` = inference-ENDPOINTS catalog, no prices; `getInferenceProviderMapping` = availability only) | price tables, `is_free` flags, trap-lane flags, **drift sentinel** | catalog schema itself drifts (moved to `providers[].pricing` + `is_free`, 2026-09-28) — re-parse before relying |
+| `infer models` | UNIQUE | — (`list_inference_catalog` = inference-ENDPOINTS catalog, no prices; JS exposes no public pricing or provider-mapping function) | price tables, `is_free` flags, trap-lane flags, **drift sentinel** | catalog schema itself drifts (moved to `providers[].pricing` + `is_free`, 2026-09-28) — re-parse before relying |
 | `infer budget` | UNIQUE | — | credits standing + burst/placeholder math + settle semantics | — |
 | `gpu preflight`/`spaces`/`run` | UNIQUE | — (`gradio_client` does direct calls; no quota/preflight anywhere) | quota semantics, run-refusal, base64 conversion, audit sidecar, MCP-Space catalog | quota `current` = REMAINING, not used · inputs must be **base64 data-URIs** (`{"path":null,"url":"data:<mime>;base64,…","meta":{"_type":"gradio.FileData"}}`) — remote URLs fail pre-GPU with a misleading 404 · duplicate fns (`fn_1`,`fn_2` = same fn) · outputs are tmp capability-URLs that die with the replica |
 | `etl upload`/`rm` | PARITY | `createRepo`+`uploadFiles`+`deleteRepo` · `create_repo`+`upload_file`+`delete_repo` | flow glue + dry-run/exit-3 + 404-verify | private datasets 501 on free accounts · filename→split-name trap (`*_test.csv` becomes split `test`) |
@@ -67,8 +70,8 @@ PARITY = SDK fully covers it (hfx = bash convenience + the trap-guard listed).
 | `watch webhooks` | PARITY | — · `create_webhook`/`list_webhooks`/`update_webhook`/`delete_webhook` (JS: none) | bash convenience | HF's delivery workers cannot resolve webhook.site (DNS) — use ntfy.sh or your own endpoint · replay is HTML-page-only |
 | `watch bucket`/`notifications` | UNIQUE | — | SSE change-feed + notification feed | `reset` = cursor older than the ~15-min buffer — re-list |
 | `social discuss` | PARITY | — · `create_discussion`/`comment_discussion`/`get_repo_discussions` (JS: none) | bash convenience | — |
-| `social collect` | PARTIAL | `createCollection`/`listCollections`/`deleteCollection` (JS **cannot add items** — not exported) · Python full CRUD `add_collection_item`/`update_collection_item`/`delete_collection_item` | bash convenience | keep the full slug incl. `-<id>` suffix — every follow-up call wants it |
-| `social like`/`unlike` | unlike PARITY (`unlike` · `unlike`) | like: — in both | csrf recipe | `like` needs the web cookie **plus a `{"csrf":…}` JSON body** (PAT → 401; token scraped from the homepage) |
+| `social collect` | PARTIAL | `createCollection`/`listCollections`/`deleteCollection` (JS **cannot add items** — not exported) · Python full CRUD (`create_collection`/`add_collection_item`/`update_collection_item`/`delete_collection_item`) | bash convenience | keep the full slug incl. `-<id>` suffix — every follow-up call wants it |
+| `social like`/`unlike` | like UNIQUE · unlike PARITY | like: — in both SDKs · unlike: `unlike()` (Python only; JS: none) | csrf recipe | `like` needs the web cookie **plus a `{"csrf":…}` JSON body** (PAT → 401; token scraped from the homepage) |
 | `mcp tools`/`call`/`resources` | PARTIAL | any MCP client speaks to `huggingface.co/mcp` | hosted-endpoint gotchas + arg marshaling | `parameters` must be a **JSON-encoded STRING**, not a nested object · every `dynamic_space` invoke = 1 of your 8 ZeroGPU runs |
 | `md render` | UNIQUE | — | cookie+Origin recipe | PATs get 401 — web-session cookie + Origin/Referer headers required |
 | `monitor live`/`space` | UNIQUE | — | SSE parse + rate-limit counters + static-space stale-vs-healthy verdict | first SSE event can be a partial snapshot — wait for the last complete one |
@@ -77,23 +80,26 @@ PARITY = SDK fully covers it (hfx = bash convenience + the trap-guard listed).
 
 **If you go SDK-native, the four rules that still apply to you** (full list in
 the next section — they describe HF's server behavior, not hfx):
-1. **Pin the provider** — JS `provider:"nscale"` option / Py
-   `InferenceClient(provider="nscale")`. Never rely on the default: "auto"
-   routes for speed and **ignores price**.
+1. **Pin the provider** — JS
+   `chatCompletion({model: "Qwen/Qwen3-4B-Instruct-2507", provider: "nscale"})`
+   / Py `InferenceClient(model=…, provider="nscale")`. Never rely on the
+   default: "auto" routes for speed and **ignores price**.
 2. **Burst mechanics** — every router call books a $0.01 placeholder against
    the $0.10/mo cap; ~10 unsettled in flight → 402 for minutes. Pace loops;
-   re-check with `GET /api/settings/inference-providers/usage-limits` (or
-   `hfx infer budget`).
+   re-check with `GET /api/settings/billing/usage/live` (SSE — read
+   `inference.usedNanoUsd`; or `hfx infer budget`).
 3. **`create_bucket(private=True)`** — the default is PUBLIC (verified live).
    And presign with SigV4, not SigV2.
-4. **Uploads-CDN + datasets-server + ZeroGPU + JWT + OIDC + registry have no
-   SDK functions** — use the raw endpoints (Raw API quick reference, §9) or hfx.
+4. **Uploads-CDN + datasets-server queries + ZeroGPU + JWT + OIDC + registry
+   have no SDK functions** (datasets-server's only SDK toe-hold:
+   `list_dataset_parquet_files`) — use the raw endpoints (Raw API quick
+   reference, §9) or hfx.
 
 **Language-lane asymmetry** (verified 2026-09-30): Python-only in the hub SDK —
 discussions, webhook CRUD, buckets, `duplicate_repo`/`create_tag`, LFS purge,
 Space runtime actions (`pause_space`/`restart_space`/`set_space_sleep_time`/
 `request_space_hardware`), Space variables/secrets. JS-only — nothing
-load-bearing. Neither — the 12 UNIQUE surfaces above (that's what hfx is for).
+load-bearing. Neither — the UNIQUE surfaces above (that's what hfx is for).
 Both SDKs also expose **Jobs APIs — prepaid-credits-only, out of $0 scope**
 (the free $0.10 inference credit does NOT count toward Jobs/sandboxes).
 
@@ -229,7 +235,7 @@ concurrent sessions share the same pools — numbers can shift between reads.
 **Billing mechanics (router/inference):**
 1. Every router request instantly books a **$0.01 placeholder**; settled truth
    lands ~5 min later. More than **10 unsettled requests in flight** → 402
-   "depleted" until placeholders settle (~2-5 min). Pace rapid-fire calls.
+   "depleted" until placeholders settle (~1-5 min). Pace rapid-fire calls.
 2. **PIN the `:provider` suffix on EVERY chat id.** Default routing is
    `:fastest`, which ignores price — unsuffixed Ling-Fin routed to deepinfra
    $0.06/$0.18 (3 accidental calls = 6,480 nU). The kit refuses unsuffixed
@@ -425,8 +431,25 @@ curl -s -X POST https://router.huggingface.co/v1/chat/completions -H "$T" \
   -d '{"model":"Qwen/Qwen3-4B-Instruct-2507:nscale","messages":[{"role":"user","content":"hi"}],"max_tokens":64}'
 # datasets-server: free query engine on ANY public dataset
 curl -s "https://datasets-server.huggingface.co/rows?dataset=lhoestq%2Fdemo1&config=default&split=train&offset=0&length=5"
-# OIDC: discovery + a code→token exchange (PKCE flow for your own app)
+# OIDC for your own app: discovery + code→token exchange (form-encoded;
+# grant_type=refresh_token and device_code work on the same endpoint)
 curl -s https://huggingface.co/.well-known/openid-configuration
+curl -s -X POST https://huggingface.co/oauth/token \
+  -d grant_type=authorization_code -d client_id=$ID -d code=$CODE \
+  -d redirect_uri=http://localhost:3000/callback -d code_verifier=$VERIFIER
+# uploads-CDN: permanent media URL outside ALL quotas (raw body + file's MIME;
+# cookie = user-scoped URL, no cookie = anonymous lane, PAT ignored)
+curl -s -X POST -H "Cookie: token=$HF_JWT" -H "Content-Type: image/png" \
+  --data-binary @./photo.png https://huggingface.co/uploads
+# mint a 1h router-only JWT (CI-safe; use the FULL hf_jwt_-prefixed accessToken)
+curl -s -H "Cookie: token=$HF_JWT" https://huggingface.co/api/settings/jwt-inference-only
+# webhook create (watch ANY repo; deliver to ntfy.sh — webhook.site DNS-fails)
+curl -s -X POST -H "$T" -H "Content-Type: application/json" \
+  https://huggingface.co/api/settings/webhooks \
+  -d '{"watched":[{"type":"space","name":"<you>/my-space"}],"url":"https://ntfy.sh/my-topic","domains":["repo"]}'
+# collection create (then add items: POST /api/collections/{slug}/items)
+curl -s -X POST -H "$T" -H "Content-Type: application/json" \
+  https://huggingface.co/api/collections -d '{"title":"My list","namespace":"<you>"}'
 # registry.hf.space: pull-token for any public Docker Space image
 curl -s -H "$T" "https://huggingface.co/api/spaces/<owner>/<space>/registry-auth-check"
 ```

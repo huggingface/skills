@@ -6,7 +6,7 @@ compatibility: "Knowledge works with any HTTP client (curl) or the official SDKs
 metadata:
   author: landogayatri
   source: https://huggingface.co/landogayatri/hf-free-maxxing
-  version: "1.2.0"
+  version: "1.2.1"
   verified: "2026-09"
 ---
 
@@ -48,10 +48,12 @@ rolling 24h; don't farm — see ToS posture below).
 ## hfx or the official SDKs?
 
 The official SDKs are typed, HF-maintained, and double as a quick API doc —
-use them when they cover the job (repo/file CRUD, listings, collections,
-raw inference calls). Audited live 2026-09-30 against `@huggingface/hub`
+use them when they cover the job (repo/file CRUD, listings, collections
+(Python full CRUD; JS can't add items), raw inference calls). Audited live
+2026-09-30 against `@huggingface/hub`
 2.17.5 / `@huggingface/inference` 4.13.30 / `huggingface_hub` 1.9.2:
-**14 of 16 hfx commands wrap at least one surface no SDK exposes** —
+**14 of 16 hfx commands wrap at least one surface no SDK exposes** (every
+command except `host` and `store`-repo-mode) —
 uploads-CDN (`POST /uploads`), datasets-server queries, credits/budget,
 catalog pricing, ZeroGPU quota, JWT mint, bucket change-feed SSE,
 notifications, OIDC flows, registry.hf.space, the blog renderer, metrics
@@ -143,8 +145,9 @@ hfx etl filter <you>/hf-free-maxxing-kit-etl --where "score>0.5" --orderby "scor
    against the $0.10/mo cap; >10 unsettled in flight → 402 until true-up
    (~1-5 min). Failed requests are never billed. Credits reset
    calendar-month and DO NOT roll over — spend down before the 1st.
-   Raw check: `GET /api/settings/inference-providers/usage-limits`.
-   Applies identically to both official InferenceClients.
+   Raw check: `GET /api/settings/billing/usage/live` (SSE — read
+   `inference.usedNanoUsd`). Applies identically to both official
+   InferenceClients.
 3. **ZeroGPU: 8 runs / rolling 24h is the BINDING limit** (300 GPU-s rarely
    binds first). Account-global across ALL public ZeroGPU Spaces. Preflight
    before every batch. Raw check: `GET /api/spaces/zero-gpu/quota`
