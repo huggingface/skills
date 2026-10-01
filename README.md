@@ -1,3 +1,4 @@
+
 # Hugging Face Skills
 
 Hugging Face Skills are definitions for AI/ML tasks like dataset creation, model training, and evaluation. The client plugin marketplaces expose the `hf-cli` skill as the bootstrap path for core Hub operations; additional workflow skills can be installed on demand with `hf skills add <skill-name>` or discovered by skill-aware clients over CLI/MCP integrations.
@@ -164,3 +165,6 @@ Newer skill-aware integrations can also pull capabilities dynamically. Hugging F
 ### Additional references
 - Browse the latest instructions, scripts, and templates directly at [huggingface/skills](https://github.com/huggingface/skills).
 - Review Hugging Face documentation for the specific libraries or workflows you reference inside each skill.
+
+- For image generation, editing, SVG, and motion, see the [Eye.Art Polyphemus skill](skills/eye-art-polyphemus/SKILL.md).
+  
