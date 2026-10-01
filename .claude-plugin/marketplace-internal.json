@@ -1,13 +1,17 @@
 {
   "name": "huggingface-skills",
-  "owner": {
-    "name": "Hugging Face"
-  },
+  "owner": { "name": "Hugging Face" },
   "metadata": {
     "description": "Full Hugging Face Skills manifest for hf skills, MCP, and discovery. Client plugin marketplaces use curated manifests.",
-    "version": "1.0.31"
+    "version": "1.0.32"
   },
   "plugins": [
+    {
+      "name": "eye-art-polyphemus",
+      "source": "./skills/eye-art-polyphemus",
+      "skills": "./",
+      "description": "Create and refine images with Eye.Art Polyphemus through its public MCP, including artist-guided images, reference edits, web visuals, editable SVG, and supported motion."
+    },
     {
       "name": "hf-cli",
       "source": "./skills/hf-cli",
