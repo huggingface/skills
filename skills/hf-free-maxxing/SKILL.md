@@ -47,7 +47,7 @@ Space).
    (official SDKs and `hf` CLI pick it up automatically).
 2. Official clients:
    ```bash
-   pip install "huggingface_hub>=1.2,<2.0" gradio_client   # pin v1.x — v2 breaks APIs
+   pip install "huggingface_hub>=1.9,<2.0" gradio_client   # pin v1.x — v2 breaks APIs; + boto3 if you'll presign bucket URLs
    # JS/TS: @huggingface/hub + @huggingface/inference (typed; definitions double as API docs)
    ```
 3. Optional `HF_JWT` (browser session cookie, from an authenticated tab)
@@ -60,7 +60,8 @@ Space).
 T="Authorization: Bearer $HF_TOKEN"
 
 # 0. Where do I stand? (ALL quotas in one SSE: storage, credits, ZeroGPU, rate buckets)
-curl -sN -H "$T" https://huggingface.co/api/settings/billing/usage/live | head -4
+#    The Accept header is REQUIRED — plain curl gets a JSON error back
+curl -sN -H "$T" -H "Accept: text/event-stream" https://huggingface.co/api/settings/billing/usage/live | head -4
 
 # 1. Durable file storage + public CDN URL (official CLI; or SDK upload_file)
 hf upload <you>/my-files ./mymodel.bin --repo-type dataset
@@ -111,7 +112,7 @@ curl -s "https://datasets-server.huggingface.co/filter?dataset=lhoestq%2Fdemo1&c
    $0.01 placeholder against the $0.10/mo cap; ~10 unsettled requests in
    flight → 402 "depleted" for 1–5 minutes until true-up. Failed requests
    are never billed. Pace loops; check standing with
-   `GET /api/settings/billing/usage/live` (SSE — read
+   `GET /api/settings/billing/usage/live` (SSE — send `Accept: text/event-stream`, read
    `inference.usedNanoUsd`; the first event can be a partial snapshot — use
    the full one).
 3. **Credits reset on the calendar month and DO NOT roll over** (verified
@@ -198,12 +199,13 @@ variables/secrets. Language asymmetry verified 2026-09-30.
   ran Sep 23–26 2026, then retired — a post-retirement probe settled
   $0.01815. Before trusting any "$0" claim, run one tiny call and read the
   settled `usedNanoUsd`. Placeholder "$0.01" entries that never settle
-  (together.ai Ternary lanes) are traps, not deals.
+  (together.ai Ternary lanes) are traps, not deals — the placeholder
+  reverses after ~30 min but burns burst headroom while it sits.
 - **Pricing schema drifts**: the catalog moved to `providers[].pricing` +
   `is_free` flags (2026-09-28); embeddings repriced ~100× the same day.
   Re-parse before relying.
 - **Endpoints retire silently**: `/api/settings/inference-providers/usage-limits`
-  404s since ~S4 2026 — billing truth is `GET /api/settings/billing/usage/live`.
+  404s since ~Sep 2026 — billing truth is `GET /api/settings/billing/usage/live`.
 - **Feature gates flip**: containers repo-type appeared then vanished from
   the creation schema (Oct 2026: not even a valid discriminator); ZeroGPU
   hosting unlocks at account age 30 days; blog publishing has an
