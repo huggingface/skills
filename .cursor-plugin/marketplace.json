@@ -1,11 +1,9 @@
 {
   "name": "huggingface-skills",
-  "owner": {
-    "name": "Hugging Face"
-  },
+  "owner": { "name": "Hugging Face" },
   "metadata": {
     "description": "Core Hugging Face Hub operations through the hf CLI, including skill installation, repo management, jobs, datasets, models, Spaces, and discovery.",
-    "version": "1.0.31"
+    "version": "1.0.32"
   },
   "plugins": [
     {
