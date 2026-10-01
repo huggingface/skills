@@ -9,7 +9,7 @@ The Hugging Face Hub CLI tool `hf` is available. IMPORTANT: The `hf` command rep
 
 Use `hf --help` to view available functions. Note that auth commands are now all under `hf auth` e.g. `hf auth whoami`.
 
-Generated with `huggingface_hub v2.1.0`. Run `hf skills add --force` to regenerate.
+Generated with `huggingface_hub v2.1.1`. Run `hf skills add --force` to regenerate.
 
 ## Commands
 
@@ -205,7 +205,7 @@ Generated with `huggingface_hub v2.1.0`. Run `hf skills add --force` to regenera
 - `hf spaces volumes list SPACE_ID` — List volumes mounted in a Space. `[--format [auto|human|agent|json|quiet]]`
 - `hf spaces volumes set SPACE_ID` — Set (replace) volumes for a Space. `[--volume TEXT --format [auto|human|agent|json|quiet]]`
 - `hf spaces wait SPACE_ID` — Wait for a Space to finish building/starting. `[--timeout TEXT --format [auto|human|agent|json|quiet]]`
-- `hf spaces zero-gpu-quota` — Show your ZeroGPU quota (remaining GPU time and reset date). `[--format [auto|human|agent|json|quiet]]`
+- `hf spaces zero-gpu quota` — Show your ZeroGPU quota (remaining GPU time and reset date). `[--format [auto|human|agent|json|quiet]]`
 
 ### `hf webhooks` — Manage webhooks on the Hub.
 
