@@ -1,20 +1,10 @@
 {
   "name": "huggingface-skills",
   "description": "Core Hugging Face Hub operations through the hf CLI, including skill installation, repo management, jobs, datasets, models, Spaces, and discovery.",
-  "version": "1.0.31",
-  "author": {
-    "name": "Hugging Face"
-  },
+  "version": "1.0.32",
+  "author": { "name": "Hugging Face" },
   "homepage": "https://github.com/huggingface/skills",
   "repository": "https://github.com/huggingface/skills",
   "license": "Apache-2.0",
-  "keywords": [
-    "huggingface",
-    "machine-learning",
-    "hub",
-    "cli",
-    "skills",
-    "jobs",
-    "llm"
-  ]
+  "keywords": ["huggingface", "machine-learning", "hub", "cli", "skills", "jobs", "llm"]
 }
