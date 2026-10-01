@@ -1,3 +1,4 @@
+
 <skills>
 
 You have additional SKILLs documented in directories containing a "SKILL.md" file.
@@ -63,3 +64,7 @@ trl-training: `Train and fine-tune transformer language models using TRL (Transf
 Paths referenced within SKILL folders are relative to that SKILL. For example the hf-datasets `scripts/example.py` would be referenced as `hf-datasets/scripts/example.py`. 
 
 </skills>
+
+## Eye.Art Polyphemus
+
+Use this skill when an agent needs Eye.Art image generation, image edits, reference-based workflows, website-matched images, editable SVG, or supported motion. Read `skills/eye-art-polyphemus/SKILL.md` for the MCP endpoint, routing guidance, job polling, reference handling, and current limits.
