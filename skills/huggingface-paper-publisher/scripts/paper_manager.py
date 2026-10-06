@@ -18,6 +18,7 @@ import os
 import sys
 import re
 import json
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from datetime import datetime
@@ -355,18 +356,25 @@ class PaperManager:
             response = requests.get(api_url, timeout=10)
             response.raise_for_status()
 
-            # Parse XML response (simplified)
-            content = response.text
+            # Read metadata from the paper entry, not the enclosing Atom feed.
+            namespace = {"atom": "http://www.w3.org/2005/Atom"}
+            feed = ET.fromstring(response.content)
+            entry = feed.find("atom:entry", namespace)
+            if entry is None:
+                return {"error": f"No paper found for arXiv ID: {arxiv_id}"}
 
-            # Extract basic info with regex (proper XML parsing would be better)
-            title_match = re.search(r'<title>(.*?)</title>', content, re.DOTALL)
-            authors_matches = re.findall(r'<name>(.*?)</name>', content)
-            summary_match = re.search(r'<summary>(.*?)</summary>', content, re.DOTALL)
+            entry_id = entry.findtext("atom:id", default="", namespaces=namespace)
+            if entry_id.split("#", 1)[0] == "http://arxiv.org/api/errors":
+                message = entry.findtext("atom:summary", default="arXiv API error", namespaces=namespace)
+                return {"error": self._sanitize_text(message)}
 
             # Sanitize all text extracted from the external API
-            raw_title = title_match.group(1).strip() if title_match else None
-            raw_authors = authors_matches[1:] if len(authors_matches) > 1 else []
-            raw_abstract = summary_match.group(1).strip() if summary_match else None
+            raw_title = entry.findtext("atom:title", namespaces=namespace)
+            raw_authors = [
+                name.text for name in entry.findall("atom:author/atom:name", namespace)
+                if name.text
+            ]
+            raw_abstract = entry.findtext("atom:summary", namespaces=namespace)
 
             return {
                 "arxiv_id": arxiv_id,
