@@ -9,7 +9,7 @@ The Hugging Face Hub CLI tool `hf` is available. IMPORTANT: The `hf` command rep
 
 Use `hf --help` to view available functions. Note that auth commands are now all under `hf auth` e.g. `hf auth whoami`.
 
-Generated with `huggingface_hub v2.1.1`. Run `hf skills add --force` to regenerate.
+Generated with `huggingface_hub v2.2.0`. Run `hf skills add --force` to regenerate.
 
 ## Commands
 
@@ -127,7 +127,7 @@ Generated with `huggingface_hub v2.1.1`. Run `hf skills add --force` to regenera
 - `hf jobs scheduled trigger SCHEDULED_JOB_ID` — Trigger a scheduled Job to run immediately (does not change the schedule). `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs scheduled uv run SCHEDULE SCRIPT` — Run a UV script (local file or URL) on HF infrastructure `[--suspend --concurrency --image TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --env TEXT --secrets TEXT --name TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --timeout TEXT --attempts INTEGER RANGE --dry-run --expose INTEGER --expose-public INTEGER --resource-group-id TEXT --namespace TEXT --with TEXT --python TEXT --format [agent|auto|human|json|quiet] --json --quiet]`
 - `hf jobs ssh JOB_ID` — SSH into a running Job. `[--identity-file PATH --dry-run --namespace TEXT --format [auto|human|agent|json|quiet]]`
-- `hf jobs stats` — Fetch the resource usage statistics and metrics of Jobs `[--namespace TEXT --format [auto|human|agent|json|quiet]]`
+- `hf jobs stats` — Fetch the resource usage statistics and metrics of Jobs. `[--follow --namespace TEXT --format [auto|human|agent|json|quiet]]`
 - `hf jobs uv run SCRIPT` — Run a UV script (local file or URL) on HF infrastructure `[--image TEXT --flavor [cpu-basic|cpu-upgrade|cpu-performance|cpu-xl|t4-small|t4-medium|l4x1|l4x4|l40sx1|l40sx4|l40sx8|a10g-small|a10g-large|a10g-largex2|a10g-largex4|a100-large|a100x4|a100x8|h200|h200x2|h200x4|h200x8|rtx-pro-6000|rtx-pro-6000x2|rtx-pro-6000x4|rtx-pro-6000x8] --env TEXT --secrets TEXT --name TEXT --label TEXT --volume TEXT --env-file TEXT --secrets-file TEXT --timeout TEXT --attempts INTEGER RANGE --detach --dry-run --expose INTEGER --expose-public INTEGER --ssh --network-group TEXT --network-alias TEXT --resource-group-id TEXT --namespace TEXT --with TEXT --python TEXT --format [agent|auto|human|json|quiet] --json --quiet]`
 - `hf jobs wait JOB_IDS` — Wait for one or more Jobs to reach a terminal state. `[--timeout TEXT --namespace TEXT --format [auto|human|agent|json|quiet]]`
 
