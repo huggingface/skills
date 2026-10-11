@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "input": "Before launching GPU training on an unknown dataset, what local validation command should you run first?",
+      "verifiers": [
+        {"type": "contains", "values": ["uv run scripts/dataset_inspector.py"]},
+        {"type": "contains", "values": ["--dataset"]},
+        {"type": "contains", "values": ["--split"]}
+      ]
+    }
+  ]
+}

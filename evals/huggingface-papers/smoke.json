@@ -1,0 +1,11 @@
+{
+  "cases": [
+    {
+      "input": "Given arXiv ID 2602.08025, show the Hugging Face API call for structured metadata and the markdown fetch path.",
+      "verifiers": [
+        {"type": "contains", "values": ["/api/papers/2602.08025"]},
+        {"type": "contains", "values": ["/papers/2602.08025.md"]}
+      ]
+    }
+  ]
+}

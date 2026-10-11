@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "input": "A user wants the modern Hugging Face CLI command to download the model bert-base-uncased into ./models and explicitly does not want deprecated CLI names. Give the exact command.",
+      "verifiers": [
+        {"type": "contains", "values": ["hf download"]},
+        {"type": "contains", "values": ["bert-base-uncased"]},
+        {"type": "contains", "values": ["--local-dir ./models"]}
+      ]
+    }
+  ]
+}
