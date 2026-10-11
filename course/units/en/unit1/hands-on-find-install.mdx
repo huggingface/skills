@@ -1,0 +1,217 @@
+# Hands-on: Find and Install Skills from the Hub
+
+Writing skills from scratch is powerful, but you don't always need to start from zero. The Hugging Face Hub hosts a growing collection of ready-to-use skills that you can install and start using immediately. In this hands-on, you'll explore the skill ecosystem, install skills, and use them to perform real ML tasks.
+
+## Finding Skills
+
+### The HF Skills Repository
+
+The main collection of official skills lives in the [huggingface/skills](https://github.com/huggingface/skills) repository. It currently includes the following core skills:
+
+| Skill | Purpose |
+|-------|---------|
+| `gradio` | Build Python web UIs and interactive demos |
+| `hugging-face-cli` | Execute Hub operations via the `hf` CLI |
+| `hugging-face-datasets` | Create and manage datasets with validation |
+| `hugging-face-evaluation` | Add evaluation results to model cards |
+| `hugging-face-jobs` | Run compute jobs on HF infrastructure |
+| `hugging-face-model-trainer` | Fine-tune models with SFT, DPO, GRPO |
+| `hugging-face-paper-publisher` | Publish and manage research papers |
+| `hugging-face-tool-builder` | Create reusable API operation scripts |
+| `hugging-face-trackio` | Track ML experiments with dashboards |
+
+### The Hub Organization
+
+The [hf-skills](https://huggingface.co/hf-skills) organization on the Hub hosts community-contributed models, datasets, and resources related to the skills ecosystem.
+
+## Installing Skills
+
+The installation process depends on your coding agent.
+
+### Claude Code
+
+Claude Code uses a plugin system for skill management:
+
+```bash
+# Add the HF Skills marketplace (one-time setup)
+/plugin marketplace add huggingface/skills
+
+# Install a specific skill
+/plugin install hugging-face-model-trainer@huggingface/skills
+```
+
+Once installed, the skill is automatically available. You can verify by asking Claude about it:
+
+```
+What skills do you have installed for model training?
+```
+
+### Codex
+
+For Codex, symlink skills into the agent's skill directory:
+
+```bash
+git clone https://github.com/huggingface/skills.git
+cd skills
+mkdir -p ~/.agents/skills
+ln -s "$(pwd)/skills/hugging-face-model-trainer" ~/.agents/skills/hugging-face-model-trainer
+```
+
+### Gemini CLI
+
+Gemini CLI supports extensions:
+
+```bash
+gemini extensions install https://github.com/huggingface/skills.git --consent
+```
+
+### Manual Installation
+
+For any agent, you can install skills manually by placing them in the agent's skill directory:
+
+```bash
+# Clone the skills repo
+git clone https://github.com/huggingface/skills.git
+cd skills
+
+# Copy a specific skill to your agent's directory
+cp -r skills/hugging-face-evaluation/ ~/.claude/skills/hugging-face-evaluation/
+```
+
+## Exercise 1: Evaluate a Model
+
+Let's use the `hugging-face-evaluation` skill to add evaluation results to a model card. This is one of the most impactful contributions you can make to the Hub — model cards with structured evaluation data are far more useful for comparison.
+
+### Install the Skill
+
+```bash
+# For Claude Code
+/plugin install hugging-face-evaluation@huggingface/skills
+
+# Or manually
+cp -r skills/hugging-face-evaluation/ ~/.claude/skills/hugging-face-evaluation/
+```
+
+### Use the Skill
+
+Ask your agent to evaluate a model:
+
+```
+Pick a trending model on the Hub that doesn't have evaluation scores in its
+model card. Extract any benchmark results from the README and add them as
+structured metadata. Use --dry-run first.
+```
+
+The agent will follow the skill's workflow:
+
+1. Find a model without structured evaluation data
+2. Use `evaluation_manager.py extract-readme` to parse existing benchmark tables
+3. Preview the changes with `--dry-run`
+4. Create a PR with the structured evaluation metadata
+
+### What to Expect
+
+The skill teaches the agent to run commands like:
+
+```bash
+python skills/hugging-face-evaluation/scripts/evaluation_manager.py extract-readme \
+  --repo-id "model-author/model-name" --dry-run
+```
+
+It can also import scores from external benchmarks:
+
+```bash
+python skills/hugging-face-evaluation/scripts/evaluation_manager.py import-aa \
+  --creator-slug "anthropic" --model-name "claude-sonnet-4" \
+  --repo-id "target/model" --create-pr
+```
+
+## Exercise 2: Create a Dataset
+
+Now let's use the `hugging-face-datasets` skill to create and publish a dataset:
+
+### Install the Skill
+
+```bash
+# For Claude Code
+/plugin install hugging-face-datasets@huggingface/skills
+
+# Or manually
+cp -r skills/hugging-face-datasets/ ~/.claude/skills/hugging-face-datasets/
+```
+
+### Use the Skill
+
+```
+Create a small conversational dataset with 20 examples of Python debugging
+help. Use the chat template format and publish it to the Hub as
+my-username/python-debug-conversations.
+```
+
+The agent will use the skill to:
+
+1. Initialize the repository with `quick_setup`
+2. Structure data in the chat format with `messages` columns
+3. Upload the data using streaming
+4. Write a complete dataset card
+
+### Quick Setup Command
+
+The skill provides a streamlined setup command:
+
+```bash
+python skills/hugging-face-datasets/scripts/dataset_manager.py quick_setup \
+  --repo_id "your-username/dataset-name" --template chat
+```
+
+## Exercise 3: Fine-Tune a Model
+
+Finally, let's use the `hugging-face-model-trainer` skill for the most complex workflow — fine-tuning:
+
+### Install the Skill
+
+```bash
+# For Claude Code
+/plugin install hugging-face-model-trainer@huggingface/skills
+```
+
+### Use the Skill
+
+```
+Fine-tune Qwen3-0.6B on the open-r1/codeforces-cots dataset for
+instruction following. Use the smallest GPU available.
+```
+
+The agent will:
+
+1. **Validate the dataset**: Check format compatibility for SFT
+2. **Select hardware**: Choose `t4-small` (~$0.75/hour) for a 0.6B model
+3. **Generate a training script**: Based on the SFT template with Trackio monitoring
+4. **Submit to HF Jobs**: Run training on cloud GPUs
+5. **Report progress**: Provide a monitoring URL and estimated cost
+
+> **Note**: This exercise requires a Hugging Face Pro or Team/Enterprise plan for HF Jobs access. If you don't have one, you can still follow along by using `--dry-run` to see the generated training script without submitting a job.
+
+## Comparing the Skills
+
+Notice how each skill follows the same structural patterns but applies them to different domains:
+
+| Aspect | Evaluation | Datasets | Training |
+|--------|-----------|----------|----------|
+| Main script | `evaluation_manager.py` | `dataset_manager.py` | `train_sft_example.py` |
+| Key action | Extract/import scores | Create/upload data | Submit training job |
+| Output | Model card metadata PR | Published dataset | Fine-tuned model on Hub |
+| Complexity | Medium | Medium | High |
+
+This consistency is one of the strengths of the skills format — once you understand how one skill works, you can pick up any other skill quickly.
+
+## What You've Learned
+
+In this hands-on, you've:
+
+- Explored the HF Skills ecosystem and found available skills
+- Installed skills using multiple methods
+- Used skills to perform real ML workflows: evaluation, dataset creation, and fine-tuning
+- Seen how the same skill patterns apply across different domains
+
+In the next section, we'll cover how to share your own skills with the community.

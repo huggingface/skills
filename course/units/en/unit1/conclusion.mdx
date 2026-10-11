@@ -1,0 +1,37 @@
+# Conclusion
+
+Congratulations on completing Unit 1! Let's recap what you've learned.
+
+## Key Takeaways
+
+**Skills bridge the gap between general-purpose agents and domain expertise.** Without skills, agents have to figure out specialized workflows from scratch every time. With skills, they can draw on pre-packaged knowledge that encodes best practices, decision logic, and tested templates.
+
+**The SKILL.md format is simple but powerful.** A markdown file with YAML frontmatter is all you need to define a skill. The format is readable by both humans and agents, works across different coding platforms, and plays well with version control.
+
+**Good skills use progressive disclosure.** The main `SKILL.md` file acts as a router — it gives the agent a high-level workflow and points to scripts, references, and templates for deeper detail. This keeps context usage efficient while allowing unlimited depth.
+
+**The ecosystem is growing.** The Hugging Face Skills repository already includes skills for model training, evaluation, dataset creation, CUDA kernel development, and more. And the `upskill` tool lets you generate and evaluate new skills systematically.
+
+## What You Built
+
+In this unit, you:
+
+- Wrote a `dataset-publisher` skill from scratch, including a SKILL.md, helper script, and template
+- Installed and used production skills for model evaluation, dataset creation, and fine-tuning
+- Learned how to share skills with the community
+
+## What's Next
+
+In **Unit 2**, you'll learn how to use skills with specific coding agents in depth — including Claude Code's slash commands and MCP integration, and how to chain multiple skills together for end-to-end ML workflows.
+
+In **Unit 3**, you'll explore advanced skill sharing through the Hub and community registries.
+
+In **Unit 4**, you'll take on a deep-dive challenge: using the `cuda-kernels` skill to build production CUDA kernels with architecture-aware optimization.
+
+## Additional Resources
+
+- [Agent Skills Specification](https://agentskills.io) — The formal specification for the SKILL.md format
+- [huggingface/skills](https://github.com/huggingface/skills) — Official HF Skills repository
+- [huggingface/upskill](https://github.com/huggingface/upskill) — Skill generation and evaluation tool
+- [HF Skills Training Blog](https://huggingface.co/blog/hf-skills-training) — How Claude fine-tunes models with skills
+- [Custom CUDA Kernels Blog](https://huggingface.co/blog/custom-cuda-kernels-agent-skills) — Building CUDA kernels with agent skills

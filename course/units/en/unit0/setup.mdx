@@ -1,0 +1,110 @@
+# Setting Up Your Environment
+
+Before diving into agent skills, let's make sure your environment is ready. You'll need a Hugging Face account, a coding agent, and the HF Skills repository.
+
+## 1. Create a Hugging Face Account
+
+If you don't already have one, create a free account at [huggingface.co/join](https://huggingface.co/join). You'll need this to access models, datasets, and skills on the Hub.
+
+## 2. Install the Hugging Face CLI
+
+The `hf` CLI is used to authenticate and interact with the Hub. Install it with:
+
+```bash
+# macOS / Linux
+curl -LsSf https://hf.co/cli/install.sh | bash
+
+# Windows
+powershell -ExecutionPolicy ByPass -c "irm https://hf.co/cli/install.ps1 | iex"
+```
+
+Then log in to create and store your token:
+
+```bash
+hf auth login
+```
+
+This sets your `HF_TOKEN` environment variable, which skills use to authenticate API calls.
+
+## 3. Choose and Set Up a Coding Agent
+
+Agent skills work with any coding agent that can read markdown instructions and run Python scripts. Here are the most common options:
+
+### Claude Code
+
+Claude Code is Anthropic's command-line coding agent. Install it and add HF Skills:
+
+```bash
+# Install Claude Code (requires Node.js)
+npm install -g @anthropic-ai/claude-code
+
+# Add the HF Skills marketplace
+/plugin marketplace add huggingface/skills
+
+# Install a specific skill
+/plugin install hugging-face-model-trainer@huggingface/skills
+```
+
+### Codex
+
+OpenAI's Codex CLI discovers skills from standard `.agents/skills` locations (project-level or `~/.agents/skills`). A simple setup is:
+
+```bash
+# Clone the skills repo
+git clone https://github.com/huggingface/skills.git
+cd skills
+
+# Symlink skills into Codex's skill directory
+mkdir -p ~/.agents/skills
+ln -s "$(pwd)/skills/hugging-face-model-trainer" ~/.agents/skills/hugging-face-model-trainer
+```
+
+### Gemini CLI
+
+Google's Gemini CLI supports skills as extensions:
+
+```bash
+gemini extensions install https://github.com/huggingface/skills.git --consent
+```
+
+### Cursor / Windsurf / Other IDEs
+
+IDE-based agents can load skills by pointing their configuration at a local skills directory. Check your IDE's documentation for the specific configuration format.
+
+## 4. Clone the Skills Repository
+
+For the hands-on exercises in this course, you'll want a local copy of the HF Skills repository:
+
+```bash
+git clone https://github.com/huggingface/skills.git
+cd skills
+```
+
+This repository contains all the official Hugging Face skills, along with scripts, templates, and examples you'll use throughout the course.
+
+## 5. Verify Your Setup
+
+Let's make sure everything is working. Run these checks:
+
+```bash
+# Check HF CLI is installed
+hf whoami
+
+# Check your token has write access
+hf auth token
+
+# Verify the skills repo is cloned
+ls skills/
+```
+
+You should see your username from `hf whoami` and a list of skill directories when you `ls skills/`.
+
+## Troubleshooting
+
+If you run into issues:
+
+- **Token errors**: Make sure you created a token with **write** access at [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
+- **CLI not found**: Restart your terminal after installing the HF CLI
+- **Agent not detecting skills**: Check that the skill's `SKILL.md` file is in the correct directory for your agent
+
+You're all set! In the next section, we'll talk about how to get help and connect with the community.
