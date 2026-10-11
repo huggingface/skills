@@ -254,7 +254,7 @@ trainer.push_to_hub()
 
 ## Authentication Methods
 
-For a complete guide on token types, `$HF_TOKEN` automatic replacement, `secrets` vs `env` differences, and security best practices, see the `hugging-face-jobs` skill → *Token Usage Guide*.
+For a complete guide on token types, `$HF_TOKEN` automatic replacement, `secrets` vs `env` differences, and security best practices, see the `huggingface-llm-trainer` skill → *Token Usage Guide*.
 
 **Recommended:** Always pass tokens via `secrets` (encrypted server-side):
 
