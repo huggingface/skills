@@ -1,10 +1,17 @@
 ---
 name: hf-free-maxxing
-description: "Every Hugging Face free-tier capability, live-verified: 100 GB private + 8.7 TB public storage per entity, $0.10/mo inference credits with cheapest-lane pinning, ZeroGPU bursts (8 runs/24h), unlimited static hosting, quota-free media CDN, hosted dataset queries, OIDC identity, Docker pulls, webhooks. Use when the user wants free cloud storage, free static hosting or a free CDN, free GPU compute or image/video generation, cheap or free LLM API calls, or asks what the Hugging Face free tier includes, how far $0 goes, or how to avoid paying for AI infrastructure."
+description: "Every Hugging Face free-tier capability, live-verified: 100 GB private + 8.7 TB public storage per entity, cheapest-lane pinning (free credits removed 2026-10 — PRO/BYO keys; prices verified), ZeroGPU bursts (8 runs/24h), unlimited static hosting, quota-free media CDN, hosted dataset queries, OIDC identity, Docker pulls, webhooks. Use when the user wants free cloud storage, free static hosting or a free CDN, free GPU compute or image/video generation, cheap or free LLM API calls, or asks what the Hugging Face free tier includes, how far $0 goes, or how to avoid paying for AI infrastructure."
 license: Apache-2.0
 ---
 
 # HF Free-Maxxing — the verified $0 operating manual
+
+> ⚠️ **Platform drift 2026-10-08+ (re-verified 2026-10-12):** Hugging Face **removed the
+> free-tier inference credits** ("Free Users: None"; staff cited "constant abuse by account
+> farms"). All `$0.10/mo` credit figures herein are the verified 2026-09 → 2026-10-01 record.
+> Unchanged at re-scan: storage, static hosting, media CDN, **ZeroGPU** (8 runs / 300 GPU-s
+> per rolling 24h), data queries, identity, webhooks. Router inference now needs PRO ($2/mo
+> credits) or your own provider keys (pass-through, still $0 platform-side).
 
 What Hugging Face actually gives a free account, measured live (Sep–Oct 2026),
 with the traps that cost money or hours if learned the hard way. Everything
@@ -20,7 +27,7 @@ curl** — no custom tooling required.
 | Public storage | **8.7 TB** per entity (best-effort) | $0 |
 | Bandwidth / egress | 20 TB/mo (user) + 30 TB/mo per org, CloudFront-backed | $0 |
 | ZeroGPU compute | 300 GPU-sec + **8 runs** per rolling 24h | $0 |
-| LLM API | **$0.10/mo credits** ≈ 5M tokens on the cheapest pinned lane (Qwen3-4B:nscale, $0.01/$0.03 per 1M) | $0 |
+| LLM API | ⚠️ free credits **REMOVED 2026-10-08** ("Free Users: None") — cheapest lanes (Qwen3-4B:nscale, $0.01/$0.03 per 1M) now need PRO $2/mo credits or **BYO provider keys**; ~5M tok per $0.10 was the verified 2026-09 record | $0 (BYO) |
 | Static hosting | unlimited static Spaces, always-on, no cold start | $0 |
 | Media CDN upload | `POST /uploads` — outside BOTH storage+bandwidth quotas, permanent | $0 |
 | Data query engine | datasets-server filter/search/sort/stats + DuckDB SQL over auto-parquet | $0 |
@@ -35,7 +42,7 @@ orgs is the safe zone; org farming violates ToS.
 
 **Not free** (route elsewhere — Cloudflare/Supabase/Netlify): dynamic compute
 and serverless functions, cron schedulers, databases, transactional email,
-custom domains, Jobs and sandboxes (prepaid wallet only — the $0.10 credits do
+custom domains, Jobs and sandboxes (prepaid wallet only — inference credits (removed 2026-10-08 for free users) do
 NOT count toward them), private dataset viewer (501), EU regions, Dev Mode
 SSH, `app_build_command` static builds (credits-gated — they brick a static
 Space).
@@ -105,11 +112,11 @@ curl -s "https://datasets-server.huggingface.co/filter?dataset=lhoestq%2Fdemo1&c
    (`"model": "...:nscale"`) or the SDK option
    (`provider: "nscale"`). Cheapest verified lane Sep 2026:
    `Qwen/Qwen3-4B-Instruct-2507:nscale` at $0.01/$0.03 per 1M tokens
-   (≈5M tokens per monthly $0.10). Lane prices DRIFT — re-check the public
+   (≈5M tokens per $0.10 of credits — the free tier lost its credits 2026-10-08; PRO/BYO now). Lane prices DRIFT — re-check the public
    catalog (`GET https://router.huggingface.co/v1/models`, prices under
    `providers[].pricing`) before long batches.
 2. **Placeholder-billing burst mechanics.** EVERY router request books a
-   $0.01 placeholder against the $0.10/mo cap; ~10 unsettled requests in
+   $0.01 placeholder against the credits cap (funded/PRO accounts since the 2026-10-08 removal); ~10 unsettled requests in
    flight → 402 "depleted" for 1–5 minutes until true-up. Failed requests
    are never billed. Pace loops; check standing with
    `GET /api/settings/billing/usage/live` (SSE — send `Accept: text/event-stream`, read
@@ -133,7 +140,7 @@ curl -s "https://datasets-server.huggingface.co/filter?dataset=lhoestq%2Fdemo1&c
 6. **Storage is per-entity**: 100 GB private / 8.7 TB public (user + each
    org separately), max file 500 GB. Repo deletions keep quota in git
    history until LFS purge (Python SDK: `permanently_delete_lfs_files()`);
-   bucket deletes free quota in ≤90 s. Dedup saves bandwidth, NOT quota.
+   bucket deletes free quota in ≤60 s (object delete ~15 s). Dedup saves bandwidth, NOT quota.
 7. **`create_bucket()` defaults to PUBLIC** (verified live on
    huggingface_hub 1.9.2 — the `private=True` param is easy to miss). Pass
    it explicitly, or flip after the fact:
@@ -215,7 +222,8 @@ variables/secrets. Language asymmetry verified 2026-09-30.
 
 Every number, endpoint, and trap above was live-verified Sep–Oct 2026 by the
 hf-free-maxxing research project (probe transcripts and raw evidence:
-<https://huggingface.co/landogayatri/hf-free-maxxing>). Numbers move in real
+<https://huggingface.co/landogayatri/hf-free-maxxing>; durable mirror of the
+full kit: the domain-infra-kit mothership's `vendor/hf-free-maxxing/`). Numbers move in real
 time — the quota SSE (`/api/settings/billing/usage/live`) and
 `/api/spaces/zero-gpu/quota` are always the source of truth for current
 state.
