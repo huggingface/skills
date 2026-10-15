@@ -10,7 +10,7 @@ If you've already published a paper on arXiv and want to make it discoverable on
 # Check if paper exists
 uv run scripts/paper_manager.py check --arxiv-id "2301.12345"
 
-# Index the paper
+# Check indexing status; submit/index through Hub UI or Papers API if missing
 uv run scripts/paper_manager.py index --arxiv-id "2301.12345"
 
 # Get paper information
@@ -111,7 +111,7 @@ Output:
 }
 ```
 
-## Example 6: Complete Workflow - New Paper
+## Example 6: Draft, Publish Externally, and Link a New Paper
 
 Full workflow from paper creation to publication:
 
@@ -129,7 +129,7 @@ uv run scripts/paper_manager.py create \
 # Step 3: Submit to arXiv (external process)
 # Upload to arxiv.org, receive arXiv ID: 2312.99999
 
-# Step 4: Index on Hugging Face
+# Step 4: Check status after indexing through Hub UI or Papers API
 uv run scripts/paper_manager.py index --arxiv-id "2312.99999"
 
 # Step 5: Link to your models/datasets
@@ -193,7 +193,7 @@ cat paper_info.txt
 ## Example 9: Search and Discover Papers
 
 ```bash
-# Search for papers (opens browser)
+# Unsupported helper search: prints a URL only, returns nonzero, does not open a browser
 uv run scripts/paper_manager.py search \
   --query "transformer attention mechanism"
 ```
@@ -210,7 +210,7 @@ This skill complements [tfrere's research article template](https://huggingface.
 
 # 3. Submit to arXiv
 
-# 4. Use this skill to index and link
+# 4. Index using the Hub UI or Papers API, then check status and link
 uv run scripts/paper_manager.py index --arxiv-id "YOUR_ARXIV_ID"
 uv run scripts/paper_manager.py link \
   --repo-id "your-username/your-model" \
@@ -221,17 +221,13 @@ uv run scripts/paper_manager.py link \
 
 ```bash
 # Check if paper exists before linking
-if uv run scripts/paper_manager.py check --arxiv-id "2301.12345" | grep -q '"exists": true'; then
+if uv run scripts/paper_manager.py check --arxiv-id "2301.12345"; then
   echo "Paper exists, proceeding with link..."
   uv run scripts/paper_manager.py link \
     --repo-id "username/model" \
     --arxiv-id "2301.12345"
 else
-  echo "Paper doesn't exist, indexing first..."
-  uv run scripts/paper_manager.py index --arxiv-id "2301.12345"
-  uv run scripts/paper_manager.py link \
-    --repo-id "username/model" \
-    --arxiv-id "2301.12345"
+  echo "Check did not confirm an indexed paper. Inspect the error; if missing, index through the Hub UI or Papers API before linking."
 fi
 ```
 
@@ -278,7 +274,7 @@ jobs:
 3. **Include full citations** in model cards for proper attribution
 4. **Link papers to all relevant artifacts** (models, datasets, spaces)
 5. **Generate BibTeX citations** for easy reference by others
-6. **Keep paper visibility updated** in your HF profile settings
+6. **Manage authorship/visibility in Hub settings**; the helper has no account-management commands
 7. **Use templates consistently** within your research group
 8. **Version control your papers** alongside code
 
@@ -287,7 +283,7 @@ jobs:
 ### Paper not found after indexing
 
 ```bash
-# Visit the URL directly to trigger indexing
+# The Hub documents visiting this URL as an indexing path; inspect the result
 open "https://huggingface.co/papers/2301.12345"
 
 # Wait a few seconds, then check again
@@ -297,8 +293,7 @@ uv run scripts/paper_manager.py check --arxiv-id "2301.12345"
 ### Permission denied when linking
 
 ```bash
-# Verify your token has write access
-echo $HF_TOKEN
+# Verify token availability and write access without printing its value
 
 # Set token if missing
 export HF_TOKEN="your_token_here"

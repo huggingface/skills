@@ -48,7 +48,7 @@ class PaperManager:
 
     def index_paper(self, arxiv_id: str) -> Dict[str, Any]:
         """
-        Index a paper on Hugging Face from arXiv.
+        Check indexing status; this compatibility command does not submit papers.
 
         Args:
             arxiv_id: arXiv identifier (e.g., "2301.12345")
@@ -73,10 +73,11 @@ class PaperManager:
             if response.status_code == 200:
                 print(f"✓ Paper already indexed at {paper_url}")
                 return {"status": "exists", "url": paper_url}
-            else:
-                print(f"Paper not indexed. Visit {paper_url} to trigger indexing.")
-                print("The paper will be automatically indexed when you first visit the URL.")
-                return {"status": "not_indexed", "url": paper_url, "action": "visit_url"}
+            if response.status_code == 404:
+                print("Paper not indexed. Use the Hub's paper indexing workflow.")
+                return {"status": "not_indexed", "url": paper_url, "action": "index_paper"}
+            response.raise_for_status()
+            return {"status": "error", "message": f"Unexpected HTTP {response.status_code}"}
         except requests.RequestException as e:
             print(f"Error checking paper status: {e}")
             return {"status": "error", "message": str(e)}
@@ -106,15 +107,17 @@ class PaperManager:
                     "arxiv_id": arxiv_id,
                     "arxiv_url": f"https://arxiv.org/abs/{arxiv_id}"
                 }
-            else:
+            if response.status_code == 404:
                 return {
                     "exists": False,
                     "arxiv_id": arxiv_id,
                     "index_url": paper_url,
-                    "message": f"Visit {paper_url} to index this paper"
+                    "message": "Paper not indexed; use the Hub's paper indexing workflow"
                 }
+            response.raise_for_status()
+            return {"exists": None, "error": f"Unexpected HTTP {response.status_code}"}
         except requests.RequestException as e:
-            return {"exists": False, "error": str(e)}
+            return {"exists": None, "error": str(e)}
 
     def link_paper_to_repo(
         self,
@@ -163,32 +166,36 @@ class PaperManager:
             # Upload updated README
             commit_message = f"Add paper reference: arXiv:{arxiv_id}"
 
-            if create_pr:
-                # Create PR (not implemented in basic version)
-                print("PR creation not yet implemented. Committing directly.")
-
-            self.api.upload_file(
+            commit = self.api.upload_file(
                 path_or_fileobj=updated_content.encode('utf-8'),
                 path_in_repo="README.md",
                 repo_id=repo_id,
                 repo_type=repo_type,
                 commit_message=commit_message,
-                token=self.token
+                token=self.token,
+                create_pr=create_pr,
             )
 
             paper_url = f"https://huggingface.co/papers/{arxiv_id}"
             repo_url = f"https://huggingface.co/{repo_id}"
 
-            print(f"✓ Successfully linked paper to repository")
+            pr_url = getattr(commit, "pr_url", None) if create_pr else None
+            if create_pr and not pr_url:
+                return {"status": "error", "message": "Hub did not return a PR URL; verify the upload result before retrying"}
+            print("✓ Proposed paper link in a pull request" if create_pr else "✓ Successfully linked paper to repository")
             print(f"  Paper: {paper_url}")
             print(f"  Repo: {repo_url}")
 
-            return {
+            result = {
                 "status": "success",
                 "paper_url": paper_url,
                 "repo_url": repo_url,
                 "arxiv_id": arxiv_id
             }
+            if create_pr:
+                result["pr_url"] = pr_url
+                print(f"  PR: {pr_url}")
+            return result
 
         except Exception as e:
             print(f"Error linking paper: {e}")
@@ -406,10 +413,10 @@ class PaperManager:
 
         if format == "bibtex":
             # Generate BibTeX citation
-            key = f"arxiv{arxiv_id.replace('.', '_')}"
+            key = "arxiv" + re.sub(r"[^a-zA-Z0-9_-]", "_", arxiv_id)
             raw_authors = " and ".join(info.get("authors", ["Unknown"]))
             raw_title = info.get("title", "Untitled")
-            year = arxiv_id.split(".")[0][:2]  # Extract year from ID (simplified)
+            year = arxiv_id.rsplit("/", 1)[-1][:2]
             year = f"20{year}" if int(year) < 50 else f"19{year}"
 
             # Escape BibTeX structural characters in untrusted values
@@ -482,7 +489,7 @@ class PaperManager:
         return text.strip()
 
 
-def main():
+def main() -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description="Paper Manager for Hugging Face Hub",
@@ -492,7 +499,7 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
 
     # Index command
-    index_parser = subparsers.add_parser("index", help="Index a paper from arXiv")
+    index_parser = subparsers.add_parser("index", help="Check indexing status (does not submit a paper)")
     index_parser.add_argument("--arxiv-id", required=True, help="arXiv paper ID")
 
     # Check command
@@ -543,10 +550,12 @@ def main():
     if args.command == "index":
         result = manager.index_paper(args.arxiv_id)
         print(json.dumps(result, indent=2))
+        return 0 if result.get("status") == "exists" else 1
 
     elif args.command == "check":
         result = manager.check_paper(args.arxiv_id)
         print(json.dumps(result, indent=2))
+        return 0 if result.get("exists") else 1
 
     elif args.command == "link":
         arxiv_ids = []
@@ -559,6 +568,7 @@ def main():
             print("Error: Must provide --arxiv-id or --arxiv-ids")
             sys.exit(1)
 
+        failed = False
         for arxiv_id in arxiv_ids:
             result = manager.link_paper_to_repo(
                 repo_id=args.repo_id,
@@ -568,6 +578,8 @@ def main():
                 create_pr=args.create_pr
             )
             print(json.dumps(result, indent=2))
+            failed = failed or result.get("status") != "success"
+        return 1 if failed else 0
 
     elif args.command == "create":
         result = manager.create_research_article(
@@ -578,6 +590,7 @@ def main():
             abstract=args.abstract
         )
         print(json.dumps(result, indent=2))
+        return 0 if result.get("status") == "success" else 1
 
     elif args.command == "info":
         result = manager.get_arxiv_info(args.arxiv_id)
@@ -591,16 +604,19 @@ def main():
                 print(f"Authors: {', '.join(result.get('authors', []))}")
                 print(f"arXiv URL: {result.get('arxiv_url')}")
                 print(f"\nAbstract:\n{result.get('abstract')}")
+        return 1 if "error" in result else 0
 
     elif args.command == "citation":
         citation = manager.generate_citation(args.arxiv_id, args.format)
         print(citation)
+        return 0 if args.format == "bibtex" and not citation.startswith("Error") else 1
 
     elif args.command == "search":
         print(f"Searching for: {args.query}")
         print("Search functionality coming soon!")
         print(f"Visit: https://huggingface.co/papers?search={args.query}")
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

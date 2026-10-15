@@ -1,16 +1,15 @@
 ---
 name: huggingface-paper-publisher
-description: Publish and manage research papers on Hugging Face Hub. Supports creating paper pages, linking papers to models/datasets, claiming authorship, and generating professional markdown-based research articles.
+description: Publish and manage research papers on Hugging Face Hub. Supports checking paper status, reading arXiv metadata, linking papers to models/datasets/Spaces, and creating local Markdown research drafts.
 ---
 
 # Overview
-This skill provides comprehensive tools for AI engineers and researchers to publish, manage, and link research papers on the Hugging Face Hub. It streamlines the workflow from paper creation to publication, including integration with arXiv, model/dataset linking, and authorship management.
+This skill provides comprehensive tools for AI engineers and researchers to publish, manage, and link research papers on the Hugging Face Hub. It creates local drafts, reads paper metadata, and updates repository READMEs. The helper does not call separate indexing/submission or authorship-management endpoints. Paper-page GET requests can still trigger server-side indexing as described by the Hub; the helper reports the observed response without confirming completion of that indexing.
 
 ## Integration with HF Ecosystem
 - **Paper Pages**: Index and discover papers on Hugging Face Hub
-- **arXiv Integration**: Automatic paper indexing from arXiv IDs
+- **arXiv Integration**: Check paper indexing status and read arXiv metadata
 - **Model/Dataset Linking**: Connect papers to relevant artifacts through metadata
-- **Authorship Verification**: Claim and verify paper authorship
 - **Research Article Template**: Generate professional, modern scientific papers
 
 # Version
@@ -23,16 +22,14 @@ manual environment setup.
 - huggingface_hub>=0.26.0
 - pyyaml>=6.0.3
 - requests>=2.32.5
-- markdown>=3.5.0
 - python-dotenv>=1.2.1
 
 # Core Capabilities
 
-## 1. Paper Page Management
-- **Index Papers**: Add papers to Hugging Face from arXiv
-- **Claim Authorship**: Verify and claim authorship on published papers
-- **Manage Visibility**: Control which papers appear on your profile
-- **Paper Discovery**: Find and explore papers in the HF ecosystem
+## 1. Paper Status and Metadata
+- **Check Papers**: Check whether a paper is indexed on the Hub
+- **Read Metadata**: Fetch arXiv metadata and generate BibTeX
+- **Indexing**: `index` issues a paper-page GET and reports the observed status; use the Hub UI or Papers API for the documented indexing workflow
 
 ## 2. Link Papers to Artifacts
 - **Model Cards**: Add paper citations to model metadata
@@ -43,14 +40,13 @@ manual environment setup.
 ## 3. Research Article Creation
 - **Markdown Templates**: Generate professional paper formatting
 - **Modern Design**: Clean, readable research article layouts
-- **Dynamic TOC**: Automatic table of contents generation
 - **Section Structure**: Standard scientific paper organization
 - **LaTeX Math**: Support for equations and technical notation
 
 ## 4. Metadata Management
 - **YAML Frontmatter**: Proper model/dataset card metadata
 - **Citation Tracking**: Maintain paper references across repositories
-- **Version Control**: Track paper updates and revisions
+- **Version Control**: Link directly or propose README changes with `--create-pr`
 - **Multi-Paper Support**: Link multiple papers to single artifacts
 
 # Usage Instructions
@@ -59,17 +55,18 @@ The skill includes Python scripts in `scripts/` for paper publishing operations.
 
 ### Prerequisites
 - Run scripts with `uv run` (dependencies are resolved from the script header)
-- Set `HF_TOKEN` environment variable with Write-access token
+- Public page requests and local creation do not require a token. A page GET may trigger Hub indexing; it is not guaranteed to be free of server-side effects. Linking requires an authorized `HF_TOKEN` with repository write access.
+- `link` updates a remote repository README. It commits directly by default; use `--create-pr` to propose a change for review. The returned `pr_url` comes from the Hub response, and a rejected PR never falls back to a direct commit.
+- CLI exit `0` means the requested supported operation succeeded. Errors, an unindexed/missing paper, and unsupported operations return nonzero. Batch linking reports a nonzero exit if any item failed; earlier successful items are not rolled back. A network/service failure is an error with unknown existence, not proof that a paper is absent. Check the reported result before retrying a write whose outcome is uncertain.
 
-> **All paths are relative to the directory containing this SKILL.md
-file.**
-> Before running any script, first `cd` to that directory or use the full
-path.
+> Script and template paths are relative to the directory containing this
+> SKILL.md. Resolve the script to its full path when working elsewhere.
+> Write generated drafts to the operator's workspace, not the installed skill/cache.
 
 
-### Method 1: Index Paper from arXiv
+### Method 1: Check Paper Status
 
-Add a paper to Hugging Face Paper Pages from arXiv.
+`index` is a compatibility command that performs a paper-page GET and reports the observed response. It does not call a separate indexing POST or confirm completed indexing. The Hub documents that visiting the paper URL can trigger indexing; see the [Paper Pages FAQ](https://huggingface.co/docs/hub/paper-pages).
 
 **Basic Usage:**
 ```bash
@@ -84,7 +81,7 @@ uv run scripts/paper_manager.py check \
 ```
 
 **Direct URL Access:**
-You can also visit `https://huggingface.co/papers/{arxiv-id}` directly to index a paper.
+Visit `https://huggingface.co/papers/{arxiv-id}` to inspect a paper page. The Hub also documents this visit as an indexing path. Inspect the resulting page/status before claiming that indexing completed.
 
 ### Method 2: Link Paper to Model/Dataset
 
@@ -132,49 +129,7 @@ When you add an arXiv paper link to a model or dataset README:
 4. The Paper Page shows all models/datasets citing this paper
 5. Papers are discoverable through filters and search
 
-### Method 3: Claim Authorship
-
-Verify your authorship on papers published on Hugging Face.
-
-**Start Claim Process:**
-```bash
-uv run scripts/paper_manager.py claim \
-  --arxiv-id "2301.12345" \
-  --email "your.email@institution.edu"
-```
-
-**Manual Process:**
-1. Navigate to your paper's page: `https://huggingface.co/papers/{arxiv-id}`
-2. Find your name in the author list
-3. Click your name and select "Claim authorship"
-4. Wait for admin team verification
-
-**Check Authorship Status:**
-```bash
-uv run scripts/paper_manager.py check-authorship \
-  --arxiv-id "2301.12345"
-```
-
-### Method 4: Manage Paper Visibility
-
-Control which verified papers appear on your public profile.
-
-**List Your Papers:**
-```bash
-uv run scripts/paper_manager.py list-my-papers
-```
-
-**Toggle Visibility:**
-```bash
-uv run scripts/paper_manager.py toggle-visibility \
-  --arxiv-id "2301.12345" \
-  --show true
-```
-
-**Manage in Settings:**
-Navigate to your account settings → Papers section to toggle "Show on profile" for each paper.
-
-### Method 5: Create Research Article
+### Method 3: Create Research Article
 
 Generate a professional markdown-based research paper using modern templates.
 
@@ -202,13 +157,7 @@ uv run scripts/paper_manager.py create \
   --output "paper.md"
 ```
 
-**Convert to HTML:**
-```bash
-uv run scripts/paper_manager.py convert \
-  --input "paper.md" \
-  --output "paper.html" \
-  --style "modern"
-```
+HTML conversion is not implemented by this helper. The Markdown templates contain editable structure and example content; replace all sample results and claims before sharing.
 
 ### Paper Template Structure
 
@@ -250,18 +199,11 @@ Summary and future work...
 # References
 ```
 
-**Modern Template Features:**
-- Dynamic table of contents
-- Responsive design for web viewing
-- Code syntax highlighting
-- Interactive figures and charts
-- Math equation rendering (LaTeX)
-- Citation management
-- Author affiliation linking
+The modern template includes HTML/CSS layout scaffolding. It does not generate interactive figures, a dynamic table of contents, or a rendered HTML export.
 
 ### Commands Reference
 
-**Index Paper:**
+**Request Paper Page and Report Observed Status:**
 ```bash
 uv run scripts/paper_manager.py index --arxiv-id "2301.12345"
 ```
@@ -276,20 +218,6 @@ uv run scripts/paper_manager.py link \
   [--create-pr]
 ```
 
-**Claim Authorship:**
-```bash
-uv run scripts/paper_manager.py claim \
-  --arxiv-id "2301.12345" \
-  --email "your.email@edu"
-```
-
-**Manage Visibility:**
-```bash
-uv run scripts/paper_manager.py toggle-visibility \
-  --arxiv-id "2301.12345" \
-  --show true|false
-```
-
 **Create Research Article:**
 ```bash
 uv run scripts/paper_manager.py create \
@@ -297,30 +225,12 @@ uv run scripts/paper_manager.py create \
   --title "Paper Title" \
   [--authors "Author1, Author2"] \
   [--abstract "Abstract text"] \
-  [--output "filename.md"]
-```
-
-**Convert Markdown to HTML:**
-```bash
-uv run scripts/paper_manager.py convert \
-  --input "paper.md" \
-  --output "paper.html" \
-  [--style "modern|classic"]
+  --output "filename.md"
 ```
 
 **Check Paper Status:**
 ```bash
 uv run scripts/paper_manager.py check --arxiv-id "2301.12345"
-```
-
-**List Your Papers:**
-```bash
-uv run scripts/paper_manager.py list-my-papers
-```
-
-**Search Papers:**
-```bash
-uv run scripts/paper_manager.py search --query "transformer attention"
 ```
 
 ### YAML Metadata Format
@@ -393,7 +303,7 @@ uv run scripts/paper_manager.py create \
 # 3. Submit to arXiv (external process)
 # Upload to arxiv.org, get arXiv ID
 
-# 4. Index on Hugging Face
+# 4. Check status after indexing through the Hub UI or Papers API
 uv run scripts/paper_manager.py index --arxiv-id "2301.12345"
 
 # 5. Link to your model
@@ -402,10 +312,6 @@ uv run scripts/paper_manager.py link \
   --repo-type "model" \
   --arxiv-id "2301.12345"
 
-# 6. Claim authorship
-uv run scripts/paper_manager.py claim \
-  --arxiv-id "2301.12345" \
-  --email "your.email@edu"
 ```
 
 **Workflow 2: Link Existing Paper**
@@ -413,7 +319,7 @@ uv run scripts/paper_manager.py claim \
 # 1. Check if paper exists
 uv run scripts/paper_manager.py check --arxiv-id "2301.12345"
 
-# 2. Index if needed
+# 2. Check indexing status (use the Hub UI or Papers API if missing)
 uv run scripts/paper_manager.py index --arxiv-id "2301.12345"
 
 # 3. Link to multiple repositories
@@ -464,17 +370,12 @@ uv run scripts/paper_manager.py link \
    - Include proper licensing information
    - Tag with relevant task categories and domains
 
-3. **Authorship**
-   - Claim authorship on papers where you're listed as author
-   - Use institutional email addresses for verification
-   - Keep paper visibility settings updated
-
-4. **Repository Linking**
+3. **Repository Linking**
    - Link papers to all relevant models, datasets, and Spaces
    - Include paper context in README descriptions
    - Add BibTeX citations for easy reference
 
-5. **Research Articles**
+4. **Research Articles**
    - Use templates consistently within projects
    - Include code and data links in papers
    - Generate web-friendly HTML versions for sharing
@@ -508,30 +409,17 @@ uv run scripts/paper_manager.py citation \
   --format "bibtex"
 ```
 
-**Validate Links:**
-```bash
-# Check all paper links in a repository
-uv run scripts/paper_manager.py validate \
-  --repo-id "username/model-name" \
-  --repo-type "model"
-```
-
 ### Error Handling
 
 - **Paper Not Found**: arXiv ID doesn't exist or isn't indexed yet
 - **Permission Denied**: HF_TOKEN lacks write access to repository
 - **Invalid YAML**: Malformed metadata in README frontmatter
-- **Authorship Failed**: Email doesn't match paper author records
-- **Already Claimed**: Another user has claimed authorship
 - **Rate Limiting**: Too many API requests in short time
 
 ### Troubleshooting
 
 **Issue**: "Paper not found on Hugging Face"
-- **Solution**: Visit `hf.co/papers/{arxiv-id}` to trigger indexing
-
-**Issue**: "Authorship claim not verified"
-- **Solution**: Wait for admin review or contact HF support with proof
+- **Solution**: Use the Hub UI or Papers API to index the paper, then check again
 
 **Issue**: "arXiv tag not appearing"
 - **Solution**: Ensure README includes proper arXiv URL format
@@ -554,7 +442,7 @@ uv run scripts/paper_manager.py validate \
 
 This skill complements [tfrere's research article template](https://huggingface.co/spaces/tfrere/research-article-template) by providing:
 
-- Automated paper indexing workflows
+- Paper indexing-status checks
 - Repository linking capabilities
 - Metadata management tools
 - Citation generation utilities
@@ -563,30 +451,15 @@ You can use tfrere's template for writing, then use this skill to publish and li
 
 ### Common Patterns
 
-**Pattern 1: New Paper Publication**
+**Pattern: Create, publish externally, then link**
 ```bash
-# Write → Publish → Index → Link
-uv run scripts/paper_manager.py create --template modern --output paper.md
-# (Submit to arXiv)
-uv run scripts/paper_manager.py index --arxiv-id "2301.12345"
-uv run scripts/paper_manager.py link --repo-id "user/model" --arxiv-id "2301.12345"
-```
-
-**Pattern 2: Existing Paper Discovery**
-```bash
-# Search → Check → Link
-uv run scripts/paper_manager.py search --query "transformers"
+uv run scripts/paper_manager.py create --template modern --title "Paper title" --output paper.md
+# Edit the draft, submit to arXiv, and index through the Hub UI or Papers API.
 uv run scripts/paper_manager.py check --arxiv-id "2301.12345"
-uv run scripts/paper_manager.py link --repo-id "user/model" --arxiv-id "2301.12345"
+uv run scripts/paper_manager.py link --repo-id "user/model" --arxiv-id "2301.12345" --create-pr
 ```
 
-**Pattern 3: Author Portfolio Management**
-```bash
-# Claim → Verify → Organize
-uv run scripts/paper_manager.py claim --arxiv-id "2301.12345"
-uv run scripts/paper_manager.py list-my-papers
-uv run scripts/paper_manager.py toggle-visibility --arxiv-id "2301.12345" --show true
-```
+Unsupported helper operations: `claim`, `check-authorship`, `list-my-papers`, `toggle-visibility`, `convert`, and `validate`. Use the Hub UI or Papers API for account/paper management. `search` only prints a search URL and returns nonzero; it does not search or open a browser. Only BibTeX citation output is implemented; APA/MLA return an unsupported message and nonzero.
 
 ### API Integration
 
@@ -596,11 +469,11 @@ from scripts.paper_manager import PaperManager
 
 pm = PaperManager(hf_token="your_token")
 
-# Index paper
+# GET the paper page and report observed status; no separate indexing POST
 pm.index_paper("2301.12345")
 
 # Link to model
-pm.link_paper(
+pm.link_paper_to_repo(
     repo_id="username/model",
     repo_type="model",
     arxiv_id="2301.12345",

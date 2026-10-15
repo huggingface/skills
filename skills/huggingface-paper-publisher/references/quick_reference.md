@@ -4,7 +4,7 @@
 
 ### Paper Indexing
 ```bash
-# Index from arXiv
+# GET the paper page and report observed status; no separate indexing POST
 uv run scripts/paper_manager.py index --arxiv-id "2301.12345"
 
 # Check if exists
@@ -168,13 +168,17 @@ done
 ## Troubleshooting
 
 ### Paper not found
-Visit `https://huggingface.co/papers/{arxiv-id}` to trigger indexing
+The Hub documents visiting the paper URL as an indexing path. The helper's `index` command performs a GET and reports its response; it sends no separate indexing POST and does not confirm completed indexing. Inspect the result before linking or claiming completion.
 
 ### Permission denied
 Check `HF_TOKEN` is set and has write access
 
 ### arXiv API errors
 Wait a moment and retry - arXiv has rate limits
+
+## Write and exit behavior
+
+`link` commits directly unless `--create-pr` is supplied. A PR request returns the Hub's `pr_url`; it never falls back to a direct commit. CLI errors and missing/unindexed papers return nonzero. HTTP service failures leave paper existence unknown. Multi-paper linking can partially succeed; inspect per-item results before retrying.
 
 ## Tips
 
