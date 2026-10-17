@@ -2,7 +2,7 @@
 """Create a SageMaker execution role. Cross-platform (Windows/macOS/Linux).
 
 Run only after check_role.py confirms no usable role exists.
-Requires iam:CreateRole, iam:AttachRolePolicy, iam:PutRolePolicy.
+Requires iam:CreateRole and iam:PutRolePolicy.
 
 SSO principals typically lack these — this script will fail with AccessDenied
 in that case, and the right answer is to ask an AWS admin for a role.
@@ -30,7 +30,6 @@ REFERENCES = Path(__file__).resolve().parent.parent / "references"
 TRUST_POLICY = REFERENCES / "trust-policy.json"
 PERMISSIONS_TEMPLATE = REFERENCES / "minimum-permissions.json"
 
-FULL_ACCESS_ARN = "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
 
 
 def log(msg: str) -> None:
@@ -86,11 +85,6 @@ def main() -> int:
         check=True,
     )
 
-    log("Attaching AmazonSageMakerFullAccess")
-    run_aws(
-        ["iam", "attach-role-policy", "--role-name", role_name, "--policy-arn", FULL_ACCESS_ARN],
-        check=True,
-    )
 
     inline_policy = PERMISSIONS_TEMPLATE.read_text(encoding="utf-8")
     if model_bucket:

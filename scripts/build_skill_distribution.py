@@ -12,8 +12,8 @@ archive-oriented format.
 
 ``skills.json`` contains the current SEP-2640 skill-entry shape. Each entry has
 the URI of its ``SKILL.md``, its complete parsed frontmatter, and a ``resources``
-manifest containing the URI and raw-byte SHA-256 digest of every file in the
-published skill directory. All selected skill files are emitted under
+manifest containing the URI, raw-byte SHA-256 digest, and byte size of every file
+in the published skill directory. All selected skill files are emitted under
 ``<out>/<name>/``; the bucket sync workflow publishes that expanded tree and its
 manifest together.
 """
@@ -148,12 +148,19 @@ def load_skills(skills_dir: Path) -> list[Skill]:
 	return skills
 
 
-def sha256_hex(path: Path) -> str:
+def sha256_and_size(path: Path) -> tuple[str, int]:
+	"""Hash and count the same raw bytes in a single streaming pass."""
 	h = hashlib.sha256()
+	size = 0
 	with path.open("rb") as handle:
 		for chunk in iter(lambda: handle.read(1024 * 1024), b""):
 			h.update(chunk)
-	return h.hexdigest()
+			size += len(chunk)
+	return h.hexdigest(), size
+
+
+def sha256_hex(path: Path) -> str:
+	return sha256_and_size(path)[0]
 
 
 def write_skill_md(skill: Skill, out_dir: Path) -> Path:
@@ -209,10 +216,12 @@ def write_skill_files(skill: Skill, out_dir: Path, uri_prefix: str) -> dict[str,
 		target = out_dir / skill.name / relative_path
 		target.parent.mkdir(parents=True, exist_ok=True)
 		shutil.copy2(path, target)
+		digest, size = sha256_and_size(target)
 		resources.append(
 			{
 				"uri": resource_uri(uri_prefix, skill.name, relative_path),
-				"digest": f"sha256:{sha256_hex(target)}",
+				"digest": f"sha256:{digest}",
+				"size": size,
 			}
 		)
 

@@ -287,10 +287,11 @@ def main() -> int:
     p.add_argument("--instance-type", required=True, help="e.g. ml.g5.xlarge")
     p.add_argument("--region", required=True, help="From hf-cloud-aws-context-discovery")
     p.add_argument("--output-s3-uri", required=True,
-                   help="S3 path where async results are written. e.g. s3://my-bucket/async-output/")
+                   help="S3 path where async results are written. e.g. s3://amzn-s3-demo-async-output/async-output/")
 
     # Conditional
-    p.add_argument("--model-s3-uri", default=None, help="Omit when loading from HF Hub")
+    p.add_argument("--model-s3-uri", default=None,
+                   help="S3 model artifact extracted to /opt/ml/model (preferred); omit only for Hub-at-runtime")
     p.add_argument("--env", action="append", default=[], help="KEY=VALUE; repeatable")
     p.add_argument("--inference-ami-version", default=None,
                    help="REQUIRED for vLLM DLC with CUDA 13+ (e.g. al2-ami-sagemaker-inference-gpu-3-1)")

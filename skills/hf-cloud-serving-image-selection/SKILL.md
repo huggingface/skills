@@ -110,7 +110,7 @@ This is a vLLM-specific concern. TEI and HF Inference Toolkit images don't need 
 
 ## Configuring the vLLM DLCs (HuggingFace vLLM and AWS vLLM)
 
-Both images share the same contract: configuration as environment variables on the SageMaker model definition, `SM_VLLM_*` mapped to vLLM CLI flags. The `huggingface-vllm` entrypoint additionally auto-detects the model when `SM_VLLM_MODEL` is unset — from `/opt/ml/model` if artifacts are mounted, else from `HF_MODEL_ID` — but setting `SM_VLLM_MODEL` explicitly works on both and is what our examples use.
+Both images share the same contract: configuration as environment variables on the SageMaker model definition, `SM_VLLM_*` mapped to vLLM CLI flags. The `huggingface-vllm` entrypoint additionally auto-detects the model when `SM_VLLM_MODEL` is unset — from `/opt/ml/model` if S3 artifacts are mounted, else from `HF_MODEL_ID`. For production, point `SM_VLLM_MODEL` at `/opt/ml/model`; loading directly from the Hub at runtime is the exception.
 
 ### Required for every HuggingFace LLM deployment
 
@@ -118,8 +118,10 @@ Both images share the same contract: configuration as environment variables on t
 |---|---|---|
 | `SM_VLLM_MODEL` | HF model ID (e.g. `Qwen/Qwen3-0.6B`) or `/opt/ml/model` if loading from S3 | — |
 | `SM_VLLM_HOST` | **Must be `0.0.0.0`** | Otherwise vLLM binds localhost only, ping fails, container dies before logs. Top cause of mystery failures with this image. |
-| `SM_VLLM_TRUST_REMOTE_CODE` | `true` for Qwen and several recent architectures | Set unconditionally — downside negligible, upside is the model loads. |
+| `SM_VLLM_TRUST_REMOTE_CODE` | Whether model artifacts may execute custom Python code | **Default `false`.** Set `true` only for a specific architecture that cannot load without its repository code, after reviewing and pinning those artifacts. Enabling it allows model-supplied code to run inside the container. |
 | `HUGGING_FACE_HUB_TOKEN` | HF token | Required for gated models. |
+
+Stage production model artifacts in an account-controlled S3 bucket, pass their URI as `--model-s3-uri`, and use `SM_VLLM_MODEL=/opt/ml/model`. This avoids downloading or executing repository code at runtime. Use a Hub model ID only when runtime Hub access is explicitly required; keep `SM_VLLM_TRUST_REMOTE_CODE=false` unless that architecture requires reviewed custom code.
 
 ### Tuning (optional)
 

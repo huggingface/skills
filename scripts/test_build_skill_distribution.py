@@ -57,7 +57,9 @@ class BuildSkillDistributionTest(unittest.TestCase):
 			write_skill(multi, "Multi-file skill")
 			(multi / "references").mkdir()
 			(multi / "references" / "guide.md").write_text("# Guide\r\n", encoding="utf-8", newline="")
+			(multi / "references" / "unicode.md").write_text("Café 🤗\n", encoding="utf-8")
 			(multi / "assets").mkdir()
+			(multi / "assets" / "empty.bin").write_bytes(b"")
 			binary_payload = b"line1\r\nline2\x00\xff\n"
 			(multi / "assets" / "raw data.bin").write_bytes(binary_payload)
 			(multi / "node_modules").mkdir()
@@ -72,7 +74,13 @@ class BuildSkillDistributionTest(unittest.TestCase):
 
 			for skill_name, expected_paths in {
 				"single": {"SKILL.md"},
-				"multi": {"SKILL.md", "assets/raw data.bin", "references/guide.md"},
+				"multi": {
+					"SKILL.md",
+					"assets/raw data.bin",
+					"assets/empty.bin",
+					"references/guide.md",
+					"references/unicode.md",
+				},
 			}.items():
 				entry = entries[skill_name]
 				self.assertEqual(set(entry), {"uri", "frontmatter", "resources"})
@@ -91,6 +99,8 @@ class BuildSkillDistributionTest(unittest.TestCase):
 				self.assertEqual(actual_paths, expected_paths)
 
 				for resource in resources:
+					self.assertEqual(set(resource), {"uri", "digest", "size"})
+					self.assertIs(type(resource["size"]), int)
 					self.assertRegex(resource["digest"], DIGEST_RE)
 					relative_uri = resource["uri"].split(f"skill://{skill_name}/", maxsplit=1)[1]
 					relative_path = unquote(relative_uri)
@@ -99,6 +109,7 @@ class BuildSkillDistributionTest(unittest.TestCase):
 					self.assertEqual(published_path.read_bytes(), source_bytes)
 					expected_digest = "sha256:" + hashlib.sha256(published_path.read_bytes()).hexdigest()
 					self.assertEqual(resource["digest"], expected_digest)
+					self.assertEqual(resource["size"], len(source_bytes))
 
 			binary_resource = next(
 				resource for resource in entries["multi"]["resources"] if resource["uri"].endswith("raw%20data.bin")
@@ -113,6 +124,13 @@ class BuildSkillDistributionTest(unittest.TestCase):
 
 			manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
 			self.assertEqual(manifest["artifacts"]["skills_catalog"], "skills.json")
+
+	def test_hash_and_size_across_chunk_boundaries(self) -> None:
+		with tempfile.TemporaryDirectory() as temp_dir:
+			path = Path(temp_dir) / "large.bin"
+			payload = b"\x00\xff" * (1024 * 1024 + 1)
+			path.write_bytes(payload)
+			self.assertEqual(builder.sha256_and_size(path), (hashlib.sha256(payload).hexdigest(), len(payload)))
 
 	def test_rejects_non_string_metadata_values(self) -> None:
 		with tempfile.TemporaryDirectory() as temp_dir:

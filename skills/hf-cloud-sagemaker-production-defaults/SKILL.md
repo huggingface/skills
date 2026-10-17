@@ -29,7 +29,7 @@ Defaults and reasoning in `references/deployment-template.md`.
 
 ## Running the deployment
 
-For a text-generation LLM (vLLM):
+For a text-generation LLM (vLLM), first package the pinned model snapshot as a SageMaker `model.tar.gz` artifact and upload it to an account-controlled S3 bucket. SageMaker extracts it under `/opt/ml/model`, so the deployment does not fetch or execute repository code at runtime:
 
 ```bash
 python scripts/deploy.py \
@@ -37,11 +37,12 @@ python scripts/deploy.py \
     --image-uri "$IMAGE_URI" \
     --inference-ami-version "$AMI" \
     --role-arn "$ROLE_ARN" \
+    --model-s3-uri "s3://<your-model-bucket>/qwen3-medical/model.tar.gz" \
     --instance-type ml.g5.xlarge \
     --region "$REGION" \
-    --env SM_VLLM_MODEL=Qwen/Qwen3-0.6B \
+    --env SM_VLLM_MODEL=/opt/ml/model \
     --env SM_VLLM_HOST=0.0.0.0 \
-    --env SM_VLLM_TRUST_REMOTE_CODE=true \
+    --env SM_VLLM_TRUST_REMOTE_CODE=false \
     --env SM_VLLM_MAX_MODEL_LEN=4096
 ```
 
@@ -69,13 +70,13 @@ Where each value comes from:
 | `--region` | `hf-cloud-aws-context-discovery` |
 | `--instance-type` | User input or planner recommendation |
 | `--env` | Model-specific; see `hf-cloud-serving-image-selection` for required `SM_VLLM_*` vars |
-| `--model-s3-uri` | Optional — S3 path to model artifacts; omit if loading from HF Hub |
+| `--model-s3-uri` | Preferred for production — S3 URI of the pinned model artifact extracted to `/opt/ml/model`; omit only for the Hub-at-runtime exception |
 
 The script creates resources in order with error handling, waits for `InService` (up to 30 min), surfaces failure reasons, registers autoscaling and alarms, and prints a summary including the teardown command. Outputs a JSON blob on stdout with endpoint/config/model names for downstream scripting.
 
 The scripts ship with this skill. If the installed copy is missing the `scripts/` directory (some harnesses copy only SKILL.md on install), fetch them from the source repo rather than re-implementing them from this description.
 
-**Cold-start expectation**: when the model loads from HF Hub, the download happens inside the container after the endpoint starts — 5–15+ minutes to InService is normal, not a failure. `deploy.py` waits 30 minutes; if you write custom wait code, don't time out at 15. Pre-staging weights in S3 (`--model-s3-uri`) cuts this and removes the Hub dependency.
+**Model-loading default**: pre-stage pinned weights in S3 and pass `--model-s3-uri`; the container loads them from `/opt/ml/model` without a runtime Hub dependency. Loading from the Hub is an explicit exception: expect a 5–15+ minute download after endpoint startup, provide a token for gated models, and keep `SM_VLLM_TRUST_REMOTE_CODE=false` unless the specific architecture requires reviewed custom code. `deploy.py` waits 30 minutes.
 
 ## InService is not success — smoke-test before declaring victory
 
@@ -194,11 +195,12 @@ python scripts/deploy_ic.py \
     --image-uri "$IMAGE_URI" \
     --inference-ami-version "$AMI" \
     --role-arn "$ROLE_ARN" \
+    --model-s3-uri "s3://<your-model-bucket>/qwen3-scale-to-zero/model.tar.gz" \
     --instance-type ml.g5.xlarge \
     --region "$REGION" \
-    --env SM_VLLM_MODEL=Qwen/Qwen3-0.6B \
+    --env SM_VLLM_MODEL=/opt/ml/model \
     --env SM_VLLM_HOST=0.0.0.0 \
-    --env SM_VLLM_TRUST_REMOTE_CODE=true \
+    --env SM_VLLM_TRUST_REMOTE_CODE=false \
     --env SM_VLLM_MAX_MODEL_LEN=4096
 ```
 
@@ -235,7 +237,7 @@ Four pieces make zero work, and all four are required. Target tracking cannot le
 
 Scale-in is not tunable through this skill: Application Auto Scaling creates the AlarmLow itself with a 10 s period and 90 evaluation periods, so 15 minutes of idle datapoints are required before it fires.
 
-Pre-stage the weights and pass `--model-s3-uri` when wake time matters. The weights are downloaded again on **every** wake, so the Hub download sits on the critical path of the first request after each idle period.
+Pre-stage production weights and pass `--model-s3-uri`. Besides avoiding runtime Hub access, this shortens every wake: model artifacts are loaded again on **every** wake, so their retrieval sits on the critical path of the first request after each idle period.
 
 ### Sizing the component
 
@@ -293,7 +295,7 @@ python scripts/deploy_async.py \
     --role-arn "$ROLE_ARN" \
     --instance-type ml.g5.2xlarge \
     --region "$REGION" \
-    --output-s3-uri s3://my-bucket/async-output/ \
+    --output-s3-uri s3://amzn-s3-demo-async-output/async-output/ \
     --env HF_MODEL_ID=black-forest-labs/FLUX.1-dev
 ```
 
@@ -331,17 +333,17 @@ Async endpoints aren't called synchronously. You upload the input to S3, call `i
 
 ```bash
 # Upload your input first
-aws s3 cp input.json s3://my-input-bucket/job1/input.json
+aws s3 cp input.json s3://amzn-s3-demo-input/job1/input.json
 
 # Invoke
 aws sagemaker-runtime invoke-endpoint-async \
     --endpoint-name <endpoint-name> \
-    --input-location s3://my-input-bucket/job1/input.json \
+    --input-location s3://amzn-s3-demo-input/job1/input.json \
     --content-type application/json \
     --region <region>
 
 # Poll for the result at your output URI
-aws s3 cp s3://my-bucket/async-output/<inference-id>.out result.json
+aws s3 cp s3://amzn-s3-demo-async-output/async-output/<inference-id>.out result.json
 ```
 
 The same UTF-8 BOM caveat applies to the `input.json` you upload (see "The UTF-8 BOM gotcha" above) — if you build it on Windows, write it as BOM-free UTF-8 or the container's JSON parser will reject it.

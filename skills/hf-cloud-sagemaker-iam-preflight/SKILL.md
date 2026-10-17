@@ -62,24 +62,24 @@ Stop and surface this clearly. Don't retry alternative IAM operations hoping one
 
 > I can't find an existing SageMaker execution role, and you're authenticated via SSO so you can't create one directly. Please either:
 >   - Ask your AWS admin for a SageMaker execution role ARN, or
->   - Have them grant your SSO permission set `iam:CreateRole`, `iam:AttachRolePolicy`, `iam:PutRolePolicy`
+>   - Have them grant your SSO permission set `iam:CreateRole`, `iam:PutRolePolicy`
 
 Specific instructions get unblocked fast; vague "permission denied" messages don't.
 
 ## What "validated" means
 
-A role is usable when (1) it exists, (2) its trust policy allows `sagemaker.amazonaws.com` to `sts:AssumeRole` — see `references/trust-policy.json` for the canonical form.
+A role is usable when (1) it exists, (2) its trust policy allows `sagemaker.amazonaws.com` to `sts:AssumeRole`, and (3) its permissions grant only the actions and resources this deployment needs. See `references/trust-policy.json` for the canonical trust policy.
 
-`check_role.py` verifies these two. It does **not** deep-check permissions because comprehensive analysis is expensive (`iam:SimulatePrincipalPolicy` per action) and most existing SageMaker roles are over-permissioned via `AmazonSageMakerFullAccess`. If you suspect a permissions issue at deploy time, the deployment error will tell you which action was denied — fix it then, not preemptively.
+`check_role.py` verifies existence and trust because policy evaluation depends on the deployment's exact S3, ECR, logging, and optional output resources. Before deployment, inspect the selected role's policies and compare them with `references/minimum-permissions.json`; add only missing actions and scope them to the required resources. Do not attach `AmazonSageMakerFullAccess` or defer permission review until an `AccessDenied` failure.
 
 ## Minimum permissions
 
-`references/minimum-permissions.json` covers what SageMaker actually needs:
+`references/minimum-permissions.json` is the standalone inline policy for endpoint execution:
 - `s3:GetObject` + `s3:ListBucket` on the model artifact bucket
 - ECR pull permissions
 - CloudWatch logs and metrics
 
-Layered on top of `AmazonSageMakerFullAccess` (attached by `create_role.py`). Replace `REPLACE_WITH_MODEL_BUCKET` in the template with the actual bucket name — `create_role.py` does this automatically when given a bucket as its second argument.
+`create_role.py` installs this inline policy without attaching a managed FullAccess policy. Replace `REPLACE_WITH_MODEL_BUCKET` in the template with the actual bucket name — `create_role.py` does this automatically when given a bucket as its second argument. Add narrowly scoped permissions separately for optional features such as async output or data capture.
 
 ## Native AWS CLI equivalent (fallback)
 

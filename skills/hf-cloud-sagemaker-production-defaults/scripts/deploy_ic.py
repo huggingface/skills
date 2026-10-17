@@ -9,7 +9,9 @@ Minimal usage:
     python deploy_ic.py --model-name <name> --image-uri <uri> \
         --inference-ami-version <ami> --role-arn <arn> \
         --instance-type ml.g5.xlarge --region <region> \
-        --env SM_VLLM_MODEL=Qwen/Qwen3-0.6B --env SM_VLLM_HOST=0.0.0.0
+        --model-s3-uri s3://<your-model-bucket>/<model>/model.tar.gz \
+        --env SM_VLLM_MODEL=/opt/ml/model --env SM_VLLM_HOST=0.0.0.0 \
+        --env SM_VLLM_TRUST_REMOTE_CODE=false
 
 Four pieces make zero work, and all four are required:
   1. endpoint config: ManagedInstanceScaling with MinInstanceCount=0

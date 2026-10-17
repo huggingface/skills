@@ -212,7 +212,8 @@ def main() -> int:
     p.add_argument("--region", required=True, help="From hf-cloud-aws-context-discovery")
 
     # Conditional
-    p.add_argument("--model-s3-uri", default=None, help="Omit when loading from HF Hub")
+    p.add_argument("--model-s3-uri", default=None,
+                   help="S3 model artifact extracted to /opt/ml/model (preferred); omit only for Hub-at-runtime")
     p.add_argument("--env", action="append", default=[], help="KEY=VALUE; repeatable")
     p.add_argument(
         "--inference-ami-version", default=None,
