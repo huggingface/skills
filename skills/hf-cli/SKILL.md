@@ -9,7 +9,7 @@ The Hugging Face Hub CLI tool `hf` is available. IMPORTANT: The `hf` command rep
 
 Use `hf --help` to view available functions. Note that auth commands are now all under `hf auth` e.g. `hf auth whoami`.
 
-Generated with `huggingface_hub v2.3.0`. Run `hf skills add --force` to regenerate.
+Generated with `huggingface_hub v2.4.0`. Run `hf skills add --force` to regenerate.
 
 ## Commands
 
@@ -209,13 +209,13 @@ Generated with `huggingface_hub v2.3.0`. Run `hf skills add --force` to regenera
 
 ### `hf webhooks` — Manage webhooks on the Hub.
 
-- `hf webhooks create --watch TEXT` — Create a new webhook. `[--url TEXT --job-id TEXT --domain [repo|discussions] --secret TEXT --secrets TEXT --secrets-file TEXT --format [auto|human|agent|json|quiet]]`
+- `hf webhooks create --watch TEXT` — Create a new webhook. `[--url TEXT --job-id TEXT --domain [repo|discussion] --secret TEXT --secrets TEXT --secrets-file TEXT --format [auto|human|agent|json|quiet]]`
 - `hf webhooks delete WEBHOOK_ID` — Delete a webhook permanently. `[--yes --format [auto|human|agent|json|quiet]]`
 - `hf webhooks disable WEBHOOK_ID` — Disable an active webhook. `[--format [auto|human|agent|json|quiet]]`
 - `hf webhooks enable WEBHOOK_ID` — Enable a disabled webhook. `[--format [auto|human|agent|json|quiet]]`
 - `hf webhooks info WEBHOOK_ID` — Show full details for a single webhook. `[--format [auto|human|agent|json|quiet]]`
 - `hf webhooks list` — List all webhooks for the current user. `[--format [auto|human|agent|json|quiet]]`
-- `hf webhooks update WEBHOOK_ID` — Update an existing webhook. Only provided options are changed. `[--url TEXT --job-id TEXT --watch TEXT --domain [repo|discussions] --secret TEXT --secrets TEXT --secrets-file TEXT --format [auto|human|agent|json|quiet]]`
+- `hf webhooks update WEBHOOK_ID` — Update an existing webhook. Only provided options are changed. `[--url TEXT --job-id TEXT --watch TEXT --domain [repo|discussion] --secret TEXT --secrets TEXT --secrets-file TEXT --format [auto|human|agent|json|quiet]]`
 
 ## Common options
 
