@@ -160,6 +160,7 @@ hol-guard sync
 Use scanner mode for Codex plugins, Claude Code project surfaces, `.agents` marketplaces, skills, MCP server configs, and release gates.
 
 ```bash
+plugin-scanner scan .
 plugin-scanner lint .
 plugin-scanner verify .
 ```
@@ -167,11 +168,14 @@ plugin-scanner verify .
 If scanning a specific package:
 
 ```bash
+plugin-scanner scan <path>
 plugin-scanner lint <path>
 plugin-scanner verify <path>
 ```
 
 If the target is a Codex marketplace root with `.agents/plugins/marketplace.json`, scan the repo root so local plugin entries can be discovered.
+
+`scan` reports security findings, `lint` diagnoses authoring quality, and `verify` checks installation-readiness signals. None replaces independent review or authorizes executing an untrusted package. Inspect any scanner findings and resolve or explicitly acknowledge them under existing policy before proceeding.
 
 Scanner target guidance:
 
