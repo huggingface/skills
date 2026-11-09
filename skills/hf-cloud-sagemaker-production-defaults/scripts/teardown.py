@@ -69,12 +69,19 @@ def resolve_region(arg_region: str | None) -> str:
     return proc.stdout.strip() if proc.returncode == 0 else ""
 
 
-def delete_alarms(prefix: str, reg: list[str]) -> None:
-    alarms = json_out(
-        run_aws(["cloudwatch", "describe-alarms", "--alarm-name-prefix", prefix,
-                 "--query", "MetricAlarms[*].AlarmName", "--output", "json", *reg]),
-        [],
+def delete_alarms(resource_name: str, dimension_name: str, reg: list[str]) -> None:
+    """Delete alarms whose name prefix and resource dimension both match."""
+    response = json_out(
+        run_aws(["cloudwatch", "describe-alarms", "--alarm-name-prefix", f"{resource_name}-",
+                 "--output", "json", *reg]),
+        {},
     )
+    dimension = {"Name": dimension_name, "Value": resource_name}
+    alarms = [
+        alarm["AlarmName"]
+        for alarm in response.get("MetricAlarms", [])
+        if dimension in (alarm.get("Dimensions") or [])
+    ]
     if alarms:
         run_aws(["cloudwatch", "delete-alarms", "--alarm-names", *alarms, *reg])
         log(f"Deleted alarms: {' '.join(alarms)}")
@@ -205,11 +212,10 @@ def main() -> int:
             if model and model not in model_names:
                 model_names.append(model)
 
-    # Alarms — discovered by name prefix. deploy.py / deploy_async.py name them
-    # "<endpoint>-*"; deploy_ic.py names the wake alarm "<component>-*".
-    delete_alarms(f"{endpoint_name}-", reg)
+    # Longer resource names can share a prefix, so require the matching dimension.
+    delete_alarms(endpoint_name, "EndpointName", reg)
     for ic_name in ic_names:
-        delete_alarms(f"{ic_name}-", reg)
+        delete_alarms(ic_name, "InferenceComponentName", reg)
 
     # Autoscaling — variant target (model-based) and component targets (IC-based).
     delete_scaling_stack(f"endpoint/{endpoint_name}/variant/AllTraffic", VARIANT_DIM, reg)
