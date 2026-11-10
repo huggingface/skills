@@ -1,0 +1,20 @@
+# ML Benchmark configuration template
+# Copy and fill in values for your benchmark
+
+id: my-benchmark-slug
+name: My ML Benchmark
+competition_type: simple
+
+grader:
+  # Standard graders: root-mean-squared-error, mean-squared-error,
+  #   mean-absolute-error, f1-score, roc-auc, accuracy, log-loss
+  # Use 'custom' for non-standard metrics
+  name: root-mean-squared-error
+  # Path to grading function (module:function)
+  grade_fn: benchmarks.my-benchmark-slug.grade:grade
+
+preparer: benchmarks.my-benchmark-slug.prepare:prepare
+
+dataset:
+  answers: my-benchmark-slug/prepared/private/test.csv
+  sample_submission: my-benchmark-slug/prepared/public/sample_submission.csv
