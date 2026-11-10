@@ -60,6 +60,7 @@ config = SFTConfig(
     output_dir="qwen-capybara-sft",
     push_to_hub=True,
     hub_model_id="username/qwen-capybara-sft",
+    hub_private_repo=True,
     hub_strategy="every_save",  # Push checkpoints
 
     # Training parameters
