@@ -93,15 +93,31 @@ After upload, call `/parquet` to discover `<config>/<split>/<shard>` values for 
 
 ## Agent Traces
 
-The Hub supports raw agent session traces from Claude Code, Codex, and Pi Agent. Upload them to Hugging Face Datasets as original JSONL files and the Hub can auto-detect the trace format, tag the dataset as `Traces`, and enable the trace viewer for browsing sessions, turns, tool calls, and model responses. Common local session directories:
+The Hub can recognize JSONL traces from Claude Code, Codex, and Pi Agent, tag the dataset as `Traces`, and display sessions in the trace viewer. Use these locations to select individual files within the user's requested scope.
 
 - Claude Code: `~/.claude/projects`
 - Codex: `~/.codex/sessions`
 - Pi: `~/.pi/agent/sessions`
 
-Default to private dataset repos because traces can contain prompts, file paths, tool outputs, secrets, or PII. Preserve the raw `.jsonl` files and nest them by project/cwd instead of uploading every session at the dataset root.
+1. List the exact `.jsonl` files to review for the requested project or sessions.
+2. Review every selected record for credentials, personal data, private paths, and sensitive prompt or tool content. Redact those values or omit files that cannot be safely shared. Preserve valid JSONL and the original trace structure in the reviewed copies.
+3. Put only the reviewed copies in a new `./reviewed-traces` directory, using regular files without symlinks. Show the user the final file list, the scope of redactions, and the exact private dataset and paths in it. Obtain explicit approval for that payload and destination before any Hub write. Repeat the review and approval if the payload or destination changes.
+
+Use the approved dataset ID and a project folder name that is safe to share. If the dataset is missing and creation is approved, create it as private.
 
 ```bash
-hf repos create <namespace>/<repo> --type dataset --private --exist-ok
-hf upload <namespace>/<repo> ~/.codex/sessions codex/<project-or-cwd> --type dataset
+hf repos create your-namespace/agent-traces --type dataset --private
+```
+
+The `--private` flag applies at creation. For both new and existing datasets, check the exact destination and confirm that `"private": true` before uploading. Stop if you cannot verify both.
+
+```bash
+hf datasets info your-namespace/agent-traces --expand private --format json
+```
+
+Upload the approved staging directory after those checks.
+
+```bash
+hf upload your-namespace/agent-traces ./reviewed-traces codex/project-name \
+  --type dataset --private --include "*.jsonl"
 ```
