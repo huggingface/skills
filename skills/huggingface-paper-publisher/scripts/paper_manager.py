@@ -163,32 +163,38 @@ class PaperManager:
             # Upload updated README
             commit_message = f"Add paper reference: arXiv:{arxiv_id}"
 
-            if create_pr:
-                # Create PR (not implemented in basic version)
-                print("PR creation not yet implemented. Committing directly.")
-
-            self.api.upload_file(
+            commit_info = self.api.upload_file(
                 path_or_fileobj=updated_content.encode('utf-8'),
                 path_in_repo="README.md",
                 repo_id=repo_id,
                 repo_type=repo_type,
                 commit_message=commit_message,
-                token=self.token
+                token=self.token,
+                create_pr=create_pr
             )
 
             paper_url = f"https://huggingface.co/papers/{arxiv_id}"
             repo_url = f"https://huggingface.co/{repo_id}"
+            pr_url = commit_info.pr_url if create_pr else None
 
-            print(f"✓ Successfully linked paper to repository")
+            if pr_url:
+                print(f"✓ Opened PR to link paper to repository")
+            else:
+                print(f"✓ Successfully linked paper to repository")
             print(f"  Paper: {paper_url}")
             print(f"  Repo: {repo_url}")
+            if pr_url:
+                print(f"  PR: {pr_url}")
 
-            return {
+            result = {
                 "status": "success",
                 "paper_url": paper_url,
                 "repo_url": repo_url,
                 "arxiv_id": arxiv_id
             }
+            if pr_url:
+                result["pr_url"] = pr_url
+            return result
 
         except Exception as e:
             print(f"Error linking paper: {e}")
