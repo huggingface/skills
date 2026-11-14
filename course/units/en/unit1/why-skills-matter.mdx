@@ -1,0 +1,45 @@
+# Why Skills Matter
+
+Coding agents are remarkably capable general-purpose tools. You can ask Claude Code, Codex, or Gemini CLI to write code, debug errors, refactor files, and explain complex systems. But when you need them to perform specialized tasks — like fine-tuning a language model, running evaluations with a specific framework, or writing CUDA kernels — they can struggle on the specifics of the task. This is where skills come in.
+
+## The Knowledge Gap
+
+Consider what happens when you ask a coding agent to fine-tune a model on the Hugging Face Hub:
+
+```
+Fine-tune Qwen3-0.6B on the open-r1/codeforces-cots dataset for instruction following.
+```
+
+Without specialized knowledge, the agent needs to figure out on its own how to validate the dataset format, select the right GPU hardware, configure training hyperparameters, submit the job to cloud infrastructure, monitor training progress, and push the finished model to the Hub. It might get some of these steps right, but it will likely miss important details — like choosing cost-efficient hardware, adding metric monitoring, or handling LoRA configuration for larger models.
+
+## From Prompts to Portable Knowledge
+
+You could solve this by writing a very detailed prompt every time. But that approach has problems: the prompt is trapped in a single conversation, it's hard to maintain, and every team member has to write their own version. Skills solve this by packaging domain expertise into a portable, reusable format that any coding agent can consume.
+
+A **skill** is a structured set of instructions, scripts, and references that teaches an agent how to perform a specialized task. Think of it as a recipe book that the agent can consult when it encounters a task in the skill's domain.
+
+> [!NOTE]
+> We like to think of skills as 'context in file format'. This oversimplifies the concept, but it's a good mental model for getting started.
+
+Here's what that same fine-tuning task looks like with a skill installed:
+
+1. The agent detects that the task involves model training
+2. It loads the `hugging-face-model-trainer` skill's instructions
+3. It follows the skill's workflow: validate data → select hardware → generate training script → submit job → monitor → push model
+4. Every step follows best practices encoded in the skill as reference documentation and example scripts.
+
+The result is consistent, reliable execution of complex workflows — without the user needing to specify every detail. 
+
+The skill will also reduce the number of turns required to complete the task, as the agent can follow the skill's instructions and scripts without needing to ask for clarification. In turn, this makes the task faster and more efficient to complete.
+
+## Skills Are Portable
+
+A key property of skills is **portability**. Because skills are defined as markdown files with optional scripts, they work across different coding agents. The same `hugging-face-model-trainer` skill works in Claude Code, Codex, Gemini CLI, and Cursor. You write the skill once, and any agent that can read markdown and run Python can use it.
+
+This portability also means skills are **shareable**. You can publish a skill to GitHub or the Hugging Face Hub and anyone in the community can install it. The best practices you encode in a skill benefit everyone who uses it.
+
+## The Bigger Picture
+
+Skills represent a shift in how we think about coding agents. Instead of treating agents as general-purpose tools that we prompt from scratch each time, skills let us build up a library of specialized capabilities that agents can draw on. Over time, an agent with the right skills installed becomes an expert assistant for your specific domain — whether that's ML engineering, kernel development, data curation, or something entirely different.
+
+In the next section, we'll look at the technical format that makes all of this possible: the `SKILL.md` specification.

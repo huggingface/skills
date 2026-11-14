@@ -1,0 +1,249 @@
+# Hands-on: Write Your First Skill
+
+Now that you understand the `SKILL.md` format, skill anatomy, and progressive disclosure, it's time to write a skill yourself. In this exercise, you'll create a skill that teaches a coding agent to create and publish a dataset on the Hugging Face Hub.
+
+## The Task
+
+You'll build a `dataset-publisher` skill that guides an agent through:
+
+1. Creating a dataset repository on the Hub
+2. Defining the dataset structure (columns, types, splits)
+3. Adding rows of data
+4. Writing a proper dataset card
+5. Publishing the dataset
+
+This is a practical task that mirrors what the `hugging-face-datasets` skill does. By building a simplified version, you'll understand how real skills are structured.
+
+## Step 1: Create the Skill Directory
+
+Start by creating the directory structure:
+
+```bash
+mkdir -p dataset-publisher/scripts
+mkdir -p dataset-publisher/templates
+```
+
+## Step 2: Write the SKILL.md
+
+Create `dataset-publisher/SKILL.md` with the following content:
+
+<details>
+<summary>Click to view the SKILL.md file</summary>
+
+````markdown
+---
+name: dataset-publisher
+description: Create, populate, and publish datasets on the Hugging Face Hub
+license: mit
+metadata:
+  version: 0.1.0
+  tags: [datasets, hub, publishing]
+---
+
+# Dataset Publisher Skill
+
+## When to Use
+
+Activate this skill when the user wants to:
+- Create a new dataset on the Hugging Face Hub
+- Upload data to an existing dataset repository
+- Write or update a dataset card
+
+## Prerequisites
+
+- A Hugging Face token with write access (set as `HF_TOKEN`)
+- The `huggingface_hub` and `datasets` Python libraries installed
+
+## Workflow
+
+### 1. Initialize the Repository
+
+Create a new dataset repo on the Hub:
+
+```python
+from huggingface_hub import HfApi
+
+api = HfApi()
+api.create_repo(
+    repo_id="username/dataset-name",
+    repo_type="dataset",
+    private=False
+)
+```
+
+Ask the user for:
+- `repo_id`: The dataset name in `username/dataset-name` format
+- Whether the dataset should be public or private
+
+### 2. Define the Structure
+
+Determine the dataset format based on the user's data. Common formats:
+
+| Format | Use Case | Required Columns |
+|--------|----------|-----------------|
+| Chat / Conversational | Dialogue training data | `messages` (list of role/content dicts) |
+| Classification | Text categorization | `text`, `label` |
+| Question-Answering | QA pairs | `question`, `answer` |
+| Completion | Text generation | `prompt`, `completion` |
+
+### 3. Add Data
+
+Use the template script to add rows:
+
+```bash
+python scripts/add_rows.py \
+  --repo-id "username/dataset-name" \
+  --data-file data.jsonl
+```
+
+For small datasets, data can be added directly via the API.
+
+### 4. Write the Dataset Card
+
+Every dataset needs a README.md with:
+- **Description**: What the dataset contains and its purpose
+- **License**: The data license
+- **Data format**: Column descriptions and types
+- **Splits**: Train/test/validation split information
+- **Source**: Where the data came from
+
+See `templates/dataset_card.md` for a starter template.
+
+### 5. Verify and Publish
+
+After uploading, verify the dataset loads correctly:
+
+```python
+from datasets import load_dataset
+
+ds = load_dataset("username/dataset-name")
+print(ds)
+print(ds["train"][0])
+```
+
+## Important Notes
+
+- Always validate data before uploading — check for missing values, encoding issues, and schema consistency
+- Include license information in both the dataset card and the repo metadata
+- For datasets with PII, set the repository to private
+- Use streaming uploads for datasets larger than 1GB
+````
+
+</details>
+
+## Step 3: Create the Helper Script
+
+Create `dataset-publisher/scripts/add_rows.py`:
+
+<details>
+<summary>Click to view the add_rows.py file</summary>
+
+```python
+"""Add rows to a Hugging Face dataset repository."""
+
+import argparse
+import json
+from huggingface_hub import HfApi
+
+
+def add_rows(repo_id: str, data_file: str, split: str = "train"):
+    """Upload a JSONL file to a dataset repository."""
+    api = HfApi()
+
+    # Upload the data file
+    api.upload_file(
+        path_or_fileobj=data_file,
+        path_in_repo=f"data/{split}-00000-of-00001.jsonl",
+        repo_id=repo_id,
+        repo_type="dataset",
+    )
+    print(f"Uploaded {data_file} to {repo_id}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repo-id", required=True)
+    parser.add_argument("--data-file", required=True)
+    parser.add_argument("--split", default="train")
+    args = parser.parse_args()
+
+    add_rows(args.repo_id, args.data_file, args.split)
+```
+
+</details>
+
+## Step 4: Create the Dataset Card Template
+
+Create `dataset-publisher/templates/dataset_card.md`:
+
+<details>
+<summary>Click to view the dataset_card.md file</summary>
+
+```markdown
+---
+license: mit
+task_categories:
+  - text-generation
+language:
+  - en
+size_categories:
+  - 1K<n<10K
+---
+
+# Dataset Name
+
+## Description
+
+Describe what this dataset contains and its intended use.
+
+## Data Format
+
+| Column | Type | Description |
+|--------|------|-------------|
+| column_name | string | Description |
+
+## Splits
+
+| Split | Rows |
+|-------|------|
+| train | N |
+
+## Source
+
+Describe where the data came from and how it was collected.
+
+## License
+
+This dataset is released under the MIT license.
+```
+
+</details>
+
+## Step 5: Test Your Skill
+
+The best way to test a skill is to use it with a coding agent. If you have Claude Code installed, you can add your skill locally:
+
+```bash
+# Copy the skill to Claude's skill directory
+cp -r dataset-publisher/ ~/.claude/skills/dataset-publisher/
+```
+
+Then ask Claude to use it:
+
+```
+Create a small dataset of 10 Python coding questions and answers,
+and publish it to the Hub as my-username/python-qa.
+```
+
+Watch how the agent follows your skill's workflow: it will initialize the repo, structure the data as QA pairs, add the rows, write a dataset card, and verify the result.
+
+## What You've Built
+
+Congratulations! You've created a complete agent skill with:
+
+- A `SKILL.md` file with frontmatter and structured instructions
+- A helper script for data uploading
+- A template for dataset cards
+- Progressive disclosure (the agent loads the template and script only when needed)
+
+This skill is simple but functional. In the next section, you'll explore the broader ecosystem of skills available on the Hub.
