@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "input": "Run a short Python workload on Hugging Face Jobs and make sure HF_TOKEN is available to the job. Show the preferred submission pattern.",
+      "verifiers": [
+        {"type": "contains", "values": ["hf_jobs"]},
+        {"type": "contains", "values": ["HF_TOKEN"]},
+        {"type": "contains", "values": ["script"]}
+      ]
+    }
+  ]
+}
