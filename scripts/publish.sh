@@ -10,6 +10,7 @@ GENERATED_FILES=(
   ".claude-plugin/marketplace-internal.json"
   ".cursor-plugin/plugin.json"
   ".mcp.json"
+  "opencode.json"
 )
 
 file_sig() {
@@ -24,6 +25,7 @@ file_sig() {
 run_generate() {
   uv run scripts/generate_agents.py
   uv run scripts/generate_cursor_plugin.py
+  uv run scripts/generate_opencode_config.py
 }
 
 default_base_ref() {

@@ -24,6 +24,18 @@ Hugging Face skills are compatible with Claude Code, Codex, Gemini CLI, and Curs
 
 ### Claude Code
 
+
+### OpenCode
+
+OpenCode automatically detects `opencode.json` in the repository root.
+
+```bash
+# No additional setup needed - OpenCode will use opencode.json
+# See docs/opencode.md for details
+```
+
+
+
 1. Register the repository as a plugin marketplace:  
    
 ```
