@@ -33,7 +33,7 @@ Hugging Face skills are compatible with Claude Code, Codex, Gemini CLI, and Curs
 2. Install the CLI skill:  
    
 ```
-/plugin install hf-cli@huggingface/skills
+/plugin install hf-cli@huggingface-skills
 ```
 
 3. To install another Hugging Face skill, use the `hf` CLI:  
