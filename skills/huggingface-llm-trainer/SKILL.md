@@ -50,7 +50,7 @@ See `references/unsloth.md` for complete Unsloth documentation and `scripts/unsl
 
 When assisting with training jobs:
 
-1. **ALWAYS use `hf_jobs()` MCP tool** - Submit jobs using `hf_jobs("uv", {...})`, NOT bash `trl-jobs` commands. The `script` parameter accepts Python code directly. Do NOT save to local files unless the user explicitly requests it. Pass the script content as a string to `hf_jobs()`. If user asks to "train a model", "fine-tune", or similar requests, you MUST create the training script AND submit the job immediately using `hf_jobs()`.
+1. **Use the `hf_jobs()` MCP tool for approved jobs** - Prepare the training script when the user asks to train or fine-tune a model. Follow the [approval steps](#action-required) before submitting it inline with `hf_jobs("uv", {...})`. Save a local copy only when the user requests one.
 
 2. **Always include Trackio** - Every training script should include Trackio for real-time monitoring. Use example scripts in `scripts/` as templates.
 
@@ -94,11 +94,14 @@ Before starting any training job, verify:
 
 ### Action Required
 
+Before submitting any paid Job from this skill through MCP or the CLI, show the proposed hardware flavor, timeout, and estimated total cost from [Cost Estimation](#cost-estimation). Ask the user to approve that plan and wait for explicit confirmation. This applies to training, remote dataset validation, GGUF conversion, and replacement jobs. If any of those values changes, show the revised plan and get approval before submitting.
+
 **When user requests training:**
 1. **Create the training script** with Trackio included (use `scripts/train_sft_example.py` as template)
-2. **Submit immediately** using `hf_jobs()` MCP tool with script content inline - don't save to file unless user requests
-3. **Report submission** with job ID, monitoring URL, and estimated time
-4. **Wait for user** to request status checks - don't poll automatically
+2. **Get approval for the paid job** using the steps above.
+3. **Submit the approved job** with the `hf_jobs()` MCP tool and the script content inline.
+4. **Report submission** with job ID, monitoring URL, and estimated time
+5. **Wait for user** to request status checks - don't poll automatically
 
 ### Ground Rules
 - **Jobs run in background** - Submission returns immediately; training continues independently
@@ -128,6 +131,8 @@ The job is running in the background. Ask me to check status/logs when ready!
 ```
 
 ## Quick Start: Three Approaches
+
+Use the submission examples after the user [approves the job](#action-required).
 
 **💡 Tip for Demos:** For quick demos on smaller GPUs (t4-small), omit `eval_dataset` and `eval_strategy` to save ~40% memory. You'll still see training loss and learning progress.
 
@@ -442,7 +447,7 @@ uv run scripts/hf_benchmarks.py leaderboard allenai/olmOCR-bench
 
 ## Cost Estimation
 
-**Offer to estimate cost when planning jobs with known parameters.** Use `scripts/estimate_cost.py`:
+Estimate the total cost before asking the user to approve a paid job. Use the planned runtime and the [current hardware rate](https://huggingface.co/docs/hub/jobs-pricing). For training, use `scripts/estimate_cost.py` to estimate runtime with the planned parameters.
 
 ```bash
 uv run scripts/estimate_cost.py \
@@ -453,9 +458,9 @@ uv run scripts/estimate_cost.py \
   --epochs 3
 ```
 
-Output includes estimated time, cost, recommended timeout (with buffer), and optimization suggestions.
+Use the estimated time and recommended timeout from the output. Check the quoted cost against the current hardware rate.
 
-**When to offer:** User planning a job, asks about cost/time, choosing hardware, job will run >1 hour or cost >$5
+Resolve any missing inputs needed for the estimate before asking for approval.
 
 ## Example Training Scripts
 
@@ -532,6 +537,8 @@ hf_jobs("logs", {"job_id": "your-job-id"})
 
 ### Usage
 
+For remote validation, get [approval](#action-required) for the CPU job first.
+
 ```python
 hf_jobs("uv", {
     "script": "https://huggingface.co/datasets/mcp-tools/skills/raw/main/dataset_inspector.py",
@@ -552,6 +559,8 @@ The output shows compatibility for each training method:
 When mapping is needed, the output includes a **"MAPPING CODE"** section with copy-paste ready Python code.
 
 ### Example Workflow
+
+This example assumes the user has approved the remote validation job. Ask for separate approval of the training job after validation.
 
 ```python
 # 1. Inspect dataset (costs ~$0.01, <1 min on CPU)
@@ -606,7 +615,7 @@ After training, convert models to **GGUF format** for use with llama.cpp, Ollama
 
 **See:** `references/gguf_conversion.md` for complete conversion guide, including production-ready conversion script, quantization options, hardware requirements, usage examples, and troubleshooting.
 
-**Quick conversion:**
+**Quick conversion after [job approval](#action-required):**
 ```python
 hf_jobs("uv", {
     "script": "<see references/gguf_conversion.md for complete script>",
@@ -708,7 +717,7 @@ Add to PEP 723 header:
 - `scripts/train_dpo_example.py` - Production DPO template
 - `scripts/train_grpo_example.py` - Production GRPO template
 - `scripts/unsloth_sft_example.py` - Unsloth text LLM training template (faster, less VRAM)
-- `scripts/estimate_cost.py` - Estimate time and cost (offer when appropriate)
+- `scripts/estimate_cost.py` - Estimate training time and cost before approval
 - `scripts/convert_to_gguf.py` - Complete GGUF conversion script
 - `scripts/hf_benchmarks.py` - Search for benchmark results and leaderboards by task, alias or free text.
 
@@ -731,7 +740,7 @@ Add to PEP 723 header:
 3. **Always set timeout** - Default 30 min is insufficient; minimum 1-2 hours recommended
 4. **Always enable Hub push** - Environment is ephemeral; without push, all results lost
 5. **Include Trackio** - Use example scripts as templates for real-time monitoring
-6. **Offer cost estimation** - When parameters are known, use `scripts/estimate_cost.py`
+6. **Get approval before submitting** - Show the hardware flavor, timeout, and estimated cost, then wait for the user's confirmation
 7. **Use UV scripts (Approach 1)** - Default to `hf_jobs("uv", {...})` with inline scripts; TRL maintained scripts for standard training; avoid bash `trl-jobs` commands in Claude Code
 8. **Use hf_doc_fetch/hf_doc_search** for latest TRL documentation
 9. **Validate dataset format** before training with dataset inspector (see Dataset Validation section)
