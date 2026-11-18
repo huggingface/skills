@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "input": "Start an SFT training job on Hugging Face Jobs and keep real-time monitoring enabled. What pattern should you use?",
+      "verifiers": [
+        {"type": "contains", "values": ["hf_jobs"]},
+        {"type": "contains", "values": ["Trackio"]},
+        {"type": "contains", "values": ["scripts/train_sft_example.py"]}
+      ]
+    }
+  ]
+}

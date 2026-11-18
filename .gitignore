@@ -208,6 +208,9 @@ marimo/_lsp/
 __marimo__/
 .claude
 .fast-agent/
+.upskill/artifacts/
+.upskill/reports/
+.upskill/runs/
 
 # MacOS
 .DS_Store
