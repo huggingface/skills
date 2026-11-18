@@ -45,6 +45,7 @@ config = GRPOConfig(
     output_dir="qwen-grpo-math",
     push_to_hub=True,
     hub_model_id="username/qwen-grpo-math",
+    hub_private_repo=True,
     hub_strategy="every_save",
 
     # Training parameters

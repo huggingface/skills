@@ -389,6 +389,7 @@ def main():
         run_name=run_name,
         push_to_hub=True,
         hub_model_id=args.output_repo,
+        hub_private_repo=True,
         save_steps=save_steps,
         save_total_limit=3,
     )
@@ -464,6 +465,7 @@ def main():
             args.output_repo,
             tokenizer=tokenizer,
             save_method="merged_16bit",
+            private=True,
         )
         print(f"Merged model available at: https://huggingface.co/{args.output_repo}")
     else:
@@ -472,7 +474,7 @@ def main():
         print(f"Saved locally to {args.save_local}/")
 
         print(f"\nPushing adapter to {args.output_repo}...")
-        model.push_to_hub(args.output_repo, tokenizer=tokenizer)
+        model.push_to_hub(args.output_repo, tokenizer=tokenizer, private=True)
         print(f"Adapter available at: https://huggingface.co/{args.output_repo}")
 
     print("\n" + "=" * 70)

@@ -50,6 +50,7 @@ config = DPOConfig(
     output_dir="qwen-dpo-aligned",
     push_to_hub=True,
     hub_model_id="username/qwen-dpo-aligned",
+    hub_private_repo=True,
     hub_strategy="every_save",
 
     # DPO-specific parameters
