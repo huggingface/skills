@@ -4,7 +4,7 @@ description: Use Transformers.js to run state-of-the-art machine learning models
 license: Apache-2.0
 metadata:
   author: huggingface
-  version: "4.x"
+  library-version: "4.x"
   category: machine-learning
   repository: https://github.com/huggingface/transformers.js
 compatibility: Requires Node.js 18+ (or compatible Bun/Deno runtime) or modern browser with ES modules support. WebGPU requires runtime and hardware support; WASM is the broad fallback. Internet access is needed for downloading models from Hugging Face Hub (optional if using local models).
