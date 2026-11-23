@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Full Hugging Face Skills manifest for hf skills, MCP, and discovery. Client plugin marketplaces use curated manifests.",
-    "version": "1.0.38"
+    "version": "1.0.39"
   },
   "plugins": [
     {
@@ -55,6 +55,12 @@
       "source": "./skills/hf-mem",
       "skills": "./",
       "description": "Estimate the GPU memory needed to run a Hugging Face model (weights, KV cache and inference overhead) and whether it fits on given GPUs, without downloading it."
+    },
+    {
+      "name": "hf-msft-foundry",
+      "source": "./skills/hf-msft-foundry",
+      "skills": "./",
+      "description": "Deploy, use and delete open models from the Hugging Face collection on Microsoft Foundry (managed compute in the user's Azure subscription)."
     },
     {
       "name": "huggingface-best",
