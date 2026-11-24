@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Full Hugging Face Skills manifest for hf skills, MCP, and discovery. Client plugin marketplaces use curated manifests.",
-    "version": "1.0.38"
+    "version": "1.0.40"
   },
   "plugins": [
     {
@@ -54,7 +54,7 @@
       "name": "hf-mem",
       "source": "./skills/hf-mem",
       "skills": "./",
-      "description": "Hugging Face CLI to estimate the required memory to load Safetensors or GGUF model weights for inference from the Hugging Face Hub"
+      "description": "Estimate the GPU memory needed to run a Hugging Face model (weights, KV cache and inference overhead) and whether it fits on given GPUs, without downloading it."
     },
     {
       "name": "huggingface-best",
