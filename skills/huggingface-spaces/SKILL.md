@@ -76,7 +76,7 @@ If the model genuinely won't fit, check **Inference Providers** as an alternativ
 ```bash
 hf repos create <namespace>/<name> --type space --space-sdk <gradio|docker|static> \
     [--flavor zero-a10g|cpu-basic|<paid-flavor>] \
-    [--secrets KEY=val] [--env KEY=val] \
+    [--secrets KEY] [--env KEY=val] \
     --public|--private|--protected \
     --exist-ok
 ```
@@ -84,7 +84,7 @@ hf repos create <namespace>/<name> --type space --space-sdk <gradio|docker|stati
 - `--space-sdk` is required.
 - `--flavor` selects hardware. `zero-a10g` is the (legacy) identifier for ZeroGPU. Omitting it gives `cpu-basic` — which is itself gated behind a paid plan, so on a free account pass `--flavor zero-a10g` explicitly. Run `hf spaces hardware` for the full paid list and pricing.
 - Visibility: `--public` (anyone can view), `--private` (only you), `--protected` (app is reachable but git repo / Files tab is private).
-- `--secrets KEY=val` becomes an environment variable inside the Space and is **not** visible to visitors. Use for API keys, gated-repo tokens (`HF_TOKEN=hf_…`), etc. Can also be set later via `hf spaces secrets set <id> KEY=val`.
+- `--secrets KEY` reads the value from your environment (or use `--secrets-file FILE`, `-` for stdin); it becomes an environment variable inside the Space and is **not** visible to visitors. Use for API keys, gated-repo tokens (`HF_TOKEN`), etc. Avoid `--secrets KEY=value`: it leaves the value in shell history and process listings. Can also be set later via `hf spaces secrets add <id> -s KEY`.
 - `--env KEY=val` is **visible to visitors** — use only for non-sensitive config (`GRADIO_SSR_MODE=false`, `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`, etc.).
 
 > Note: `hardware:` in the README YAML is silently ignored — hardware is only set via `--flavor` at creation, or later via `hf spaces settings <id> --hardware <name>`.
