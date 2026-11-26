@@ -43,8 +43,7 @@ Examples: 16GB → 8B fp16 / 32B Q4 — 24GB VRAM → 12B fp16 / 48B Q4 — 8GB 
 Fetch the full list of official HF benchmarks:
 
 ```bash
-curl -s -H "Authorization: Bearer $(cat ~/.cache/huggingface/token)" \
-  "https://huggingface.co/api/datasets?filter=benchmark:official&limit=500" | jq '[.[] | {id, tags, description}]'
+curl -s "https://huggingface.co/api/datasets?filter=benchmark:official&limit=500" | jq '[.[] | {id, tags, description}]'
 ```
 
 Read the returned list and select the datasets most relevant to the user's task — match on dataset id, tags, and description. Use your judgment; don't limit yourself to 2-3. Aim for comprehensive coverage: if 5 benchmarks clearly cover the task, use all 5.
@@ -56,8 +55,7 @@ Read the returned list and select the datasets most relevant to the user's task 
 For each selected benchmark dataset:
 
 ```bash
-curl -s -H "Authorization: Bearer $(cat ~/.cache/huggingface/token)" \
-  "https://huggingface.co/api/datasets/<namespace>/<repo>/leaderboard" | jq '[.[:15] | .[] | {rank, modelId, value, verified}]'
+curl -s "https://huggingface.co/api/datasets/<namespace>/<repo>/leaderboard" | jq '[.[:15] | .[] | {rank, modelId, value, verified}]'
 ```
 
 Collect model IDs and scores across all benchmarks. If a leaderboard returns an error (404, 401, etc.), skip it and note it in the output.
@@ -70,8 +68,7 @@ For the top 10-15 candidate model IDs, get model infos.
 
 ```bash
 # REST API
-curl -s -H "Authorization: Bearer $(cat ~/.cache/huggingface/token)" \
-  "https://huggingface.co/api/models/org/model1" | jq '{safetensors, tags, cardData}'
+curl -s "https://huggingface.co/api/models/org/model1" | jq '{safetensors, tags, cardData}'
 
 # CLI (hf-cli)
 hf models info org/model1 --json | jq '{safetensors, tags, cardData}'
@@ -130,5 +127,5 @@ If they say yes, ask whether they'd prefer to:
 
 - **Leaderboard not found**: skip, note "leaderboard unavailable" in output
 - **Model missing from hub_repo_details**: fall back to parsing size from model name
-- **No benchmarks found for task**: use the curated fallback table above, or try `hub_repo_search` with `filters=["<task>"]` sorted by `trendingScore`
+- **No benchmarks found for task**: try `hub_repo_search` with `filters=["<task>"]` sorted by `trendingScore`
 - **All leaderboards fail**: fall back to `hub_repo_search` for popular models tagged with the task, note that results are by popularity rather than benchmark score
