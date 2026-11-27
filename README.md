@@ -102,16 +102,11 @@ This repository contains a few skills to get you started. You can also contribut
 | `hf-cloud-serving-image-selection` | Pick the right serving container for a SageMaker model deployment and find its current image URI. | [SKILL.md](skills/hf-cloud-serving-image-selection/SKILL.md) |
 | `hf-mem` | Estimate the GPU memory needed to run a Hugging Face model (weights, KV cache and inference overhead) and whether it fits on given GPUs, without downloading it. | [SKILL.md](skills/hf-mem/SKILL.md) |
 | `huggingface-best` | Use when the user asks about finding the best, top, or recommended model for a task, wants to know what AI model to use, or wants to compare models by benchmark scores. | [SKILL.md](skills/huggingface-best/SKILL.md) |
-| `huggingface-community-evals` | Run evaluations for Hugging Face Hub models using inspect-ai and lighteval on local hardware. | [SKILL.md](skills/huggingface-community-evals/SKILL.md) |
 | `huggingface-datasets` | Use this skill for Hugging Face Dataset Viewer API workflows that fetch subset/split metadata, paginate rows, search text, apply filters, download parquet URLs, and read size or statistics. | [SKILL.md](skills/huggingface-datasets/SKILL.md) |
 | `huggingface-gradio` | Build Gradio web UIs and demos in Python. | [SKILL.md](skills/huggingface-gradio/SKILL.md) |
-| `huggingface-llm-trainer` | Train or fine-tune language and vision models using TRL (Transformer Reinforcement Learning) or Unsloth with Hugging Face Jobs infrastructure. | [SKILL.md](skills/huggingface-llm-trainer/SKILL.md) |
-| `huggingface-local-models` | Use to select models to run locally with llama.cpp and GGUF on CPU, Mac Metal, CUDA, or ROCm. | [SKILL.md](skills/huggingface-local-models/SKILL.md) |
 | `huggingface-lora-space-builder` | Build and publish a Gradio demo on Hugging Face Spaces for a user-provided LoRA. | [SKILL.md](skills/huggingface-lora-space-builder/SKILL.md) |
-| `huggingface-paper-publisher` | Publish and manage research papers on Hugging Face Hub. | [SKILL.md](skills/huggingface-paper-publisher/SKILL.md) |
 | `huggingface-papers` | Look up and read Hugging Face paper pages in markdown, and use the papers API for structured metadata such as authors, linked models/datasets/spaces, Github repo and project page. | [SKILL.md](skills/huggingface-papers/SKILL.md) |
 | `huggingface-spaces` | Build, deploy, and maintain applications on Hugging Face Spaces — Gradio / Docker / Static SDKs, ZeroGPU and dedicated hardware, model loading, debugging, buckets, inference providers, community grants. | [SKILL.md](skills/huggingface-spaces/SKILL.md) |
-| `huggingface-tool-builder` | Use this skill when the user wants to build tool/scripts or achieve a task where using data from the Hugging Face API would help. | [SKILL.md](skills/huggingface-tool-builder/SKILL.md) |
 | `huggingface-trackio` | Track and visualize ML training experiments with Trackio. | [SKILL.md](skills/huggingface-trackio/SKILL.md) |
 | `huggingface-vision-trainer` | Trains and fine-tunes vision models for object detection (D-FINE, RT-DETR v2, DETR, YOLOS), image classification (timm models — MobileNetV3, MobileViT, ResNet, ViT/DINOv3 — plus any Transformers classifier), and SAM/SAM2 segmentation using Hugging Face Transformers on Hugging Face Jobs cloud GPUs. | [SKILL.md](skills/huggingface-vision-trainer/SKILL.md) |
 | `huggingface-zerogpu` | AI demos and GPU compute with Gradio Spaces and Hugging Face Spaces ZeroGPU. | [SKILL.md](skills/huggingface-zerogpu/SKILL.md) |
@@ -124,10 +119,10 @@ This repository contains a few skills to get you started. You can also contribut
 
 Once a skill is installed, mention it directly while giving your coding agent instructions:
 
-- "Use the HF LLM trainer skill to estimate the GPU memory needed for a 70B model run."
-- "Use the HF model evaluation skill to launch `run_eval_job.py` on the latest checkpoint."
-- "Use the HF dataset creator skill to draft new few-shot classification templates."
-- "Use the HF paper publisher skill to index my arXiv paper and link it to my model."
+- "Use the `hf-mem` skill to estimate the GPU memory needed for a 70B model run."
+- "Use the `trl-training` skill to write an SFT training script for Qwen2.5."
+- "Use the `huggingface-datasets` skill to inspect splits and sample rows from a dataset."
+- "Use the `huggingface-papers` skill to read an arXiv paper and find its linked models."
 
 Your coding agent automatically loads the corresponding `SKILL.md` instructions and helper scripts while it completes the task.
 

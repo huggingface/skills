@@ -26,9 +26,6 @@ jobs:
           - skill_id: hf-mem
             display_name: Hugging Face Memory Estimator
             clawscan_note: Estimates Hugging Face model memory from Hub metadata and HTTP range requests. Network access is expected for Hugging Face Hub metadata and model file headers; gated or private models may require HF_TOKEN.
-          - skill_id: huggingface-local-models
-            display_name: Hugging Face Local Models
-            clawscan_note: Helps select and run local Hugging Face models with llama.cpp, GGUF, and OpenAI-compatible local servers. It may suggest downloading models and installing local inference runtimes.
           - skill_id: huggingface-spaces
             display_name: Hugging Face Spaces
             clawscan_note: Helps create, deploy, and debug Hugging Face Spaces. It may edit app files, run local checks, and use authenticated Hugging Face CLI or API calls to manage Spaces.
