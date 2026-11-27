@@ -272,7 +272,7 @@ The 400 `has no capacity` error is the wake signal, not a fault: it publishes th
 
 `teardown.py` handles both shapes, but the order is load-bearing:
 
-1. alarms (`<endpoint>-*` and `<component>-*`)
+1. alarms whose name prefix and resource dimension match the endpoint or component
 2. scaling policies and the scalable target, on the component resource id
 3. **inference components**
 4. endpoint, endpoint config, model
@@ -348,7 +348,7 @@ aws s3 cp s3://amzn-s3-demo-async-output/async-output/<inference-id>.out result.
 
 The same UTF-8 BOM caveat applies to the `input.json` you upload (see "The UTF-8 BOM gotcha" above) — if you build it on Windows, write it as BOM-free UTF-8 or the container's JSON parser will reject it.
 
-Teardown works the same as real-time: `python3 scripts/teardown.py <endpoint-name>` (the teardown script discovers policies and alarms by name prefix, so it handles both deployment modes).
+Teardown works the same as real-time: `python3 scripts/teardown.py <endpoint-name>`.
 
 ## Defaults at a glance
 
