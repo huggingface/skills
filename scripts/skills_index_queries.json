@@ -10,9 +10,9 @@
     "note": "Supporting script/reference coverage"
   },
   {
-    "query": "gguf conversion estimate cost",
-    "expectedSkill": "huggingface-llm-trainer",
-    "note": "Supporting scripts and references for training infrastructure"
+    "query": "TRL GRPO reward function vLLM",
+    "expectedSkill": "trl-training",
+    "note": "SKILL.md content for LLM post-training"
   },
   {
     "query": "transformers js cache configuration",
@@ -25,8 +25,8 @@
     "note": "SKILL.md plus examples coverage"
   },
   {
-    "query": "publish paper on hugging face",
-    "expectedSkill": "huggingface-paper-publisher",
+    "query": "read hugging face paper page markdown",
+    "expectedSkill": "huggingface-papers",
     "note": "Skill-level discovery"
   }
 ]
