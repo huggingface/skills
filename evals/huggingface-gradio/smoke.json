@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "input": "Show a minimal Gradio chatbot app in Python.",
+      "verifiers": [
+        {"type": "contains", "values": ["import gradio as gr"]},
+        {"type": "contains", "values": ["gr.ChatInterface"]},
+        {"type": "contains", "values": [".launch()"]}
+      ]
+    }
+  ]
+}

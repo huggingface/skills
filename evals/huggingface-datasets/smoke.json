@@ -1,0 +1,12 @@
+{
+  "cases": [
+    {
+      "input": "I need to inspect a dataset with the Dataset Viewer API: resolve splits, preview rows, then paginate more rows. Describe the exact endpoints I should call.",
+      "verifiers": [
+        {"type": "contains", "values": ["/splits?dataset="]},
+        {"type": "contains", "values": ["/first-rows?dataset="]},
+        {"type": "contains", "values": ["/rows?dataset="]}
+      ]
+    }
+  ]
+}

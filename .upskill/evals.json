@@ -1,0 +1,147 @@
+{
+  "scenarios": [
+    {
+      "id": "hf-cli-smoke",
+      "skills": ["skills/hf-cli"],
+      "tests": "evals/hf-cli/smoke.json",
+      "judge": {
+        "enabled": true,
+        "criteria": [
+          "Uses the modern hf CLI, not deprecated huggingface-cli commands.",
+          "Provides a concrete command that is directly executable.",
+          "Stays focused on the user's request."
+        ]
+      }
+    },
+    {
+      "id": "community-evals-smoke",
+      "skills": ["skills/huggingface-community-evals"],
+      "tests": "evals/huggingface-community-evals/smoke.json",
+      "judge": {
+        "enabled": true,
+        "criteria": [
+          "Chooses the correct local evaluation script for the task.",
+          "Keeps the workflow local instead of drifting into HF Jobs.",
+          "Provides a runnable command shape."
+        ]
+      }
+    },
+    {
+      "id": "datasets-smoke",
+      "skills": ["skills/huggingface-datasets"],
+      "tests": "evals/huggingface-datasets/smoke.json",
+      "judge": {
+        "enabled": true,
+        "criteria": [
+          "Uses the Dataset Viewer API endpoints that match the requested workflow.",
+          "Covers split discovery, preview, and pagination.",
+          "Keeps the answer concrete and operational."
+        ]
+      }
+    },
+    {
+      "id": "gradio-smoke",
+      "skills": ["skills/huggingface-gradio"],
+      "tests": "evals/huggingface-gradio/smoke.json",
+      "judge": {
+        "enabled": true,
+        "criteria": [
+          "Shows a minimal valid Gradio solution.",
+          "Uses the API shape that matches the user request.",
+          "Keeps the code concise and directly usable."
+        ]
+      }
+    },
+    {
+      "id": "jobs-smoke",
+      "skills": ["skills/huggingface-jobs"],
+      "tests": "evals/huggingface-jobs/smoke.json",
+      "judge": {
+        "enabled": true,
+        "criteria": [
+          "Uses the hf_jobs MCP tool as the preferred submission path.",
+          "Mentions HF_TOKEN handling for Hub access.",
+          "Gives a concrete submission pattern rather than generic advice."
+        ]
+      }
+    },
+    {
+      "id": "llm-trainer-smoke",
+      "skills": ["skills/huggingface-llm-trainer"],
+      "tests": "evals/huggingface-llm-trainer/smoke.json",
+      "judge": {
+        "enabled": true,
+        "criteria": [
+          "Uses the training workflow described by the skill.",
+          "Keeps Trackio or equivalent monitoring enabled.",
+          "Points to the right script or job pattern for SFT."
+        ]
+      }
+    },
+    {
+      "id": "paper-publisher-smoke",
+      "skills": ["skills/huggingface-paper-publisher"],
+      "tests": "evals/huggingface-paper-publisher/smoke.json",
+      "judge": {
+        "enabled": true,
+        "criteria": [
+          "Uses the paper_manager script correctly.",
+          "Provides the right subcommand and required flag.",
+          "Keeps the answer concrete and executable."
+        ]
+      }
+    },
+    {
+      "id": "papers-smoke",
+      "skills": ["skills/huggingface-papers"],
+      "tests": "evals/huggingface-papers/smoke.json",
+      "judge": {
+        "enabled": true,
+        "criteria": [
+          "Uses the HF paper metadata and markdown endpoints correctly.",
+          "Handles the provided paper id directly.",
+          "Keeps the answer narrow and API-focused."
+        ]
+      }
+    },
+    {
+      "id": "trackio-smoke",
+      "skills": ["skills/huggingface-trackio"],
+      "tests": "evals/huggingface-trackio/smoke.json",
+      "judge": {
+        "enabled": true,
+        "criteria": [
+          "Uses the Trackio CLI flow that matches the retrieval task.",
+          "Returns JSON-oriented automation guidance.",
+          "Keeps the answer concrete and specific."
+        ]
+      }
+    },
+    {
+      "id": "vision-trainer-smoke",
+      "skills": ["skills/huggingface-vision-trainer"],
+      "tests": "evals/huggingface-vision-trainer/smoke.json",
+      "judge": {
+        "enabled": true,
+        "criteria": [
+          "Emphasizes dataset validation before expensive training.",
+          "Uses the helper script referenced by the skill.",
+          "Keeps the answer focused on the requested preflight step."
+        ]
+      }
+    },
+    {
+      "id": "transformers-js-smoke",
+      "skills": ["skills/transformers-js"],
+      "tests": "evals/transformers-js/smoke.json",
+      "judge": {
+        "enabled": true,
+        "criteria": [
+          "Shows the minimal correct Transformers.js setup for Node.js.",
+          "Includes proper pipeline usage and cleanup.",
+          "Keeps the answer directly usable."
+        ]
+      }
+    }
+  ]
+}
